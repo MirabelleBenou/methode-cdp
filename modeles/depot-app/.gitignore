@@ -1,0 +1,23 @@
+# Secrets — seul .env.example est suivi, avec des valeurs factices
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# Caches d'exécution (ils faussent les comptes du rituel)
+__pycache__/
+*.pyc
+.pytest_cache/
+node_modules/
+
+# Données de production : jamais dans un dépôt
+*.dump
+*.sql.gz
+backups/
+
+# Système
+.DS_Store
+Thumbs.db
+
+# ⟨dist/ : si le build est suivi mais ignoré, l'ajouter par git add -f⟩

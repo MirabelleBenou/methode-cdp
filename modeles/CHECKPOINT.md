@@ -1,0 +1,83 @@
+# CHECKPOINT — <Projet> · `v<X.Y>`
+### <date, heure> · <session de CdP> · point d'entrée de la session suivante · remplace le checkpoint du <date>
+
+> *Source : dépôt privé `<owner>/<Projet>`, `<Dossier>/CHECKPOINT_<P>.md`. Le projet claude.ai en porte un miroir sous
+> le même nom, recopié par le CdP.*
+>
+> *Le checkpoint dit l'état **réel**, mesuré — pas l'état espéré. Il se réécrit en entier à chaque passation.*
+
+---
+
+## §0 · Où on en est
+
+- **<Projet> est au `v<X.Y>`.** Empreinte du code `<…>` ; rituel rejoué le <date> : conforme, `<n> passed`.
+- **Le dépôt de code** : `main` au `<sha>` ; l'archive de déploiement est `git archive` de `main`.
+- **Depuis le checkpoint précédent** : <les lots livrés, en une ligne chacun, avec leur version et leur R>.
+- **La méthode** est en v<n> (<ce qui a changé>).
+- **Le registre** court jusqu'à **R<n>** (prochain : **R<n+1>**). « L'exécution a raison » à <n>, l'inverse à <n>.
+- **Dettes ouvertes** : <id — une demi-ligne chacune>.
+- **À faire par le porteur** :
+  - <tag et release à poser, sur quel commit, avec quel texte> ;
+  - <livrable à déposer, nom exact et sha256> ;
+  - <branches fusionnées à supprimer sur GitHub : …>.
+- **En vol** : <ce qui attend un essai ou une réponse extérieure>.
+
+---
+
+## §1 · Le premier geste — clone, rituel
+
+**1. Les dépôts** (un `add_repo` chacun, propriétaire `<owner>`, accès `push`, un clone à la fois) :
+- `<Projet>` → `git clone --depth 1 https://github.com/<owner>/<projet> /home/claude/<projet>` ;
+- `<Projet>-App` → `git clone --depth 1 https://github.com/<owner>/<projet>-app /home/claude/<projet>-app`.
+
+Lire ce checkpoint, puis `Methode/METHODE_<P>.md` (v<n>).
+
+**2. Le rituel de la base** : <les commandes, une par ligne> — attendu, ligne pour ligne :
+
+```
+<sortie attendue du rituel sur la base>
+```
+
+Toute divergence s'arrête là et se dit au porteur.
+
+---
+
+## §2 · Le circuit d'un lot
+
+<Le circuit tel qu'il se joue dans CE projet, en six étapes courtes — renvoyer à la méthode pour le détail. Ce qui a
+changé depuis la dernière fois en gras.>
+
+---
+
+## §3 · La file — à arbitrer avec le porteur
+
+- **Décidé, à cadrer en premier** (R<n>) : <…>.
+- **Ensuite** : <…>.
+- **À venir** : <…>.
+
+---
+
+## §4 · Les pièges vus depuis le dernier checkpoint
+
+- <piège — parade>.
+- Les autres pièges sont au §7 de la méthode et restent vrais.
+
+---
+
+## §5 · Le coût du CdP sur cette session
+
+- **Ouverte** le <date heure>, **close** le <date heure>.
+- **Travail réalisé** : <…>.
+- **Contexte** : environ <n> jetons au dernier tour (cible : sous 700 000).
+- **Premiers postes** : <…>.
+
+---
+
+## §6 · Les documents
+
+**Au dépôt `<Projet>`** (source) : <liste, avec leur version>.
+**Le tableau des chantiers** : `chantiers.html`, publié en artefact à <lien> — à republier au même lien.
+**Au dépôt `<Projet>-App`** : le code, `banc/` (v<n>), `PROMPT_DEV_<P>.md` (v<n>), `lots/…`.
+**Au projet, en miroir** : <liste>.
+**Au projet, écrits une fois** : <liste>.
+**Hors du projet, à téléverser dans la session suivante** : `PROMPT_REPRISE_CDP_<P>_v<n>.md`, **et rien d'autre**.

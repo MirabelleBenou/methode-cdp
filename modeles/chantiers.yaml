@@ -1,0 +1,57 @@
+# Chantiers — <Projet> · source unique des chantiers
+#
+# Ce fichier est LA source : chantiers.html (la page lisible, publiée en
+# artefact), et le §3 du checkpoint s'en déduisent. Un chantier qui n'est pas
+# ici n'existe pas. Chaque écriture de ce fichier régénère la page, dans le
+# même geste : python3 -B generer_tableau.py chantiers.yaml chantiers.html
+#
+# Forme volontairement pauvre : une entrée commence par « - id: », tout le
+# reste tient sur UNE ligne « clé: valeur ». Pas de blocs repliés.
+#
+#   statut     : a-venir | a-cadrer | en-vol | dette | recette
+#                (recette = livré et validé ; on garde l'entrée, pour l'historique)
+#   module     : <module-1> | <module-2> | socle | outillage | doc | exploitation
+#   categorie  : ecran | donnees | moteur | outillage | doc | exploitation
+#   priorite   : haut | moyen | faible
+#   complexite : forte | moyenne | faible
+#   rang       : ordre de valeur à l'intérieur d'un statut (facultatif)
+#   cout       : ce que ça coûte (à venir) ou ce que ça a coûté (livré : version, dev, durée, arrêts, réception)
+#   mesure     : ce qui fonde le chantier — la demande du porteur, la mesure, le défaut vu
+#   refs       : R du registre · cadrage · rapport · autres chantiers
+#
+# Libellés affichés par la page (facultatifs ; sinon la valeur elle-même) :
+# libelle: <module-1> = <Libellé du module 1>
+
+# ─────────────────────────────── Outillage ──────────────────────────────────
+
+- id: banc-v1
+  titre: Le banc d'essai — mesurer une archive à froid
+  module: outillage
+  categorie: outillage
+  statut: a-cadrer
+  priorite: haut
+  complexite: moyenne
+  rang: 1
+  cout: un lot d'outillage, cadrage court du CdP, dev Sonnet High
+  mesure: Sans banc, aucune porte ne se mesure. Le rituel de la base (compte de fichiers, tests, lint, syntaxe de la sortie, i18n, empreinte du code), la mesure commune base → livraison (liste exacte des fichiers changés), et ce que le projet exige en plus.
+  refs: R1
+
+# ─────────────────────────────── Produit ────────────────────────────────────
+
+- id: <premier-lot>
+  titre: <titre>
+  module: <module>
+  categorie: ecran
+  statut: a-venir
+  priorite: haut
+  complexite: moyenne
+  rang: 2
+  cout: non mesuré — à analyser au cadrage
+  mesure: <la demande du porteur, avec ses mots>
+  refs: R1
+
+# ─────────────────────────────── Dettes ─────────────────────────────────────
+#
+# Une dette porte son déclencheur dans « cout » : « à grouper avec le prochain
+# lot qui touche <fichier> ». Le CdP passe ces dettes contre la liste des
+# fichiers de chaque lot au cadrage.
