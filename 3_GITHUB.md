@@ -1,173 +1,179 @@
-# GITHUB DANS LA MÉTHODE
-### Les dépôts, leur structure, le circuit d'un lot, ce qui ne passe pas depuis une session
+# GITHUB IN THE METHOD
+### The repositories, their structure, the circuit of a batch, what does not get through from a session
 
-*Les dépôts remplacent tout ce qui se téléversait : le code, les vivants, les cadrages et les rapports. Une session de
-CdP ou de dev part d'un clone et repart par un push. Le bac à sable ne garde rien d'une session à l'autre : tout se
-reconstitue depuis les dépôts.*
+*The repositories replace everything that used to be uploaded: the code, the living docs, the briefs and the reports.
+A PL or dev session starts from a clone and leaves by a push. The sandbox keeps nothing from one session to the next:
+everything is rebuilt from the repositories.*
 
 ---
 
-## 1 · Les deux familles de dépôts
+## 1 · The two families of repositories
 
-| dépôt | visibilité | porte | qui y écrit |
+| repository | visibility | holds | who writes there |
 |---|---|---|---|
-| **`<owner>/<Projet>`** — les vivants | privé | `README.md` ; `Methode/METHODE_<P>.md` ; `<Dossier>/` : checkpoint, registre, plan, `chantiers.yaml`, statuts des sous-projets ; `<Dossier>/attendus/<version>/` ; `<Dossier>/outils_cdp/` ; `<Dossier>/Archives/` | **les sessions de CdP seules** |
-| **`<owner>/<Projet>-App`** — le code | privé (public : §6 B) | le code à la racine ; `banc/` ; `PROMPT_DEV_<P>.md` ; `lots/<version>/` ; `.gitattributes`, `.gitignore`, `CHANGELOG.md` | le CdP sur `main` (fusion, cadrage) ; le dev sur la branche de son lot |
+| **`<owner>/<Project>`** — the living docs | private | `README.md`; `Method/METHOD_<P>.md`; `<Folder>/`: checkpoint, decision log, plan, `workstreams.yaml`, statuses of the subprojects; `<Folder>/expected/<version>/`; `<Folder>/pl_tools/`; `<Folder>/Archives/` | **PL sessions only** |
+| **`<owner>/<Project>-App`** — the code | private (public: §6 B) | the code at the root; `bench/`; `DEV_PROMPT_<P>.md`; `batches/<version>/`; `.gitattributes`, `.gitignore`, `CHANGELOG.md` | the PL on `main` (merge, brief); the dev on the branch of its batch |
 
-**Le dépôt de code est public** (GitHub Pages, licence ouverte) : **le prompt du dev et `lots/` n'y vont jamais** — ils
-nomment le porteur, décrivent la méthode et citent le registre. Ils vont dans un troisième dépôt, privé (§6 B). Un fichier
-poussé sur un dépôt public y reste dans l'historique même retiré ensuite : la règle vaut **dès le premier commit**.
+**The code repository is public** (GitHub Pages, open license): **the dev prompt and `batches/` never go there** — they
+name the owner, describe the method and cite the decision log. They go into a third, private repository (§6 B). A file
+pushed to a public repository stays there in the history even if removed afterwards: the rule holds **from the first
+commit**.
 
-**Pourquoi deux dépôts** : le dev lit tout le dépôt de code ; il ne doit pas lire les attendus de la réception, ni les
-décisions en cours, ni les autres chantiers. Les vivants restent au CdP.
+**Why two repositories**: the dev reads the whole code repository; it must not read the acceptance expected results,
+nor the pending decisions, nor the other workstreams. The living docs stay with the PL.
 
 ---
 
-## 2 · La structure du dépôt de code
+## 2 · The structure of the code repository
 
 ```
-<Projet>-App/
-├── <le code livré>            ← exactement ce que porte l'archive de déploiement
-├── CHANGELOG.md               ← dans l'archive
-├── banc/                      ← export-ignore : l'outillage de mesure, son README d'abord
-├── PROMPT_DEV_<P>.md          ← export-ignore : la commande permanente du dev
-├── lots/                      ← export-ignore
+<Project>-App/
+├── <the delivered code>       ← exactly what the deployment archive holds
+├── CHANGELOG.md               ← in the archive
+├── bench/                     ← export-ignore: the measuring tooling, its README first
+├── DEV_PROMPT_<P>.md          ← export-ignore: the dev's standing command
+├── batches/                   ← export-ignore
 │   └── v<X.Y>/
-│       ├── CADRAGE.md         ← le CdP, un seul commit sur la branche du lot
-│       ├── ADDENDUM_<n>.md    ← le CdP, pour lever un arrêt ou un retour d'essai
-│       ├── ARRET_<n>.md       ← le dev, avant de s'arrêter
-│       ├── RAPPORT_DEV.md     ← le dev, après le commit de livraison
-│       └── maquette/          ← la maquette du CdP, ou les images montrées
-├── .gitattributes             ← export-ignore de lui-même aussi
+│       ├── BRIEF.md           ← the PL, a single commit on the batch's branch
+│       ├── ADDENDUM_<n>.md    ← the PL, to lift a stop or answer trial feedback
+│       ├── STOP_<n>.md        ← the dev, before stopping
+│       ├── DEV_REPORT.md      ← the dev, after the delivery commit
+│       └── mock-up/            ← the PL's mock-up, or the images shown
+├── .gitattributes             ← export-ignore of itself too
 └── .gitignore
 ```
 
-**`.gitattributes`** (modèle dans `modeles/depot-app/`) :
+**`.gitattributes`** (template in `templates/code-repo/`):
 
 ```
-banc/               export-ignore
-lots/               export-ignore
-PROMPT_DEV_*.md     export-ignore
+bench/              export-ignore
+batches/            export-ignore
+DEV_PROMPT_*.md     export-ignore
 .gitattributes      export-ignore
 ```
 
-**L'archive de déploiement est `git archive` du commit de livraison** : `banc/`, `lots/` et le prompt n'y entrent pas.
-C'est elle que le dev mesure, que le CdP remesure, et que tu déploies — la même, à l'octet.
+**The deployment archive is `git archive` of the delivery commit**: `bench/`, `batches/` and the prompt do not get into
+it. It is what the dev measures, what the PL re-measures, and what you deploy — the same one, byte for byte.
 
 ---
 
-## 3 · Le circuit d'un lot, par les branches
+## 3 · The circuit of a batch, through the branches
 
 ```
-main ──●────────────────────────────────────────────●  (avance rapide après ta validation)
-        \                                          /
-lot/vX.Y ●─ CADRAGE ─ … travail … ─ LIVRAISON ─ RAPPORT
-          (CdP)       (dev)        (dev)        (dev)
-                         └ ARRET_1 (dev) ─ ADDENDUM_1 (CdP) ┘  si besoin
+main ────●──────────────────────────────────────────●  (fast-forward after your validation)
+          \                                        /
+batch/vX.Y ●─ BRIEF ─ … work … ─ DELIVERY ─ REPORT
+              (PL)    (dev)      (dev)      (dev)
+                         └ STOP_1 (dev) ─ ADDENDUM_1 (PL) ┘  if needed
 ```
 
-1. **Le CdP crée `lot/v<X.Y>` depuis la tête de `main`** et y pousse **un seul commit** : `lots/v<X.Y>/CADRAGE.md` (et
-   sa maquette s'il y en a une). Le cadrage nomme le commit de base (la tête de `main`).
-2. **Le CdP lance le dev en sous-agent** (`modeles/COMMANDE_DEV.md`) : modèle et effort du cadrage, clone dans un dossier
-   à part, rien d'autre en contexte. *Repli : une ligne que tu colles dans une conversation neuve.*
-3. **Un arrêt** : le dev pousse sa branche avec `ARRET_<n>.md` et s'arrête. Le CdP lit, pousse `ADDENDUM_<n>.md` sur la
-   même branche, relance le dev.
-4. **La livraison** : le dev pousse son commit de livraison, **puis** `RAPPORT_DEV.md` dans un commit à part (le rapport
-   n'entre pas dans l'archive, l'empreinte n'en dépend pas).
-5. **La réception** : le CdP refait `git archive` du commit de livraison, remesure à froid, relit le diff, regarde les
-   rendus. Il te remet le livrable sous son nom exact, avec son sha256.
-6. **Après ta validation en production** : `git push origin lot/v<X.Y>:main` — **avance rapide, jamais `--force`**.
-   Puis la clôture des vivants, un commit « Lot v<X.Y> clos » au dépôt des vivants, le miroir au projet.
+1. **The PL creates `batch/v<X.Y>` from the head of `main`** and pushes **a single commit** to it:
+   `batches/v<X.Y>/BRIEF.md` (and its mock-up if there is one). The brief names the base commit (the head of `main`).
+2. **The PL launches the dev as a sub-agent** (`templates/DEV_COMMAND.md`): model and effort from the brief, clone in a
+   separate folder, nothing else in context. *Fallback: a line you paste into a new conversation.*
+3. **A stop**: the dev pushes its branch with `STOP_<n>.md` and stops. The PL reads it, pushes `ADDENDUM_<n>.md` on the
+   same branch, relaunches the dev.
+4. **The delivery**: the dev pushes its delivery commit, **then** `DEV_REPORT.md` in a separate commit (the report
+   does not enter the archive, the hash does not depend on it).
+5. **The acceptance**: the PL redoes `git archive` of the delivery commit, re-measures cold, rereads the diff, looks at
+   the renders. It hands you the deliverable under its exact name, with its sha256.
+6. **After your validation in production**: `git push origin batch/v<X.Y>:main` — **fast-forward, never `--force`**.
+   Then the close-out of the living docs, a commit “Batch v<X.Y> closed” in the living-docs repository, the mirror in
+   the project.
 
-**Un correctif** d'un lot livré porte la version suivante, sur sa propre branche partie de celle du lot.
-**Des retours d'essai** sur un lot non encore validé passent par des addenda en série sur la même branche, un commit et
-un rapport chacun.
-
----
-
-## 4 · Le CdP au dépôt des vivants
-
-- Il le rattache (`add_repo`, accès `push`) et le clone en début de session : **c'est sa copie de travail**.
-- `git pull` avant d'écrire, `git fetch origin main` avant de pousser.
-- Il modifie par remplacements ciblés ; **la version d'un document est dans son en-tête, l'historique dans git** ; les
-  noms de fichiers restent stables.
-- **Deux CdP peuvent partager les vivants** (deux chantiers en parallèle) : chacun fait `pull` avant de réécrire, prend
-  le numéro de version suivant ; un conflit se voit au `pull` au lieu de s'écraser. Tu dis lequel est actif.
-- **Le miroir au projet** : à chaque clôture, chaque fichier modifié se recopie par l'outil du projet en envoyant le
-  fichier depuis le clone (`project_write` avec `local_path`), sous le même nom. **Jamais depuis le texte que rend
-  l'outil du projet** : il rend tout en texte, sans preuve à l'octet. Un « Sync now » GitHub du projet n'est pas
-  automatique — le miroir par le CdP t'évite ce geste.
-- Il dit dans sa réponse ce qu'il a écrit : dépôt, commit, chemin.
+**A fix** for a delivered batch carries the next version, on its own branch started from the batch's branch.
+**Trial feedback** on a batch not yet validated goes through addenda in series on the same branch, one commit and
+one report each.
 
 ---
 
-## 5 · Ce qui ne passe pas depuis une session — et les autres pièges
+## 4 · The PL in the living-docs repository
 
-| piège | ce qui se passe | la parade |
+- It attaches it (`add_repo`, `push` access) and clones it at the start of the session: **it is its working copy**.
+- `git pull` before writing, `git fetch origin main` before pushing.
+- It edits by targeted replacements; **a document's version is in its header, the history in git**; file
+  names stay stable.
+- **Two PLs can share the living docs** (two workstreams in parallel): each one does `pull` before rewriting, takes the
+  next version number; a conflict shows at the `pull` instead of being overwritten. You say which one is active.
+- **The mirror in the project**: at every close-out, each modified file is copied over with the project tool by sending
+  the file from the clone (`project_write` with `local_path`), under the same name. **Never from the text the project
+  tool returns**: it returns everything as text, with no byte-exact proof. A GitHub “Sync now” of the project is not
+  automatic — the mirror by the PL spares you that action.
+- It says in its answer what it wrote: repository, commit, path.
+
+---
+
+## 5 · What does not get through from a session — and the other pitfalls
+
+| pitfall | what happens | the remedy |
 |---|---|---|
-| **Tags et releases** | le push d'un tag coupe, l'API répond 403 | **tu les poses sur GitHub**, avec le texte que te donne le CdP |
-| **Suppression de branche** | refus 403 | tu supprimes les branches fusionnées ; le checkpoint les liste |
-| **Création de dépôt** | impossible depuis une session | tu crées le dépôt vide ; la session le rattache |
-| **Un dépôt par session** | chaque session rattache ses dépôts (`add_repo`) | un clone à la fois, délai de commande généreux |
-| **Session de dev ouverte à la main** | elle peut échouer à rattacher un dépôt privé | le sous-agent du CdP hérite des dépôts de sa session |
-| **Clone d'une seule branche** | `git fetch origin main` ne crée pas `origin/main` | écrire `git fetch origin main:refs/remotes/origin/main` |
-| **Branche de lot qui suit `origin/main`** | le hook de fin de tour croit à des commits non poussés | fixer `branch.<lot>.merge` et ajouter la branche au `remote.origin.fetch` |
-| **Lignes d'attribution** | la session impose ses lignes dans les commits | sur un dépôt public, elles se voient : à savoir |
-| **Secrets** | un `.env` poussé est publié pour toujours | seul `.env.example` porte des valeurs, factices ; vérifier avant le premier push |
-| **Dossier `dist/` ignoré mais suivi** | `git add` ne le prend pas | `git add -f` |
-| **Rejet HTTP 413 au push** | push d'une copie pas à jour | `git fetch origin main` avant de pousser |
-| **Casse du nom de dépôt** | la session clone en minuscules | les deux marchent ; l'adresse canonique est celle de la création |
+| **Tags and releases** | pushing a tag gets cut off, the API answers 403 | **you set them on GitHub**, with the text the PL gives you |
+| **Branch deletion** | 403 refusal | you delete the merged branches; the checkpoint lists them |
+| **Repository creation** | impossible from a session | you create the empty repository; the session attaches it |
+| **One repository per session** | each session attaches its repositories (`add_repo`) | one clone at a time, generous command timeout |
+| **Dev session opened by hand** | it may fail to attach a private repository | the PL's sub-agent inherits the repositories of their session |
+| **Single-branch clone** | `git fetch origin main` does not create `origin/main` | write `git fetch origin main:refs/remotes/origin/main` |
+| **Batch branch tracking `origin/main`** | the end-of-turn hook believes there are unpushed commits | set `branch.<batch>.merge` and add the branch to `remote.origin.fetch` |
+| **Attribution lines** | the session imposes its lines in the commits | on a public repository, they show: be aware of it |
+| **Secrets** | a pushed `.env` is published forever | only `.env.example` holds values, dummy ones; check before the first push |
+| **`dist/` folder ignored but tracked** | `git add` does not pick it up | `git add -f` |
+| **HTTP 413 rejection on push** | push of a copy that is not up to date | `git fetch origin main` before pushing |
+| **Case of the repository name** | the session clones in lowercase | both work; the canonical address is the one from creation |
 
 ---
 
-## 6 · Variantes
+## 6 · Variants
 
-**A · Projet sans code** (documentation, campagne, données) : un seul dépôt, celui des vivants ; les livrables y vivent
-sous `livrables/`, versionnés par commit. Pas de dev en sous-agent si le CdP ne produit que des documents — la règle « le
-CdP n'écrit pas le livré » s'applique au code, pas à la documentation, que le CdP peut éditer sur ton autorisation.
+**A · Project without code** (documentation, campaign, data): a single repository, the living-docs one; the deliverables
+live there under `deliverables/`, versioned by commit. No dev sub-agent if the PL produces only documents — the rule
+“the PL does not write what is delivered” applies to code, not to documentation, which the PL may edit with your
+authorization.
 
-**B · Code public** (licence ouverte, GitHub Pages) : **trois dépôts**, que tu crées vides avant l'amorçage.
+**B · Public code** (open license, GitHub Pages): **three repositories**, which you create empty before the bootstrap.
 
-| dépôt | visibilité | porte |
+| repository | visibility | holds |
 |---|---|---|
-| `<Projet>` | privé | les vivants, comme d'habitude |
-| `<Projet>-App` | **public** | le code, ses tests, le banc s'il ne nomme personne, `.gitattributes`, `.github/` — et rien d'autre |
-| `<Projet>-Lots` | privé | `PROMPT_DEV_<P>.md` à la racine ; `lots/<lot>/` (cadrage, addenda, arrêts, rapport, maquette) sur la branche `lot/<lot>` |
+| `<Project>` | private | the living docs, as usual |
+| `<Project>-App` | **public** | the code, its tests, the test bench if it names no one, `.gitattributes`, `.github/` — and nothing else |
+| `<Project>-Batches` | private | `DEV_PROMPT_<P>.md` at the root; `batches/<batch>/` (brief, addenda, stops, report, mock-up) on the branch `batch/<batch>` |
 
-- **Le circuit** : le CdP pousse le cadrage sur `lot/<lot>` du dépôt des lots ; il nomme le commit du dépôt public d'où
-  part le code. Le dev lit le prompt et le cadrage au dépôt des lots, clone le dépôt public, y pousse le code sur sa
-  propre branche `lot/<lot>`, et pousse arrêts et rapport au dépôt des lots. Le sous-agent hérite des trois dépôts.
-- **Le dev ne lit pas les vivants** : c'est pour cela que le prompt et les lots ne vont pas au dépôt des vivants, où sont
-  les attendus de la réception.
-- **Un outil simple peut se passer de prompt du dev** : le cadrage se suffit alors, et nomme les fonctions à lire dans un
-  gros fichier de build.
-- Après ta validation : avance rapide de `main` public (à l'octet de l'archive reçue) ; au jalon, le `CHANGELOG` et ce
-  que sert GitHub Pages, puis **tu poses le tag et la release**.
-- **Le CdP relit chaque diff poussé au public** : aucun prénom, aucun profil, aucune référence à la méthode, au registre
-  ou à un autre projet. Les lignes d'attribution des commits, imposées par la session, s'y voient.
+- **The circuit**: the PL pushes the brief to `batch/<batch>` of the batches repository; it names the commit of the
+  public repository the code starts from. The dev reads the prompt and the brief in the batches repository, clones the
+  public repository, pushes the code there on its own branch `batch/<batch>`, and pushes stops and report to the batches
+  repository. The sub-agent inherits the three repositories.
+- **The dev does not read the living docs**: that is why the prompt and the batches do not go into the living-docs
+  repository, where the acceptance expected results are.
+- **A simple tool can do without a dev prompt**: the brief is then enough on its own, and names the functions to read
+  in a large build file.
+- After your validation: fast-forward of the public `main` (byte-exact to the accepted archive); at the milestone, the
+  `CHANGELOG` and what GitHub Pages serves, then **you set the tag and the release**.
+- **The PL rereads every diff pushed to the public repository**: no first name, no profile, no reference to the method,
+  the decision log or another project. The attribution lines of the commits, imposed by the session, show there.
 
-**C · Plusieurs sous-projets** : un seul dépôt des vivants, un dossier par sous-projet, un seul registre et un seul
-`chantiers.yaml` (un champ `module`), un statut par sous-projet ; un dépôt de code par livrable déployé à part.
+**C · Several subprojects**: a single living-docs repository, one folder per subproject, a single decision log and a
+single `workstreams.yaml` (a `module` field), one status per subproject; one code repository per deliverable deployed
+separately.
 
-- **Un seul dépôt de lots pour toute la suite** (`<Projet>-Lots`, privé), même quand les dépôts de code sont plusieurs,
-  publics ou privés : chaque lot y porte **un préfixe de module** — branche `lot/<préfixe>-<lot>`, dossier
-  `lots/<préfixe>-<lot>/` — et son code part du dépôt de code du module, sur `lot/<lot>`. Les prompts du dev des modules
-  y vivent aussi, à la racine. Un dépôt de code privé y gagne : il ne porte plus que le code et le banc.
-- **Pourquoi un seul** : un `-Lots` par dépôt de code multiplie les rattachements, les clones et les règles de circuit ;
-  un seul garde une règle pour tous, et le CdP n'a qu'un endroit où verser cadrages et rapports.
-- **En le formant après coup** : partir de l'historique d'un `-Lots` existant (avance rapide sur le dépôt neuf, vide),
-  copier les autres dossiers de lots dans un commit, contrôler chaque empreinte d'arbre (`git rev-parse <ref>:lots/<x>`),
-  et retirer `lots/` du dépôt de code en vérifiant que la liste (chemin, mode, sha256) de `git archive` ne bouge pas.
-  Les dossiers déjà clos gardent leur nom ; seuls les lots à venir prennent le préfixe.
+- **A single batches repository for the whole suite** (`<Project>-Batches`, private), even when there are several code
+  repositories, public or private: each batch carries **a module prefix** there — branch `batch/<prefix>-<batch>`, folder
+  `batches/<prefix>-<batch>/` — and its code starts from the module's code repository, on `batch/<batch>`. The modules'
+  dev prompts live there too, at the root. A private code repository gains from it: it then holds only the code and
+  the test bench.
+- **Why a single one**: one `-Batches` per code repository multiplies the attachments, the clones and the circuit rules;
+  a single one keeps one rule for all, and the PL has only one place to file briefs and reports.
+- **Forming it after the fact**: start from the history of an existing `-Batches` (fast-forward onto the new, empty
+  repository), copy the other batch folders in one commit, check every tree hash (`git rev-parse <ref>:batches/<x>`),
+  and remove `batches/` from the code repository while checking that the list (path, mode, sha256) of `git archive`
+  does not change. Folders already closed keep their name; only the upcoming batches take the prefix.
 
 ---
 
-## 7 · Ce qui ne va jamais dans un dépôt
+## 7 · What never goes into a repository
 
-*Et dans un dépôt public, en plus : le prompt du dev et `lots/` (§6 B).*
+*And in a public repository, in addition: the dev prompt and `batches/` (§6 B).*
 
-- les secrets, jetons, mots de passe, `.env` réels ;
-- les données de production (journaux, dumps, exports) : elles se téléversent dans la session qui en a besoin ;
-- le prompt de reprise du CdP : il se téléverse ;
-- les images à faire valider par toi : elles passent dans la discussion (ou dans `lots/<version>/maquette/` quand le
-  cadrage les commande).
+- secrets, tokens, passwords, real `.env` files;
+- production data (logs, dumps, exports): they are uploaded into the session that needs them;
+- the PL handover prompt: it is uploaded;
+- images for you to validate: they go through the conversation (or into `batches/<version>/mock-up/` when the
+  brief orders them).

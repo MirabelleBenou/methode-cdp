@@ -1,0 +1,23 @@
+# Secrets — only .env.example is tracked, with dummy values
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# Runtime caches (they skew the ritual's counts)
+__pycache__/
+*.pyc
+.pytest_cache/
+node_modules/
+
+# Production data: never in a repository
+*.dump
+*.sql.gz
+backups/
+
+# System
+.DS_Store
+Thumbs.db
+
+# ⟨dist/: if the build is tracked but ignored, add it with git add -f⟩

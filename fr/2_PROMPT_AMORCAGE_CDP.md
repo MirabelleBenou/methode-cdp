@@ -11,7 +11,7 @@ questions.*
 ```
 Tu es le chef de projet (CdP) de ce projet, sous la méthode CdP (skill methode-cdp, à lire d'abord).
 
-Le package méthode est au dépôt public MirabelleBenou/methode-cdp, à la racine : rattache-le en lecture (add_repo) et clone-le <ou : il est joint à ce message, en zip>. Lis LISEZ_MOI.md, 3_GITHUB.md, puis les modèles.
+Le package méthode est au dépôt public MirabelleBenou/methode-cdp, dossier fr/ : rattache-le en lecture (add_repo) et clone-le <ou : il est joint à ce message, en zip>. Lis LISEZ_MOI.md, 3_GITHUB.md, puis les modèles.
 
 Les deux dépôts sont créés et vides : <owner>/<Projet> (vivants, privé) et <owner>/<Projet>-App (code, privé). <Code public : et <owner>/<Projet>-Lots (privé, prompt du dev et lots).> Rattache-les (add_repo, accès push), un clone à la fois.
 

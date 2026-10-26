@@ -80,7 +80,7 @@ elle ne remplace pas un document versionné qu'un dev neuf peut lire.
 3. **Installe la skill `methode-cdp`** : personnalise d'abord ses §1 et §8 (ce sont eux qui te décrivent : ton
    profil, tes contraintes de poste), puis crée-la dans tes skills claude.ai avec le contenu de `skill/SKILL.md`.
 4. **Mets le package à la portée de la première session** — au choix :
-   - (recommandé) le CdP le lit lui-même au dépôt public `MirabelleBenou/methode-cdp` (à la racine), en lecture :
+   - (recommandé) le CdP le lit lui-même au dépôt public `MirabelleBenou/methode-cdp` (dossier `fr/`), en lecture :
      rien à téléverser ;
    - ou tu téléverses le zip dans la première conversation.
 5. **Ouvre une conversation avec Opus dans le projet** et colle `2_PROMPT_AMORCAGE_CDP.md`, complété de ce que tu veux

@@ -1,0 +1,57 @@
+# Workstreams — <Project> · single source of the workstreams
+#
+# This file is THE source: workstreams.html (the readable page, published as an
+# artifact), and §3 of the checkpoint are derived from it. A workstream that is not
+# here does not exist. Every write to this file regenerates the page, in the
+# same move: python3 -B make_board.py workstreams.yaml workstreams.html
+#
+# Deliberately poor form: an entry starts with “- id:”, everything
+# else fits on ONE line “key: value”. No folded blocks.
+#
+#   status     : upcoming | to-brief | in-flight | debt | accepted
+#                (accepted = delivered and validated; the entry is kept, for the history)
+#   module     : <module-1> | <module-2> | core | tooling | doc | operations
+#   category   : screen | data | engine | tooling | doc | operations
+#   priority   : high | medium | low
+#   complexity : high | medium | low
+#   rank       : order of value within a status (optional)
+#   cost       : what it will cost (upcoming) or what it cost (delivered: version, dev, duration, stops, acceptance)
+#   basis      : what the workstream rests on — the owner's request, the measurement, the defect seen
+#   refs       : D from the decision log · brief · report · other workstreams
+#
+# Labels displayed by the page (optional; otherwise the value itself):
+# label: <module-1> = <Module 1 label>
+
+# ─────────────────────────────── Tooling ────────────────────────────────────
+
+- id: bench-v1
+  title: The test bench — measuring an archive cold
+  module: tooling
+  category: tooling
+  status: to-brief
+  priority: high
+  complexity: medium
+  rank: 1
+  cost: a tooling batch, short brief from the PL, dev Sonnet High
+  basis: Without a test bench, no gate can be measured. The base ritual (file count, tests, lint, output syntax, i18n, code fingerprint), the common base → delivery measurement (exact list of changed files), and whatever else the project requires.
+  refs: D1
+
+# ─────────────────────────────── Product ────────────────────────────────────
+
+- id: <first-batch>
+  title: <title>
+  module: <module>
+  category: screen
+  status: upcoming
+  priority: high
+  complexity: medium
+  rank: 2
+  cost: not measured — to analyze at the brief
+  basis: <the owner's request, in their own words>
+  refs: D1
+
+# ─────────────────────────────── Debts ──────────────────────────────────────
+#
+# A debt carries its trigger in “cost”: “to group with the next
+# batch that touches <file>”. The PL runs these debts against the list of
+# files of each batch at the brief.
