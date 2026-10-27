@@ -88,7 +88,9 @@ accepted → the entry is written in its place. An entry carries no total: it ma
 deliverable, a single batch in flight**: the batch in flight carries in `workstreams.yaml` `status: in-flight`, `pl:`
 and `deliverable:`, and pushing that entry takes the deliverable. **Another batch of the same deliverable is
 suspended**, even from another PL: it stays `to-brief` with `waits: <id>`, no brief pushed, no branch, no dev, until the
-first one is validated in production and merged (or abandoned on the owner's decision). **Nobody decides a version
+first one is validated in production and merged (or abandoned on the owner's decision). **Study and pre-brief stay
+free**: the pre-brief (rules, criteria, texts, no version, no expected results) may be pushed to the batches repository,
+under `batches/<batch>/PRE_BRIEF.md`; it becomes the brief when the batch takes the deliverable. **Nobody decides a version
 number in advance**: the version is computed when the batch takes the deliverable (`main` plus one), then written in
 `version:` and the brief; a suspended batch that resumes computes it on the new `main` and redoes its base. A file of
 another deliverable is declared (`touches:`).

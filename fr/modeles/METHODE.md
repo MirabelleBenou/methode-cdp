@@ -87,7 +87,9 @@ accepté → l'entrée se rédige à sa place. Une entrée ne porte pas de total
 vol** : le lot en vol porte dans `chantiers.yaml` `statut: en-vol`, `cdp:` et `livrable:`, et pousser cette entrée
 prend le livrable. **Un autre lot du même livrable est suspendu**, même s'il vient d'un autre CdP : il reste `a-cadrer`
 avec `attend: <id>`, sans cadrage poussé, branche ni dev, jusqu'à ce que le premier soit validé en production et
-fusionné (ou abandonné sur décision du porteur). **Personne ne décide d'un numéro de version à l'avance** : la version
+fusionné (ou abandonné sur décision du porteur). **L'étude et le pré-cadrage restent libres** : le pré-cadrage (règles,
+critères, textes, sans version ni attendus) peut se pousser au dépôt des lots, sous `lots/<lot>/PRECADRAGE.md` ; il
+devient le cadrage quand le lot prend le livrable. **Personne ne décide d'un numéro de version à l'avance** : la version
 se calcule quand le lot prend le livrable (`main` plus un), s'écrit alors dans `version:` et le cadrage ; un lot
 suspendu qui reprend la calcule sur le nouveau `main` et refait sa base. Un fichier d'un autre livrable se déclare
 (`touche:`).
