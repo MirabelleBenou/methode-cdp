@@ -62,7 +62,8 @@ are shared out through messages the owner relays (first project, four PLs in par
 1. **One active PL = one domain = a checkpoint of its own.** Nobody writes in someone else's checkpoint.
 2. **What is shared is written append-only** (decision log, plan, `workstreams.yaml`): no rewritten summary, no “last
    updated” line, no header version on a shared file — the history is in git.
-3. **Anything numbered is reserved by a push**: a refused push is the only atomic operation available.
+3. **Whatever can be taken only once is taken by a push** (a decision number, a deliverable): a refused push is the
+   only atomic operation available.
 4. **What can be computed is not written**: totals, the board. After a conflict, regenerate; never merge by hand.
 5. **A file that is not append-only has a single owner**: this method, the dev prompt, the living-docs README and the
    method package belong to **the coordination session** (Opus-Coordination).
@@ -83,9 +84,14 @@ the living docs** (`check_living_docs.py`, `make_board.py`, the arbiter).
 accepted → the entry is written in its place. An entry carries no total: it marks `[execution +1]` or
 `[reverse +1]` (§5).
 
-**Code versions**: a batch in flight carries in `workstreams.yaml` `status: in-flight`, `pl:` and `version:`; pushing
-the entry reserves the version, at the brief, before the branch. Batches are merged in the order of their versions; an
-overtaken batch rebases on the new `main` and redoes its acceptance. A file of another domain is declared (`touches:`).
+**The deliverable and its version**: the deliverable is the code repository the release comes out of. **One
+deliverable, a single batch in flight**: the batch in flight carries in `workstreams.yaml` `status: in-flight`, `pl:`
+and `deliverable:`, and pushing that entry takes the deliverable. **Another batch of the same deliverable is
+suspended**, even from another PL: it stays `to-brief` with `waits: <id>`, no brief pushed, no branch, no dev, until the
+first one is validated in production and merged (or abandoned on the owner's decision). **Nobody decides a version
+number in advance**: the version is computed when the batch takes the deliverable (`main` plus one), then written in
+`version:` and the brief; a suspended batch that resumes computes it on the new `main` and redoes its base. A file of
+another deliverable is declared (`touches:`).
 
 **Between PLs**: a report for another domain becomes a workstream of its module, `status: to-brief`, `for: <PL>`;
 **after every `pull`, a PL reads the `for:` entries addressed to it**. The owner no longer relays. A generic lesson is a
@@ -125,8 +131,8 @@ top of its reply.
 5. **The acceptance** (§4), then the verdict to the owner, with the prediction for production, and **the deliverable
    handed over as is**, under its exact name, with its sha256.
 6. **One delivery = one new number.** Whatever is handed over to the owner or deployed carries a version never handed
-   over before. A fix or trial feedback after a hand-over makes **a batch of the next version** (reserved by its
-   `in-flight` entry), on its own branch started from the batch's branch, in the same dev session if it is still open.
+   over before. A fix or trial feedback after a hand-over makes **a batch of the next version**, which keeps the
+   deliverable, on its own branch started from the batch's branch, in the same dev session if it is still open.
    **An addendum under the same version only serves while nothing has been handed over or deployed**: lifting a stop,
    correcting a gap found at acceptance.
 7. **Validation in production by the owner**, then **the merge**: `git push origin batch/v<X.Y>:main` as a
@@ -323,7 +329,7 @@ handover prompt** (the handover, below). **Images** go through the conversation,
   3. push, then the mirror in the project;
   4. **the domain's fixed line**, under “**Opus · new conversation in the project**”: “You are <PL>. Resume: attach
      `<owner>/<Project>` (push access), git pull, read `<domain checkpoint>` in full (§0 first) and follow it.”
-- **Nothing travels outside the repository**: no handover prompt, no “next number”, no reserved version in a text handed
+- **Nothing travels outside the repository**: no handover prompt, no “next number”, no upcoming version in a text handed
   to the owner — a text that copies the state ages while the other PLs move on.
 - **The resume can be started by the session itself**: a one-off scheduled task whose prompt is the fixed line; the
   owner opens the session in their task list. When the owner is not there to open it, the fixed line is enough.

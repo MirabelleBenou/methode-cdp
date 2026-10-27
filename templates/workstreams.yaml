@@ -16,7 +16,9 @@
 #   complexity : high | medium | low
 #   rank       : order of value within a status (optional)
 #   pl         : the PL holding the workstream in flight — required when in-flight (method §1a)
-#   version    : the version reserved by the batch; pushing the entry reserves it
+#   deliverable: the code repository the release comes out of; one batch in flight per deliverable, pushing the in-flight entry takes it
+#   waits      : the id of the batch in flight this suspended batch waits for (same deliverable)
+#   version    : computed when the batch takes the deliverable (main + 1), never announced before
 #   for        : the PL a workstream from another domain is addressed to, read after every pull
 #   touches    : the files or modules of another domain the batch will touch
 #   cost       : what it will cost (upcoming) or what it cost (delivered: version, dev, duration, stops, acceptance)

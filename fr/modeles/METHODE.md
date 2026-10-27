@@ -61,7 +61,8 @@ dérivent, des versions se répartissent par des messages que le porteur relaie 
 1. **Un CdP en activité = un domaine = un checkpoint à lui.** Personne n'écrit dans le checkpoint d'un autre.
 2. **Ce qui est partagé s'écrit en ajout seul** (registre, plan, `chantiers.yaml`) : aucun récapitulatif réécrit,
    aucune ligne « dernière mise à jour », aucune version d'en-tête sur un fichier partagé — l'historique est dans git.
-3. **Tout ce qui est numéroté se réserve par un push** : un push refusé est la seule opération atomique dont on dispose.
+3. **Ce qui ne se prend qu'une fois se prend par un push** (un numéro de décision, un livrable) : un push refusé est la
+   seule opération atomique dont on dispose.
 4. **Ce qui se calcule ne s'écrit pas** : totaux, tableau. Après un conflit, on régénère ; on ne fusionne jamais à la main.
 5. **Un fichier qui n'est pas en ajout seul a un seul propriétaire** : cette méthode, le prompt du dev, le README des
    vivants et le package méthode appartiennent à **la session de coordination** (Opus-Coordination).
@@ -82,9 +83,14 @@ des vivants** (`verifier_vivants.py`, `generer_tableau.py`, l'arbitre).
 accepté → l'entrée se rédige à sa place. Une entrée ne porte pas de total : elle marque `[exécution +1]` ou
 `[inverse +1]` (§5).
 
-**Les versions de code** : un lot en vol porte dans `chantiers.yaml` `statut: en-vol`, `cdp:` et `version:` ; pousser
-l'entrée réserve la version, au cadrage, avant la branche. Les lots se fusionnent dans l'ordre de leurs versions ; un lot
-dépassé se rebase sur le nouveau `main` et refait sa réception. Un fichier d'un autre domaine se déclare (`touche:`).
+**Le livrable et sa version** : le livrable est le dépôt de code d'où sort la release. **Un livrable, un seul lot en
+vol** : le lot en vol porte dans `chantiers.yaml` `statut: en-vol`, `cdp:` et `livrable:`, et pousser cette entrée
+prend le livrable. **Un autre lot du même livrable est suspendu**, même s'il vient d'un autre CdP : il reste `a-cadrer`
+avec `attend: <id>`, sans cadrage poussé, branche ni dev, jusqu'à ce que le premier soit validé en production et
+fusionné (ou abandonné sur décision du porteur). **Personne ne décide d'un numéro de version à l'avance** : la version
+se calcule quand le lot prend le livrable (`main` plus un), s'écrit alors dans `version:` et le cadrage ; un lot
+suspendu qui reprend la calcule sur le nouveau `main` et refait sa base. Un fichier d'un autre livrable se déclare
+(`touche:`).
 
 **Entre CdP** : un signalement pour un autre domaine devient un chantier de son module, `statut: a-cadrer`,
 `pour: <CdP>` ; **après chaque `pull`, un CdP lit les entrées `pour:` qui le visent**. Le porteur ne relaie plus. Une leçon
@@ -124,8 +130,8 @@ en tête de réponse.
 5. **La réception** (§4), puis le verdict au porteur, avec la prédiction pour la production, et **le livrable remis tel
    quel**, sous son nom exact, avec son sha256.
 6. **Une livraison = un nouveau numéro.** Ce qui se remet au porteur ou se déploie porte une version qui n'a jamais été
-   remise. Un correctif ou des retours d'essai après une remise font **un lot de la version suivante** (réservée par son
-   entrée `en-vol`), sur sa propre branche partie de celle du lot, dans la même session de dev si elle est encore
+   remise. Un correctif ou des retours d'essai après une remise font **un lot de la version suivante**, qui garde le
+   livrable, sur sa propre branche partie de celle du lot, dans la même session de dev si elle est encore
    ouverte. **L'addendum sous la même version ne sert que tant que rien n'a été remis ni déployé** : lever un arrêt,
    corriger un écart de la réception.
 7. **La validation en production par le porteur**, puis **la fusion** : `git push origin lot/v<X.Y>:main` en avance rapide,
@@ -319,7 +325,7 @@ dépôt. **Plus de prompt de reprise** (la passation, ci-dessous). **Les images*
   4. **la ligne fixe du domaine**, sous « **Opus · conversation neuve dans le projet** » : « Tu es <CdP>. Reprends :
      rattache `<owner>/<Projet>` (accès push), fais git pull, lis `<checkpoint du domaine>` en entier (§0 d'abord) et
      suis-le. »
-- **Rien ne voyage hors du dépôt** : pas de prompt de reprise, ni « prochain numéro », ni version réservée dans un texte
+- **Rien ne voyage hors du dépôt** : pas de prompt de reprise, ni « prochain numéro », ni version à venir dans un texte
   remis au porteur — un texte qui recopie l'état vieillit pendant que les autres CdP avancent.
 - **La reprise peut être lancée par la session elle-même** : une tâche planifiée unique dont le prompt est la ligne
   fixe ; le porteur ouvre la session dans sa liste de tâches. Quand le porteur n'est pas là pour l'ouvrir, la ligne fixe suffit.

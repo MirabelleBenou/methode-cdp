@@ -1,4 +1,4 @@
-# PL METHOD PACKAGE · v7
+# PL METHOD PACKAGE · v8
 ### 27 October 2026 · to start a new project under the PL method
 
 *This package reproduces a way of working proven batch after batch: a **project lead** (PL, Opus) who decides
@@ -172,4 +172,6 @@ over ready, with no field to fill in. v5 — the public version. v6, 27 October 
 through workstreams); the handover without a handover prompt, by a fixed line per domain; the coordinator. v7,
 27 October 2026 — one delivery = one new number, everywhere: an addendum only serves while nothing has been handed over
 or deployed, trial feedback makes a batch of the next version; the coordinator briefs the tooling of the method and of
-the living docs; `check_living_docs.py`.
+the living docs; `check_living_docs.py`. v8, 27 October 2026 — one deliverable, a single batch in flight: another batch
+of the same deliverable is suspended until the first one is validated and merged; nobody announces a version in
+advance, it is computed when the batch takes the deliverable; the “deliverables” check of `check_living_docs.py`.

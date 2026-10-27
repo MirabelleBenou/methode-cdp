@@ -16,7 +16,9 @@
 #   complexite : forte | moyenne | faible
 #   rang       : ordre de valeur à l'intérieur d'un statut (facultatif)
 #   cdp        : le CdP qui tient le chantier en vol — obligatoire en en-vol (méthode §1 bis)
-#   version    : la version réservée par le lot ; pousser l'entrée la réserve
+#   livrable   : le dépôt de code d'où sort la release ; un seul lot en vol par livrable, pousser l'entrée en-vol le prend
+#   attend     : l'id du lot en vol dont ce lot suspendu attend la fin (même livrable)
+#   version    : calculée quand le lot prend le livrable (main + 1), jamais annoncée avant
 #   pour       : le CdP à qui s'adresse un chantier venu d'un autre domaine, lu après chaque pull
 #   touche     : les fichiers ou modules d'un autre domaine que le lot va toucher
 #   cout       : ce que ça coûte (à venir) ou ce que ça a coûté (livré : version, dev, durée, arrêts, réception)

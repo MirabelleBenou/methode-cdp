@@ -94,7 +94,8 @@ serves while nothing has been handed over or deployed.
 - It edits by targeted replacements; **a document's version is in its header, the history in git**; file
   names stay stable.
 - **Several PLs can share the living docs**, one per domain (method §1a): each its own checkpoint and baton; decision
-  log, plan and workstreams append-only; a number or a version is reserved by a push; `pull` before every write, a
+  log, plan and workstreams append-only; a decision number is reserved by a push; a deliverable has a single batch in flight, its
+  version is computed when the batch takes it; `pull` before every write, a
   conflict shows at the `pull` instead of being overwritten.
 - **The mirror in the project**: at every close-out, each modified file is copied over with the project tool by sending
   the file from the clone (`project_write` with `local_path`), under the same name. **Never from the text the project

@@ -92,7 +92,8 @@ sert que tant que rien n'a été remis ni déployé.
 - Il modifie par remplacements ciblés ; **la version d'un document est dans son en-tête, l'historique dans git** ; les
   noms de fichiers restent stables.
 - **Plusieurs CdP peuvent partager les vivants**, un par domaine (méthode §1 bis) : chacun son checkpoint et son
-  témoin ; registre, plan et chantiers en ajout seul ; un numéro ou une version se réserve par un push ; `pull` avant
+  témoin ; registre, plan et chantiers en ajout seul ; un numéro de décision se réserve par un push ; un livrable n'a qu'un lot en vol, sa version se
+  calcule quand le lot le prend ; `pull` avant
   chaque écriture, un conflit se voit au `pull` au lieu de s'écraser.
 - **Le miroir au projet** : à chaque clôture, chaque fichier modifié se recopie par l'outil du projet en envoyant le
   fichier depuis le clone (`project_write` avec `local_path`), sous le même nom. **Jamais depuis le texte que rend

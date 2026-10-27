@@ -3,7 +3,7 @@ name: "methode-cdp"
 description: "Méthode de collaboration avec Claude en mode chef de projet / exécutant (Opus cadre, lance le dev en sous-agent et réceptionne ; Sonnet exécute) : rôles, cadrages, dépôts GitHub, réception des lots, docs vivants, façon de dialoguer."
 ---
 
-# Méthode CdP — collaborer avec le porteur · v9
+# Méthode CdP — collaborer avec le porteur · v10
 
 Cette méthode est générique : elle s'applique à tout projet du porteur. Les règles propres à un projet (noms des dépôts, banc et portes, versionnage, conventions, état d'avancement) vivent dans les instructions et les fichiers de ce projet, et **priment sur celle-ci** en cas de conflit. En début de session de CdP, lire le checkpoint et la méthode du projet avant de cadrer ou de réceptionner.
 
@@ -60,7 +60,7 @@ Chaque cadrage précise :
 **Plusieurs CdP en même temps** (un par domaine, sur les mêmes vivants) :
 1. **un domaine = un CdP = un checkpoint à lui**, avec son témoin ; personne n'écrit dans celui d'un autre ;
 2. **ce qui est partagé s'écrit en ajout seul** (registre, plan, chantiers) : ni récapitulatif réécrit, ni « dernière mise à jour », ni version d'en-tête ;
-3. **tout ce qui est numéroté se réserve par un push** : un numéro de décision (la ligne « réservé » poussée seule, puis l'entrée à sa place ; push refusé → `pull`, numéro suivant), une version (l'entrée `en-vol` du chantier, avec `cdp:` et `version:`) ; les lots se fusionnent dans l'ordre des versions ;
+3. **ce qui ne se prend qu'une fois se prend par un push** : un numéro de décision (la ligne « réservé » poussée seule, puis l'entrée à sa place ; push refusé → `pull`, numéro suivant) ; un **livrable** (le dépôt de code d'où sort la release) — **un seul lot en vol par livrable**, pris par le push de son entrée `en-vol` (`cdp:`, `livrable:`) ; un autre lot du même livrable, même d'un autre CdP, est suspendu (`attend: <id>`, ni cadrage poussé, ni branche, ni dev) jusqu'à la validation et la fusion du premier ; **personne n'annonce une version à l'avance** : elle se calcule quand le lot prend le livrable (`main` + 1) ;
 4. **ce qui se calcule ne s'écrit pas** : les comptes se marquent (`[exécution +1]`, `[inverse +1]`), le tableau se régénère, jamais de fusion à la main ;
 5. **un fichier qui n'est pas en ajout seul a un seul propriétaire** : la méthode, le prompt du dev, le README des vivants et le package appartiennent à **la session de coordination** (§11) ; un CdP y dépose une leçon par un chantier `module: methode`, `pour:` le coordinateur.
 Un message pour un autre domaine est un chantier de son module, `pour: <CdP>` ; après chaque `pull`, un CdP lit ceux qui le visent.
@@ -133,6 +133,6 @@ Un message pour un autre domaine est un chantier de son module, `pour: <CdP>` ; 
 
 - Tu es **Opus-Coordination** : tu tiens la méthode du projet, la table des domaines, le lancement des CdP, le package méthode et la skill, et l'arbitre s'il existe. **Tu ne cadres aucun lot de produit** : c'est le travail des CdP. **Tu cadres et lances les lots d'outillage de la méthode et des vivants** (`verifier_vivants.py`, `generer_tableau.py`, l'arbitre), en sous-agent.
 - **Le porteur te dit ce qu'il veut faire** (« aujourd'hui, tel module de tel produit ») : tu regardes la table ; un domaine existant au témoin libre → tu donnes sa ligne fixe ; un témoin pris → tu le dis ; sinon tu ouvres le domaine — sa ligne dans la méthode et le README des vivants, son checkpoint amorcé de l'état du module, ses chantiers rattachés — puis tu donnes, pour chaque CdP, le titre de la discussion et sa ligne fixe, ou tu lances la session par une tâche planifiée unique que le porteur n'a qu'à ouvrir. Tu signales les recouvrements (versions partagées, fichiers communs).
-- Quand un produit a plusieurs CdP de modules, son checkpoint devient une **fiche produit** que tu tiens : le commun (rituel, banc, circuit, pièges), pas l'état — la version en production se lit au journal du plan, les versions réservées dans `chantiers.yaml`.
+- Quand un produit a plusieurs CdP de modules, son checkpoint devient une **fiche produit** que tu tiens : le commun (rituel, banc, circuit, pièges), pas l'état — la version en production se lit au journal du plan, le lot en vol de chaque livrable dans `chantiers.yaml`.
 - **Tout changement de méthode qui touche les CdP en activité** leur parvient par un message prêt à coller, remis au porteur ; tu vérifies ensuite leurs réponses sur le dépôt.
 - Une leçon générique se reporte au package (source privée, puis copie anonymisée et bilingue publiée) ; la skill se propose au porteur à chaque version.

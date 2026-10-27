@@ -12,13 +12,13 @@ qui s'en régénère (chantiers.html) et le journal des lots du plan.
 « --tableau » et « --generateur » vont ensemble ; « --journal » est facultatif.
 Un contrôle dont les fichiers ne sont pas donnés s'affiche « non demandé ».
 
-Les sept contrôles, dans cet ordre :
+Les huit contrôles, dans cet ordre :
   1. numéros du registre : les lignes « | **R<n>** | » n'ont aucun numéro en
      double et aucun trou entre le plus petit et le plus grand ;
   2. réservations : une ligne « | **R<n>** | *réservé … » encore présente est un
      avertissement, pas un écart (une réservation vit le temps d'écrire l'entrée) ;
   3. identifiants de chantier : aucune « id: » en double dans chantiers.yaml ;
-  4. versions réservées : aucune valeur de « version: » portée par deux entrées ;
+  4. versions des lots : aucune valeur de « version: » portée par deux entrées ;
   5. chantiers en vol : chaque entrée « statut: en-vol » porte un « cdp: » non vide ;
   6. tableau : la régénération de chantiers.yaml par le générateur, dans un
      dossier temporaire, est égale à l'octet à chantiers.html, après avoir
@@ -26,7 +26,14 @@ Les sept contrôles, dans cet ordre :
      (le générateur date la page du jour où il tourne) ;
   7. journal : la dernière version du journal (dernière ligne du plan qui
      commence par « | `v…` | ») a une entrée de chantiers.yaml en
-     « statut: recette » dont l'id ou la version la contient.
+     « statut: recette » dont l'id ou la version la contient ;
+  8. livrables : un livrable (« livrable: », le dépôt de code d'où sort la
+     release) n'a qu'un seul lot en vol à la fois, et un lot qui attend
+     (« attend: <id> ») est suspendu. Trois règles : (a) pour chaque valeur de
+     « livrable: », au plus une entrée en « statut: en-vol » ; (b) chaque
+     « attend: » désigne l'id d'une entrée qui existe ; (c) une entrée qui porte
+     « attend: » n'est pas en « statut: en-vol ». Ce contrôle ne dépend que de
+     « --chantiers » : il tourne toujours.
 
 Sortie : une ligne par contrôle (OK, ÉCART ou avertissement, avec un compte),
 le détail des écarts indenté dessous, puis une dernière ligne « VIVANTS · … ».
@@ -139,7 +146,7 @@ def controle_versions(chantiers: list[dict]):
             portees.setdefault(c["version"], []).append(nom(c))
     details = [f"version {v} portée par {' et '.join(ids)}"
                for v, ids in portees.items() if len(ids) > 1]
-    return ("ÉCART" if details else "OK"), f"{len(portees)} versions réservées", details
+    return ("ÉCART" if details else "OK"), f"{len(portees)} versions", details
 
 
 def controle_en_vol(chantiers: list[dict]):
@@ -185,6 +192,26 @@ def controle_journal(chantiers: list[dict], journal: Path):
     return "ÉCART", f"dernière version {derniere}", details
 
 
+def controle_livrables(chantiers: list[dict]):
+    livrables: dict[str, list[str]] = {}  # livrable -> ids des entrées en vol
+    for c in chantiers:
+        if c.get("livrable"):
+            livrables.setdefault(c["livrable"], [])
+            if c.get("statut") == "en-vol":
+                livrables[c["livrable"]].append(nom(c))
+    ids = {c["id"] for c in chantiers if c.get("id")}
+    details = [f"livrable {livrable} : {len(en_vol)} lots en vol ({', '.join(en_vol)})"
+               for livrable, en_vol in livrables.items() if len(en_vol) > 1]
+    attendent = [c for c in chantiers if c.get("attend")]
+    details += [f"{nom(c)} attend {c['attend']}, qui n'existe pas"
+                for c in attendent if c["attend"] not in ids]
+    details += [f"{nom(c)} est en vol mais attend {c['attend']}"
+                for c in attendent if c.get("statut") == "en-vol"]
+    en_vol = sum(len(v) for v in livrables.values())
+    compte = f"{len(livrables)} livrables, {en_vol} en vol, {len(attendent)} en attente"
+    return ("ÉCART" if details else "OK"), compte, details
+
+
 class Analyseur(argparse.ArgumentParser):
     def error(self, message):
         raise ValueError(message.replace("expected one argument", "valeur manquante"))
@@ -225,11 +252,12 @@ def main(argv: list[str]) -> int:
         ("numéros du registre", lambda: controle_numeros(f["registre"])),
         ("réservations", lambda: controle_reservations(f["registre"])),
         ("identifiants de chantier", lambda: controle_identifiants(chantiers)),
-        ("versions réservées", lambda: controle_versions(chantiers)),
+        ("versions des lots", lambda: controle_versions(chantiers)),
         ("chantiers en vol", lambda: controle_en_vol(chantiers)),
         ("tableau", (lambda: controle_tableau(chantiers, f["chantiers"], f["tableau"], f["generateur"]))
          if "tableau" in f else None),
         ("journal", (lambda: controle_journal(chantiers, f["journal"])) if "journal" in f else None),
+        ("livrables", lambda: controle_livrables(chantiers)),
     ]
     ecarts = 0
     for rang, (libelle, controle) in enumerate(controles, start=1):

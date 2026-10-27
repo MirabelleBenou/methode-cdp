@@ -3,7 +3,7 @@ name: "methode-cdp"
 description: "Use when working with Claude in project lead / executor mode (Opus briefs, launches the dev as a subagent and accepts; Sonnet executes): roles, briefs, GitHub repositories, batch acceptance, living docs, how to dialogue."
 ---
 
-# PL method — working with the owner · v9
+# PL method — working with the owner · v10
 
 This method is generic: it applies to every project of the owner. The rules specific to a project (repository names, test bench and gates, versioning, conventions, state of progress) live in that project's instructions and files, and **take precedence over this one** in case of conflict. At the start of a PL session, read the project's checkpoint and method before briefing or accepting.
 
@@ -60,7 +60,7 @@ Each brief specifies:
 **Several PLs at the same time** (one per domain, on the same living docs):
 1. **one domain = one PL = a checkpoint of its own**, with its baton; nobody writes in someone else's;
 2. **what is shared is written append-only** (decision log, plan, workstreams): no rewritten summary, no “last updated”, no header version;
-3. **anything numbered is reserved by a push**: a decision number (the “reserved” line pushed alone, then the entry in its place; push refused → `pull`, next number), a version (the workstream's `in-flight` entry, with `pl:` and `version:`); batches are merged in version order;
+3. **whatever can be taken only once is taken by a push**: a decision number (the “reserved” line pushed alone, then the entry in its place; push refused → `pull`, next number); a **deliverable** (the code repository the release comes out of) — **a single batch in flight per deliverable**, taken by the push of its `in-flight` entry (`pl:`, `deliverable:`); another batch of the same deliverable, even from another PL, is suspended (`waits: <id>`, no brief pushed, no branch, no dev) until the first one is validated and merged; **nobody announces a version in advance**: it is computed when the batch takes the deliverable (`main` + 1);
 4. **what can be computed is not written**: counts are marked (`[execution +1]`, `[reverse +1]`), the board is regenerated, never merged by hand;
 5. **a file that is not append-only has a single owner**: the method, the dev prompt, the living-docs README and the package belong to **the coordination session** (§11); a PL files a lesson there as a workstream `module: method`, `for:` the coordinator.
 A message for another domain is a workstream of its module, `for: <PL>`; after every `pull`, a PL reads those addressed to it.
@@ -133,6 +133,6 @@ A message for another domain is a workstream of its module, `for: <PL>`; after e
 
 - You are **Opus-Coordination**: you hold the project's method, the table of domains, the launching of PLs, the method package and the skill, and the arbiter if there is one. **You brief no product batch**: that is the PLs' job. **You brief and launch the tooling batches of the method and of the living docs** (`check_living_docs.py`, `make_board.py`, the arbiter), as a sub-agent.
 - **The owner tells you what they want to do** (“today, this module of this product”): you look at the table; an existing domain with a free baton → you give its fixed line; a baton taken → you say so; otherwise you open the domain — its line in the method and the living-docs README, its checkpoint seeded with the module's state, its workstreams attached — then you give, for each PL, the conversation title and its fixed line, or you start the session through a one-off scheduled task the owner only has to open. You flag overlaps (shared versions, common files).
-- When a product has several module PLs, its checkpoint becomes a **product sheet** that you hold: what is common (ritual, bench, circuit, pitfalls), not the state — the version in production is read in the plan's log, the reserved versions in `workstreams.yaml`.
+- When a product has several module PLs, its checkpoint becomes a **product sheet** that you hold: what is common (ritual, bench, circuit, pitfalls), not the state — the version in production is read in the plan's log, the batch in flight of each deliverable in `workstreams.yaml`.
 - **Any method change that affects the active PLs** reaches them through a ready-to-paste message handed to the owner; you then check their answers in the repository.
 - A generic lesson is carried over into the package (private source, then the anonymized bilingual copy published); the skill is offered to the owner at each version.

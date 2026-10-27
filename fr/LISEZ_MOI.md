@@ -1,4 +1,4 @@
-# PACKAGE MÉTHODE CdP · v7
+# PACKAGE MÉTHODE CdP · v8
 ### 27 octobre 2026 · pour démarrer un nouveau projet sous la méthode CdP
 
 *Ce package reproduit une façon de travailler éprouvée lot après lot : un **chef de projet** (CdP, Opus) qui décide
@@ -169,3 +169,6 @@ remet prêt, sans champ à remplir. v5 — la version publique. v6, le 27 octobr
 messages par chantier) ; la passation sans prompt de reprise, par une ligne fixe par domaine ; le coordinateur.
 v7, le 27 octobre 2026 — une livraison = un nouveau numéro, partout : l'addendum ne sert que tant que rien n'a été
 remis ni déployé ; le coordinateur cadre l'outillage de la méthode et des vivants ; `verifier_vivants.py`.
+v8, le 27 octobre 2026 — un livrable, un seul lot en vol : un autre lot du même livrable est suspendu jusqu'à la
+validation et la fusion du premier ; personne n'annonce une version à l'avance, elle se calcule quand le lot prend
+le livrable ; le contrôle « livrables » de `verifier_vivants.py`.
