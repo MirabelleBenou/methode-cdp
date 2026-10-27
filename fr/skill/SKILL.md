@@ -3,7 +3,7 @@ name: "methode-cdp"
 description: "Méthode de collaboration avec Claude en mode chef de projet / exécutant (Opus cadre, lance le dev en sous-agent et réceptionne ; Sonnet exécute) : rôles, cadrages, dépôts GitHub, réception des lots, docs vivants, façon de dialoguer."
 ---
 
-# Méthode CdP — collaborer avec le porteur · v8
+# Méthode CdP — collaborer avec le porteur · v9
 
 Cette méthode est générique : elle s'applique à tout projet du porteur. Les règles propres à un projet (noms des dépôts, banc et portes, versionnage, conventions, état d'avancement) vivent dans les instructions et les fichiers de ce projet, et **priment sur celle-ci** en cas de conflit. En début de session de CdP, lire le checkpoint et la méthode du projet avant de cadrer ou de réceptionner.
 
@@ -91,7 +91,7 @@ Un message pour un autre domaine est un chantier de son module, `pour: <CdP>` ; 
 - Le CdP **re-mesure indépendamment, à froid, sur l'archive livrée** : critères en deltas, contrôle de syntaxe sur la sortie réellement produite, diff relu contre les règles du cadrage, rien hors des fichiers autorisés.
 - Les attendus ne se recopient jamais depuis le rapport du dev.
 - **Le CdP regarde lui-même les rendus** des écrans touchés avant le verdict : le dev ne relit aucune capture, donc personne d'autre ne voit l'écran avant le porteur.
-- Il valide ou émet un correctif (version suivante, sur sa propre branche) ; des retours d'essai passent par des addenda en série.
+- Il valide ou émet un correctif. **Une livraison = un nouveau numéro** : ce qui se remet ou se déploie porte une version jamais remise ; un correctif ou des retours d'essai après une remise font un lot de la version suivante, sur sa propre branche ; l'addendum sous la même version ne sert que tant que rien n'a été remis ni déployé (lever un arrêt, corriger un écart de la réception).
 - **Le livrable se remet au porteur tel quel**, sous son nom exact, avec son sha256 ; un fichier unique à déposer sur un serveur se remet hors zip.
 - Pas de recettes au pixel contre la base ni de captures exigées du dev, sauf si le cadrage le demande.
 - Un arrêt juste du dev n'est jamais un reproche : l'exécution a souvent raison contre le cadrage. Le registre tient le compte, et le compte inverse des défauts du CdP vus en production.
@@ -131,8 +131,8 @@ Un message pour un autre domaine est un chantier de son module, `pour: <CdP>` ; 
 
 ## 11. Si tu es la session de coordination
 
-- Tu es **Opus-Coordination** : tu tiens la méthode du projet, la table des domaines, le lancement des CdP, le package méthode et la skill, et l'arbitre s'il existe. **Tu ne cadres aucun lot** : c'est le travail des CdP.
+- Tu es **Opus-Coordination** : tu tiens la méthode du projet, la table des domaines, le lancement des CdP, le package méthode et la skill, et l'arbitre s'il existe. **Tu ne cadres aucun lot de produit** : c'est le travail des CdP. **Tu cadres et lances les lots d'outillage de la méthode et des vivants** (`verifier_vivants.py`, `generer_tableau.py`, l'arbitre), en sous-agent.
 - **Le porteur te dit ce qu'il veut faire** (« aujourd'hui, tel module de tel produit ») : tu regardes la table ; un domaine existant au témoin libre → tu donnes sa ligne fixe ; un témoin pris → tu le dis ; sinon tu ouvres le domaine — sa ligne dans la méthode et le README des vivants, son checkpoint amorcé de l'état du module, ses chantiers rattachés — puis tu donnes, pour chaque CdP, le titre de la discussion et sa ligne fixe, ou tu lances la session par une tâche planifiée unique que le porteur n'a qu'à ouvrir. Tu signales les recouvrements (versions partagées, fichiers communs).
-- Quand un produit a plusieurs CdP de modules, son checkpoint devient une **fiche produit** que tu tiens : le commun (rituel, banc, circuit, pièges), pas l'état.
+- Quand un produit a plusieurs CdP de modules, son checkpoint devient une **fiche produit** que tu tiens : le commun (rituel, banc, circuit, pièges), pas l'état — la version en production se lit au journal du plan, les versions réservées dans `chantiers.yaml`.
 - **Tout changement de méthode qui touche les CdP en activité** leur parvient par un message prêt à coller, remis au porteur ; tu vérifies ensuite leurs réponses sur le dépôt.
 - Une leçon générique se reporte au package (source privée, puis copie anonymisée et bilingue publiée) ; la skill se propose au porteur à chaque version.

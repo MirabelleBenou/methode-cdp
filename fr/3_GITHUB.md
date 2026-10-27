@@ -34,7 +34,7 @@ décisions en cours, ni les autres chantiers. Les vivants restent au CdP.
 ├── lots/                      ← export-ignore
 │   └── v<X.Y>/
 │       ├── CADRAGE.md         ← le CdP, un seul commit sur la branche du lot
-│       ├── ADDENDUM_<n>.md    ← le CdP, pour lever un arrêt ou un retour d'essai
+│       ├── ADDENDUM_<n>.md    ← le CdP, pour lever un arrêt ou un écart, avant la remise
 │       ├── ARRET_<n>.md       ← le dev, avant de s'arrêter
 │       ├── RAPPORT_DEV.md     ← le dev, après le commit de livraison
 │       └── maquette/          ← la maquette du CdP, ou les images montrées
@@ -79,9 +79,9 @@ lot/vX.Y ●─ CADRAGE ─ … travail … ─ LIVRAISON ─ RAPPORT
 6. **Après ta validation en production** : `git push origin lot/v<X.Y>:main` — **avance rapide, jamais `--force`**.
    Puis la clôture des vivants, un commit « Lot v<X.Y> clos » au dépôt des vivants, le miroir au projet.
 
-**Un correctif** d'un lot livré porte la version suivante, sur sa propre branche partie de celle du lot.
-**Des retours d'essai** sur un lot non encore validé passent par des addenda en série sur la même branche, un commit et
-un rapport chacun.
+**Une livraison = un nouveau numéro** : un correctif ou des retours d'essai après une remise font un lot de la version
+suivante, sur sa propre branche partie de celle du lot, un commit et un rapport chacun. L'addendum sous la même version ne
+sert que tant que rien n'a été remis ni déployé.
 
 ---
 

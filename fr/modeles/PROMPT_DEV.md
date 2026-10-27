@@ -174,6 +174,8 @@ prédiction.
 **Avant de t'arrêter, pousse ta branche** avec la raison dans `lots/v<X.Y>/ARRET_<n>.md` : le CdP lit ton travail sur le
 dépôt. **Un arrêt se lève par un addendum du CdP** (`ADDENDUM_<n>.md`) sur la même branche :
 `git pull --rebase origin lot/v<X.Y>`, lis-le, reprends à l'étape qu'il indique.
+**Un addendum ne change jamais la version du lot ; une livraison = un nouveau numéro** : un lot que le CdP a remis ne se
+reprend pas par addendum — son correctif t'arrive par un cadrage neuf, sous la version suivante, sur sa propre branche.
 *Un signalement n'est jamais un reproche : l'exécution a souvent eu raison contre le cadrage.*
 
 ---

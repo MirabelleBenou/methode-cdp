@@ -9,7 +9,7 @@ déploiement.*
 
 ```markdown
 # ADDENDUM <n> — <titre du lot> · `v<X.Y>`
-### <date> · <session de CdP> · répond à `ARRET_<n>.md` | aux retours d'essai du porteur du <date>
+### <date> · <session de CdP> · répond à `ARRET_<n>.md` | à un écart de la réception du <date>
 
 **Dev : Sonnet · Medium · même session si elle est ouverte, sinon neuve (qui lit aussi les rapports précédents)**
 
@@ -27,7 +27,9 @@ déploiement.*
 Tout le reste du cadrage.
 ```
 
-*Un addendum de retours d'essai porte, mot pour mot, les demandes du porteur, puis les règles qui en découlent.*
+*Un addendum ne sert que tant que rien n'a été remis ni déployé : lever un arrêt, corriger un écart de la réception.
+Des retours d'essai après une remise font un cadrage neuf, sous la version suivante ; il porte, mot pour mot, les
+demandes du porteur, puis les règles qui en découlent.*
 
 ---
 

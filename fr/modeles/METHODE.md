@@ -73,7 +73,9 @@ son checkpoint⟩. Le README des vivants porte la même table, avec la ligne de 
 **Ouvrir un domaine** : le porteur dit au coordinateur ce qu'il veut faire ; le coordinateur donne la ligne fixe d'un domaine
 existant au témoin libre, ou ouvre le domaine (ligne ici et au README, checkpoint amorcé, chantiers rattachés), puis
 donne le titre et la ligne de chaque CdP — ou lance la session par une tâche planifiée. Un produit à plusieurs CdP de
-modules garde une **fiche produit** (le commun : rituel, banc, circuit, pièges), tenue par le coordinateur.
+modules garde une **fiche produit** (le commun : rituel, banc, circuit, pièges ; jamais l'état), tenue par le
+coordinateur. Le coordinateur ne cadre aucun lot de produit ; **il cadre et lance les lots d'outillage de la méthode et
+des vivants** (`verifier_vivants.py`, `generer_tableau.py`, l'arbitre).
 
 **Les numéros de décision** : avant d'écrire une entrée, pousser seule, sur `main`, la ligne
 `| **R<n>** | *réservé — <CdP>, <date>* | | |` après la dernière entrée. Push refusé → `git pull`, numéro suivant ;
@@ -117,13 +119,15 @@ en tête de réponse.
    - **Garde-fou** : un sous-agent consomme le crédit de la session du CdP ; la passation se mesure toujours.
 3. **Un arrêt du dev** : le dev pousse sa branche et la raison (`ARRET_<n>.md`). Le CdP la lit au dépôt, pousse
    `ADDENDUM_<n>.md` sur la même branche et relance le dev (le même sous-agent s'il est joignable, sinon un neuf, qui lit
-   aussi les rapports précédents).
+   aussi les rapports précédents). **Un addendum ne reprend jamais un lot remis au porteur** (étape 6).
 4. **La livraison** : le commit de livraison, puis `RAPPORT_DEV.md` dans un commit à part.
 5. **La réception** (§4), puis le verdict au porteur, avec la prédiction pour la production, et **le livrable remis tel
    quel**, sous son nom exact, avec son sha256.
-6. **Un correctif** d'un lot livré porte la version suivante, sur sa propre branche partie de celle du lot. **Des
-   retours d'essai** avant validation passent par des addenda en série, dans la même session de dev si elle est encore
-   ouverte.
+6. **Une livraison = un nouveau numéro.** Ce qui se remet au porteur ou se déploie porte une version qui n'a jamais été
+   remise. Un correctif ou des retours d'essai après une remise font **un lot de la version suivante** (réservée par son
+   entrée `en-vol`), sur sa propre branche partie de celle du lot, dans la même session de dev si elle est encore
+   ouverte. **L'addendum sous la même version ne sert que tant que rien n'a été remis ni déployé** : lever un arrêt,
+   corriger un écart de la réception.
 7. **La validation en production par le porteur**, puis **la fusion** : `git push origin lot/v<X.Y>:main` en avance rapide,
    jamais `--force` ; enfin **la clôture** (§6), une fois par lot.
 

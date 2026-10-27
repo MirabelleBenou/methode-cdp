@@ -175,6 +175,8 @@ prediction.
 **Before stopping, push your branch** with the reason in `batches/v<X.Y>/STOP_<n>.md`: the PL reads your work on the
 repository. **A stop is lifted by an addendum from the PL** (`ADDENDUM_<n>.md`) on the same branch:
 `git pull --rebase origin batch/v<X.Y>`, read it, resume at the step it indicates.
+**An addendum never changes the batch's version; one delivery = one new number**: a batch the PL has handed over is not
+reopened by an addendum — its fix reaches you through a new brief, under the next version, on its own branch.
 *A report of a problem is never a reproach: execution has often been right against the brief.*
 
 ---

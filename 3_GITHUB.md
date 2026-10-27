@@ -35,7 +35,7 @@ nor the pending decisions, nor the other workstreams. The living docs stay with 
 ├── batches/                   ← export-ignore
 │   └── v<X.Y>/
 │       ├── BRIEF.md           ← the PL, a single commit on the batch's branch
-│       ├── ADDENDUM_<n>.md    ← the PL, to lift a stop or answer trial feedback
+│       ├── ADDENDUM_<n>.md    ← the PL, to lift a stop or a gap, before hand-over
 │       ├── STOP_<n>.md        ← the dev, before stopping
 │       ├── DEV_REPORT.md      ← the dev, after the delivery commit
 │       └── mock-up/            ← the PL's mock-up, or the images shown
@@ -81,9 +81,9 @@ batch/vX.Y ●─ BRIEF ─ … work … ─ DELIVERY ─ REPORT
    Then the close-out of the living docs, a commit “Batch v<X.Y> closed” in the living-docs repository, the mirror in
    the project.
 
-**A fix** for a delivered batch carries the next version, on its own branch started from the batch's branch.
-**Trial feedback** on a batch not yet validated goes through addenda in series on the same branch, one commit and
-one report each.
+**One delivery = one new number**: a fix or trial feedback after a hand-over makes a batch of the next version, on its
+own branch started from the batch's branch, one commit and one report each. An addendum under the same version only
+serves while nothing has been handed over or deployed.
 
 ---
 

@@ -1,5 +1,5 @@
-# PACKAGE MÉTHODE CdP · v6
-### 26 octobre 2026 · pour démarrer un nouveau projet sous la méthode CdP
+# PACKAGE MÉTHODE CdP · v7
+### 27 octobre 2026 · pour démarrer un nouveau projet sous la méthode CdP
 
 *Ce package reproduit une façon de travailler éprouvée lot après lot : un **chef de projet** (CdP, Opus) qui décide
 avec toi, cadre, lance le dev et réceptionne ; un **dev** (Sonnet par défaut) qui construit un lot à la fois ; **toi**,
@@ -29,6 +29,7 @@ qui décides et valides à l'écran. Tout circule par GitHub ; tu ne téléverse
 | `modeles/chantiers.yaml` | la source unique des chantiers (à venir, dettes, livrés) | dépôt des vivants, miroir au projet |
 | `modeles/contexte.py` | mesure le contexte de la session du CdP : prévenir à 600 000 jetons, passer la main à 700 000 | `outils_cdp/` du dépôt des vivants |
 | `modeles/generer_tableau.py` | fabrique `chantiers.html`, la page lisible des chantiers, à chaque écriture du yaml | dépôt des vivants, miroir au projet |
+| `modeles/verifier_vivants.py` | contrôle les vivants partagés (numéros de décision, chantiers, versions réservées, chantiers en vol, tableau, journal) quand plusieurs CdP y écrivent ; lecture seule | dépôt des vivants, lancé par le coordinateur et l'arbitre |
 | `modeles/EXECUTANT_LOCAL.md` | l'exécutant Claude Code local sur le PC, piloté par fichiers (`sync\`) | sert au CdP et à l'exécutant |
 | `modeles/depot-vivants/` | `README.md` du dépôt des vivants | dépôt des vivants |
 | `modeles/depot-app/` | `.gitattributes`, `.gitignore`, `CHANGELOG.md` du dépôt de code | dépôt de code |
@@ -166,3 +167,5 @@ lots pour une suite de plusieurs dépôts de code, préfixe de module dans le no
 remet prêt, sans champ à remplir. v5 — la version publique. v6, le 27 octobre 2026 — plusieurs CdP en même temps
 (un checkpoint et un témoin par domaine, numéros et versions réservés par un push, ajout seul, totaux calculés,
 messages par chantier) ; la passation sans prompt de reprise, par une ligne fixe par domaine ; le coordinateur.
+v7, le 27 octobre 2026 — une livraison = un nouveau numéro, partout : l'addendum ne sert que tant que rien n'a été
+remis ni déployé ; le coordinateur cadre l'outillage de la méthode et des vivants ; `verifier_vivants.py`.

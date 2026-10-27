@@ -1,5 +1,5 @@
-# PL METHOD PACKAGE · v6
-### 26 October 2026 · to start a new project under the PL method
+# PL METHOD PACKAGE · v7
+### 27 October 2026 · to start a new project under the PL method
 
 *This package reproduces a way of working proven batch after batch: a **project lead** (PL, Opus) who decides
 with you, writes the briefs, launches the dev and accepts; a **dev** (Sonnet by default) who builds one batch at a time;
@@ -29,6 +29,7 @@ with you, writes the briefs, launches the dev and accepts; a **dev** (Sonnet by 
 | `templates/workstreams.yaml` | the single source of the workstreams (upcoming, debts, delivered) | living-docs repository, mirror in the project |
 | `templates/context.py` | measures the context of the PL session: warn at 600,000 tokens, hand over at 700,000 | `pl_tools/` in the living-docs repository |
 | `templates/make_board.py` | builds `workstreams.html`, the readable page of the workstreams, at every write of the yaml | living-docs repository, mirror in the project |
+| `templates/check_living_docs.py` | checks the shared living docs (decision numbers, workstreams, reserved versions, workstreams in flight, board, log) when several PLs write to them; read-only | living-docs repository, run by the coordinator and the arbiter |
 | `templates/LOCAL_RUNNER.md` | the local Claude Code runner on the PC, driven by files (`sync\`) | used by the PL and the runner |
 | `templates/living-docs-repo/` | `README.md` of the living-docs repository | living-docs repository |
 | `templates/code-repo/` | `.gitattributes`, `.gitignore`, `CHANGELOG.md` of the code repository | code repository |
@@ -168,4 +169,7 @@ driven by files); the measured handover (warn at 600,000 tokens, hand over at 70
 repository for a suite of several code repositories, module prefix in the batch names. v4 — a text to paste is handed
 over ready, with no field to fill in. v5 — the public version. v6, 27 October 2026 — several PLs at the same time
 (a checkpoint and a baton per domain, numbers and versions reserved by a push, append-only, computed totals, messages
-through workstreams); the handover without a handover prompt, by a fixed line per domain; the coordinator.
+through workstreams); the handover without a handover prompt, by a fixed line per domain; the coordinator. v7,
+27 October 2026 — one delivery = one new number, everywhere: an addendum only serves while nothing has been handed over
+or deployed, trial feedback makes a batch of the next version; the coordinator briefs the tooling of the method and of
+the living docs; `check_living_docs.py`.

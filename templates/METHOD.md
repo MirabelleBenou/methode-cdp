@@ -74,7 +74,9 @@ checkpoint⟩. The living-docs README holds the same table, with each one's resu
 **Opening a domain**: the owner tells the coordinator what they want to do; the coordinator gives the fixed line of an
 existing domain with a free baton, or opens the domain (line here and in the README, seeded checkpoint, workstreams
 attached), then gives each PL's title and line — or starts the session through a scheduled task. A product with several
-module PLs keeps a **product sheet** (what is common: ritual, bench, circuit, pitfalls), held by the coordinator.
+module PLs keeps a **product sheet** (what is common: ritual, bench, circuit, pitfalls; never the state), held by the
+coordinator. The coordinator briefs no product batch; **it briefs and launches the tooling batches of the method and of
+the living docs** (`check_living_docs.py`, `make_board.py`, the arbiter).
 
 **Decision numbers**: before writing an entry, push alone, on `main`, the line
 `| **D<n>** | *reserved — <PL>, <date>* | | |` after the last entry. Push refused → `git pull`, next number;
@@ -117,12 +119,16 @@ top of its reply.
    - **Safeguard**: a sub-agent consumes the credit of the PL's session; the handover is always measured.
 3. **A dev stop**: the dev pushes their branch and the reason (`STOP_<n>.md`). The PL reads it in the repository,
    pushes `ADDENDUM_<n>.md` on the same branch and relaunches the dev (the same sub-agent if it can be reached,
-   otherwise a new one, which also reads the previous reports).
+   otherwise a new one, which also reads the previous reports). **An addendum never reopens a batch handed over to the
+   owner** (step 6).
 4. **The delivery**: the delivery commit, then `DEV_REPORT.md` in a separate commit.
 5. **The acceptance** (§4), then the verdict to the owner, with the prediction for production, and **the deliverable
    handed over as is**, under its exact name, with its sha256.
-6. **A fix** of a delivered batch carries the next version, on its own branch started from the batch's branch. **Trial
-   feedback** before validation goes through addenda in series, in the same dev session if it is still open.
+6. **One delivery = one new number.** Whatever is handed over to the owner or deployed carries a version never handed
+   over before. A fix or trial feedback after a hand-over makes **a batch of the next version** (reserved by its
+   `in-flight` entry), on its own branch started from the batch's branch, in the same dev session if it is still open.
+   **An addendum under the same version only serves while nothing has been handed over or deployed**: lifting a stop,
+   correcting a gap found at acceptance.
 7. **Validation in production by the owner**, then **the merge**: `git push origin batch/v<X.Y>:main` as a
    fast-forward, never `--force`; finally **the close-out** (§6), once per batch.
 

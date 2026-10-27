@@ -9,7 +9,7 @@ deployment archive.*
 
 ```markdown
 # ADDENDUM <n> — <batch title> · `v<X.Y>`
-### <date> · <PL session> · answers `STOP_<n>.md` | the owner's test feedback of <date>
+### <date> · <PL session> · answers `STOP_<n>.md` | a gap found at acceptance on <date>
 
 **Dev: Sonnet · Medium · same session if it is open, otherwise a new one (which also reads the previous reports)**
 
@@ -27,7 +27,9 @@ At step <k> of the sequence. The work already committed stays (or: resumes from 
 All the rest of the brief.
 ```
 
-*A test-feedback addendum carries, word for word, the owner's requests, then the rules that follow from them.*
+*An addendum only serves while nothing has been handed over or deployed: lifting a stop, correcting a gap found at
+acceptance. Trial feedback after a hand-over makes a new brief, under the next version; it carries, word for word, the
+owner's requests, then the rules that follow from them.*
 
 ---
 
