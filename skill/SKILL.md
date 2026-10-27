@@ -64,7 +64,7 @@ Each brief specifies:
 5. **a file that is not append-only has a single owner**: the method, the dev prompt, the living-docs README and the package belong to the method-maintenance session; a PL files a lesson there as a workstream `module: method`.
 A message for another domain is a workstream of its module, `for: <PL>`; after every `pull`, a PL reads those addressed to it.
 
-**The PL in the living-docs repository**: clones it at the start of the session (`add_repo`, `push`); `git pull` before writing, `git fetch origin main` before pushing; targeted replacements, version in the header, history in git; says what they wrote (repository, commit, path). Two PLs can share the living docs: each does `git pull` before rewriting, a conflict shows up at the `pull` instead of being overwritten. **The claude.ai project files are a mirror**: at every close-out, each modified file is copied over from the clone (`project_write` with `local_path`), under the same name — never from the text the project tool returns.
+**The PL in the living-docs repository**: clones it at the start of the session (`add_repo`, `push`); `git pull` before writing, `git fetch origin main` before pushing; targeted replacements; the version in the header of single-owner files only, the history in git; says what they wrote (repository, commit, path). **The claude.ai project files are a mirror**: at every close-out, each modified file is copied over from the clone (`project_write` with `local_path`), under the same name — never from the text the project tool returns.
 
 **The circuit of a batch**:
 1. The PL creates `batch/<version>` from the head of `main` and pushes a single commit to it: `batches/<version>/BRIEF.md` (and its mock-up). The brief names this base commit.
