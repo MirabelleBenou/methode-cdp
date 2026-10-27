@@ -1,4 +1,10 @@
-# CHECKPOINT — <Projet> · `v<X.Y>`
+# CHECKPOINT — <Projet> · <domaine> · `v<X.Y>`
+
+**Session en activité : aucune — libre depuis <date, heure>.** *(ou : `<identifiant court>`, depuis <heure>)*
+
+> **Reprise** — le porteur colle dans une conversation neuve du projet, avec Opus : « Tu es Opus-CdP-<Domaine>.
+> Reprends : rattache `<owner>/<Projet>` (accès push), fais git pull, lis `<Dossier>/CHECKPOINT_<DOMAINE>.md` en entier
+> (§0 d'abord) et suis-le. » Premier geste : poser le témoin ci-dessus par un push.
 ### <date, heure> · <session de CdP> · point d'entrée de la session suivante · remplace le checkpoint du <date>
 
 > *Source : dépôt privé `<owner>/<Projet>`, `<Dossier>/CHECKPOINT_<P>.md`. Le projet claude.ai en porte un miroir sous
@@ -14,7 +20,7 @@
 - **Le dépôt de code** : `main` au `<sha>` ; l'archive de déploiement est `git archive` de `main`.
 - **Depuis le checkpoint précédent** : <les lots livrés, en une ligne chacun, avec leur version et leur R>.
 - **La méthode** est en v<n> (<ce qui a changé>).
-- **Le registre** court jusqu'à **R<n>** (prochain : **R<n+1>**). « L'exécution a raison » à <n>, l'inverse à <n>.
+- **Le registre** : les numéros se réservent par un push au moment d'écrire (méthode §1 bis) — jamais d'après ce fichier.
 - **Dettes ouvertes** : <id — une demi-ligne chacune>.
 - **À faire par le porteur** :
   - <tag et release à poser, sur quel commit, avec quel texte> ;
@@ -80,4 +86,4 @@ changé depuis la dernière fois en gras.>
 **Au dépôt `<Projet>-App`** : le code, `banc/` (v<n>), `PROMPT_DEV_<P>.md` (v<n>), `lots/…`.
 **Au projet, en miroir** : <liste>.
 **Au projet, écrits une fois** : <liste>.
-**Hors du projet, à téléverser dans la session suivante** : `PROMPT_REPRISE_CDP_<P>_v<n>.md`, **et rien d'autre**.
+**Rien à téléverser à la session suivante** : elle reprend par la ligne fixe, en tête de ce fichier.

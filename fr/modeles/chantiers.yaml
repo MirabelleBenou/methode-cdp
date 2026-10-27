@@ -15,6 +15,10 @@
 #   priorite   : haut | moyen | faible
 #   complexite : forte | moyenne | faible
 #   rang       : ordre de valeur à l'intérieur d'un statut (facultatif)
+#   cdp        : le CdP qui tient le chantier en vol — obligatoire en en-vol (méthode §1 bis)
+#   version    : la version réservée par le lot ; pousser l'entrée la réserve
+#   pour       : le CdP à qui s'adresse un chantier venu d'un autre domaine, lu après chaque pull
+#   touche     : les fichiers ou modules d'un autre domaine que le lot va toucher
 #   cout       : ce que ça coûte (à venir) ou ce que ça a coûté (livré : version, dev, durée, arrêts, réception)
 #   mesure     : ce qui fonde le chantier — la demande du porteur, la mesure, le défaut vu
 #   refs       : R du registre · cadrage · rapport · autres chantiers

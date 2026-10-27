@@ -18,4 +18,6 @@ repository, `<owner>/<Project>-App`.
 **Rules**: stable names (the version is in the header, the history in git); `git pull` before writing; a commit
 “Batch v<X.Y> closed” at each close-out; the claude.ai project holds a mirror of it, copied over by the PL from their clone.
 
-**Never here**: secrets, production data, handover prompt, images.
+**Never here**: secrets, production data, images.
+
+**Resuming a domain**: ⟨the table of PLs, their checkpoint and their fixed resume line (method §1a)⟩.

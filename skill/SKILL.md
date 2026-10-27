@@ -3,7 +3,7 @@ name: "methode-cdp"
 description: "Use when working with Claude in project lead / executor mode (Opus briefs, launches the dev as a subagent and accepts; Sonnet executes): roles, briefs, GitHub repositories, batch acceptance, living docs, how to dialogue."
 ---
 
-# PL method — working with the owner · v6
+# PL method — working with the owner · v7
 
 This method is generic: it applies to every project of the owner. The rules specific to a project (repository names, test bench and gates, versioning, conventions, state of progress) live in that project's instructions and files, and **take precedence over this one** in case of conflict. At the start of a PL session, read the project's checkpoint and method before briefing or accepting.
 
@@ -36,7 +36,8 @@ This method is generic: it applies to every project of the owner. The rules spec
 - Save tokens, except on structural decisions.
 - Look for inspiration in other tools, not competition.
 - When the owner reopens a discarded option after seeing a mock-up: redo it rather than defend it.
-- **The handover is measured** (`context.py` from the package: the context size at the last turn, not the cumulative consumption), at every close-out, before every dev launch and at least every ten exchanges. **At 600,000 tokens, warn the owner** at the top of the reply and launch no new batch; **at 700,000 at the latest** — or earlier, at a natural end of queue or at the first sign of saturation (losing the thread, contradictions) —, **hand over without waiting to be asked**: checkpoint rewritten (repository and mirror), handover prompt handed over as a file, and the line “Opus · new conversation: upload this file and write “Resume”.”
+- **The handover is measured** (`context.py` from the package: the context size at the last turn, not the cumulative consumption), at every close-out, before every dev launch and at least every ten exchanges. **At 600,000 tokens, warn the owner** at the top of the reply and launch no new batch; **at 700,000 at the latest** — or earlier, at a natural end of queue or at the first sign of saturation (losing the thread, contradictions) —, **hand over without waiting to be asked**, in one go: §0 of the domain's checkpoint rewritten (the state only), the baton released, push and mirror, then **the domain's fixed line** under “Opus · new conversation in the project”: “You are <PL>. Resume: attach <living-docs repository> (push access), git pull, read <domain checkpoint> in full (§0 first) and follow it.” **No more handover prompt**: nothing travels outside the repository, neither a number nor a reserved version. The resume can also be started by a one-off scheduled task whose prompt is that line, when the owner is there to open the session.
+- **On resuming, the first move is the baton**: `Session active: <short id>, since <time>` at the top of the domain's checkpoint, set by a push. A session that finds another id than its own after a `pull` stops writing to the living docs and tells the owner. A session waiting for the owner keeps the baton.
 
 ## 4. Writing a brief for the dev
 
@@ -54,6 +55,14 @@ Each brief specifies:
 ## 5. The GitHub repositories
 
 **Two families** — the **living-docs repository** (private: method, checkpoint, decision log, plan, workstreams, expected results, PL scripts; only PL sessions write to it) and the **code repositories** (the code at the root; `bench/`, the dev prompt and `batches/<version>/` kept out of the archive by `export-ignore`). **A public code repository receives only the code, its tests and the test bench if it names no one**: the dev prompt and `batches/` (briefs, addenda, stops, reports) go into a separate private repository, `<Project>-Batches`, from the first commit — a pushed file stays in the public history. **Several code repositories of the same suite share a single `-Batches`**, each batch there carrying a module prefix (`batch/<prefix>-<batch>`), the code going out from the module's repository on `batch/<batch>`. The PL reviews every diff pushed to the public one.
+
+**Several PLs at the same time** (one per domain, on the same living docs):
+1. **one domain = one PL = a checkpoint of its own**, with its baton; nobody writes in someone else's;
+2. **what is shared is written append-only** (decision log, plan, workstreams): no rewritten summary, no “last updated”, no header version;
+3. **anything numbered is reserved by a push**: a decision number (the “reserved” line pushed alone, then the entry in its place; push refused → `pull`, next number), a version (the workstream's `in-flight` entry, with `pl:` and `version:`); batches are merged in version order;
+4. **what can be computed is not written**: counts are marked (`[execution +1]`, `[reverse +1]`), the board is regenerated, never merged by hand;
+5. **a file that is not append-only has a single owner**: the method, the dev prompt, the living-docs README and the package belong to the method-maintenance session; a PL files a lesson there as a workstream `module: method`.
+A message for another domain is a workstream of its module, `for: <PL>`; after every `pull`, a PL reads those addressed to it.
 
 **The PL in the living-docs repository**: clones it at the start of the session (`add_repo`, `push`); `git pull` before writing, `git fetch origin main` before pushing; targeted replacements, version in the header, history in git; says what they wrote (repository, commit, path). Two PLs can share the living docs: each does `git pull` before rewriting, a conflict shows up at the `pull` instead of being overwritten. **The claude.ai project files are a mirror**: at every close-out, each modified file is copied over from the clone (`project_write` with `local_path`), under the same name — never from the text the project tool returns.
 
@@ -94,7 +103,7 @@ Each brief specifies:
 - The PL deletes nothing from the project without explicit agreement, except the version it has just replaced.
 - Put in the project only what serves in the medium or long term: not the dev reports nor the briefs (they live under `batches/`).
 - Arrange the project files in folders by theme / sub-project; a new document is created in its folder, never at the root; an old one joins its folder at its next update, no mass moves.
-- What goes into no repository (production data, logs, handover prompt) is uploaded into the session that needs it.
+- What goes into no repository (production data, logs, images) is uploaded into the session that needs it.
 - To start a new project: the PL method package, in the public repository `MirabelleBenou/methode-cdp` or in the owner's copy (`GUIDE.md`, `2_PL_BOOTSTRAP_PROMPT.md`, method templates, dev prompt, brief, living docs). The package is the source of this skill (`skill/SKILL.md`); a generic lesson drawn from a project is carried over into it.
 
 ## 8. The owner's practical constraints ⟨to customize⟩

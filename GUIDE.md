@@ -1,4 +1,4 @@
-# PL METHOD PACKAGE · v5
+# PL METHOD PACKAGE · v6
 ### 26 October 2026 · to start a new project under the PL method
 
 *This package reproduces a way of working proven batch after batch: a **project lead** (PL, Opus) who decides
@@ -29,7 +29,6 @@ with you, writes the briefs, launches the dev and accepts; a **dev** (Sonnet by 
 | `templates/workstreams.yaml` | the single source of the workstreams (upcoming, debts, delivered) | living-docs repository, mirror in the project |
 | `templates/context.py` | measures the context of the PL session: warn at 600,000 tokens, hand over at 700,000 | `pl_tools/` in the living-docs repository |
 | `templates/make_board.py` | builds `workstreams.html`, the readable page of the workstreams, at every write of the yaml | living-docs repository, mirror in the project |
-| `templates/PL_HANDOVER_PROMPT.md` | the handover message from one PL session to the next | uploaded into the next session |
 | `templates/LOCAL_RUNNER.md` | the local Claude Code runner on the PC, driven by files (`sync\`) | used by the PL and the runner |
 | `templates/living-docs-repo/` | `README.md` of the living-docs repository | living-docs repository |
 | `templates/code-repo/` | `.gitattributes`, `.gitignore`, `CHANGELOG.md` of the code repository | code repository |
@@ -113,7 +112,6 @@ deployed.
 | Specs, style guide, studies | project, written once | — | PL | once, never rewritten |
 | Production data, logs | **no repository** | no | you | uploaded into the session that needs them |
 | Images (tiles, visuals) | **in the conversation** | never | you | importing them into the project corrupts them silently |
-| PL handover prompt | outside everything | no | PL | uploaded into the next session |
 
 **The claude.ai project holds only** the mirrors of the living docs (copied over by the PL at every close-out, from their
 clone) and the references written once, sorted into folders by theme (`Method/`, `<SubProject>/`, `Archives/`…).
@@ -168,4 +166,6 @@ the first product batch.*
 write; a private `-Batches` repository when the code is public; the local runner (Claude Code on the PC,
 driven by files); the measured handover (warn at 600,000 tokens, hand over at 700,000). v3 — a single batches
 repository for a suite of several code repositories, module prefix in the batch names. v4 — a text to paste is handed
-over ready, with no field to fill in. v5 — the public version.
+over ready, with no field to fill in. v5 — the public version. v6, 27 October 2026 — several PLs at the same time
+(a checkpoint and a baton per domain, numbers and versions reserved by a push, append-only, computed totals, messages
+through workstreams); the handover without a handover prompt, by a fixed line per domain.

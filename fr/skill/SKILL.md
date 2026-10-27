@@ -3,7 +3,7 @@ name: "methode-cdp"
 description: "Méthode de collaboration avec Claude en mode chef de projet / exécutant (Opus cadre, lance le dev en sous-agent et réceptionne ; Sonnet exécute) : rôles, cadrages, dépôts GitHub, réception des lots, docs vivants, façon de dialoguer."
 ---
 
-# Méthode CdP — collaborer avec le porteur · v6
+# Méthode CdP — collaborer avec le porteur · v7
 
 Cette méthode est générique : elle s'applique à tout projet du porteur. Les règles propres à un projet (noms des dépôts, banc et portes, versionnage, conventions, état d'avancement) vivent dans les instructions et les fichiers de ce projet, et **priment sur celle-ci** en cas de conflit. En début de session de CdP, lire le checkpoint et la méthode du projet avant de cadrer ou de réceptionner.
 
@@ -36,7 +36,8 @@ Cette méthode est générique : elle s'applique à tout projet du porteur. Les 
 - Économiser les tokens, sauf sur les décisions structurantes.
 - Chercher l'inspiration chez les autres outils, pas la compétition.
 - Quand le porteur rouvre une option écartée après avoir vu une maquette : la refaire plutôt que la défendre.
-- **La passation se mesure** (`contexte.py` du package : la taille du contexte au dernier tour, pas le cumul consommé), à chaque clôture, avant chaque lancement de dev et au moins tous les dix échanges. **À 600 000 jetons, prévenir le porteur** en tête de réponse et ne plus lancer de lot neuf ; **à 700 000 au plus tard** — ou plus tôt, à une fin de file naturelle ou au premier signe de saturation (pertes de fil, contradictions) —, **passer la main sans attendre qu'il le demande** : checkpoint réécrit (dépôt et miroir), prompt de reprise remis en fichier, et la ligne « Opus · conversation neuve : téléverse ce fichier et écris « Reprends ». »
+- **La passation se mesure** (`contexte.py` du package : la taille du contexte au dernier tour, pas le cumul consommé), à chaque clôture, avant chaque lancement de dev et au moins tous les dix échanges. **À 600 000 jetons, prévenir le porteur** en tête de réponse et ne plus lancer de lot neuf ; **à 700 000 au plus tard** — ou plus tôt, à une fin de file naturelle ou au premier signe de saturation (pertes de fil, contradictions) —, **passer la main sans attendre qu'il le demande**, d'un bloc : le §0 du checkpoint du domaine réécrit (l'état seulement), le témoin rendu, push et miroir, puis **la ligne fixe du domaine** sous « Opus · conversation neuve dans le projet » : « Tu es <CdP>. Reprends : rattache <dépôt des vivants> (accès push), fais git pull, lis <checkpoint du domaine> en entier (§0 d'abord) et suis-le. » **Plus de prompt de reprise** : rien ne voyage hors du dépôt, ni numéro ni version réservée. La reprise peut aussi être lancée par une tâche planifiée unique dont le prompt est cette ligne, quand le porteur est là pour ouvrir la session.
+- **À la reprise, le premier geste est le témoin** : `Session en activité : <identifiant court>, depuis <heure>` en tête du checkpoint du domaine, posé par un push. Une session qui trouve après un `pull` un autre identifiant que le sien n'écrit plus aux vivants et le dit au porteur. Une session qui attend un geste du porteur garde le témoin.
 
 ## 4. Écrire un cadrage pour le dev
 
@@ -54,6 +55,14 @@ Chaque cadrage précise :
 ## 5. Les dépôts GitHub
 
 **Deux familles** — le **dépôt des vivants** (privé : méthode, checkpoint, registre, plan, chantiers, attendus, scripts du CdP ; seules les sessions de CdP y écrivent) et les **dépôts de code** (le code à la racine ; `banc/`, le prompt dev et `lots/<version>/` tenus hors de l'archive par `export-ignore`). **Un dépôt de code public ne reçoit que le code, ses tests et le banc s'il ne nomme personne** : le prompt dev et `lots/` (cadrages, addenda, arrêts, rapports) vont dans un dépôt privé à part, `<Projet>-Lots`, dès le premier commit — un fichier poussé reste dans l'historique public. **Plusieurs dépôts de code d'une même suite partagent un seul `-Lots`**, chaque lot y portant un préfixe de module (`lot/<préfixe>-<lot>`), le code partant du dépôt du module sur `lot/<lot>`. Le CdP relit chaque diff poussé au public.
+
+**Plusieurs CdP en même temps** (un par domaine, sur les mêmes vivants) :
+1. **un domaine = un CdP = un checkpoint à lui**, avec son témoin ; personne n'écrit dans celui d'un autre ;
+2. **ce qui est partagé s'écrit en ajout seul** (registre, plan, chantiers) : ni récapitulatif réécrit, ni « dernière mise à jour », ni version d'en-tête ;
+3. **tout ce qui est numéroté se réserve par un push** : un numéro de décision (la ligne « réservé » poussée seule, puis l'entrée à sa place ; push refusé → `pull`, numéro suivant), une version (l'entrée `en-vol` du chantier, avec `cdp:` et `version:`) ; les lots se fusionnent dans l'ordre des versions ;
+4. **ce qui se calcule ne s'écrit pas** : les comptes se marquent (`[exécution +1]`, `[inverse +1]`), le tableau se régénère, jamais de fusion à la main ;
+5. **un fichier qui n'est pas en ajout seul a un seul propriétaire** : la méthode, le prompt du dev, le README des vivants et le package appartiennent à la session de maintenance de la méthode ; un CdP y dépose une leçon par un chantier `module: methode`.
+Un message pour un autre domaine est un chantier de son module, `pour: <CdP>` ; après chaque `pull`, un CdP lit ceux qui le visent.
 
 **Le CdP au dépôt des vivants** : il le clone en début de session (`add_repo`, `push`) ; `git pull` avant d'écrire, `git fetch origin main` avant de pousser ; remplacements ciblés, version dans l'en-tête, historique dans git ; il dit ce qu'il a écrit (dépôt, commit, chemin). Deux CdP peuvent partager les vivants : chacun fait `git pull` avant de réécrire, un conflit se voit au `pull` au lieu de s'écraser. **Les fichiers du projet claude.ai sont un miroir** : à chaque clôture, chaque fichier modifié se recopie depuis le clone (`project_write` avec `local_path`), sous le même nom — jamais depuis le texte que rend l'outil du projet.
 
@@ -94,7 +103,7 @@ Chaque cadrage précise :
 - Le CdP ne supprime rien au projet sans accord explicite, sauf la version qu'il vient de remplacer.
 - Ne déposer au projet que ce qui sert à moyen ou long terme : pas les rapports du dev ni les cadrages (ils vivent sous `lots/`).
 - Ranger les fichiers du projet en dossiers par thème / sous-projet ; un document neuf se crée dans son dossier, jamais à la racine ; un ancien rejoint son dossier à sa prochaine mise à jour, pas de déplacement en masse.
-- Ce qui n'entre dans aucun dépôt (données de production, journaux, prompt de reprise) se téléverse dans la session qui en a besoin.
+- Ce qui n'entre dans aucun dépôt (données de production, journaux, images) se téléverse dans la session qui en a besoin.
 - Pour démarrer un nouveau projet : le package méthode CdP, au dépôt public `MirabelleBenou/methode-cdp` ou à la copie du porteur (`LISEZ_MOI.md`, `2_PROMPT_AMORCAGE_CDP.md`, modèles de méthode, prompt dev, cadrage, vivants). Le package est la source de cette skill (`skill/SKILL.md`) ; une leçon générique tirée d'un projet s'y reporte.
 
 ## 8. Contraintes pratiques du porteur ⟨à personnaliser⟩

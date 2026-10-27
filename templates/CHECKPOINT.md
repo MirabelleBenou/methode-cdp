@@ -1,4 +1,10 @@
-# CHECKPOINT — <Project> · `v<X.Y>`
+# CHECKPOINT — <Project> · <domain> · `v<X.Y>`
+
+**Session active: none — free since <date, time>.** *(or: `<short id>`, since <time>)*
+
+> **Resume** — the owner pastes into a new conversation of the project, with Opus: “You are Opus-PL-<Domain>.
+> Resume: attach `<owner>/<Project>` (push access), git pull, read `<Folder>/CHECKPOINT_<DOMAIN>.md` in full
+> (§0 first) and follow it.” First move: set the baton above by a push.
 ### <date, time> · <PL session> · entry point of the next session · replaces the checkpoint of <date>
 
 > *Source: private repository `<owner>/<Project>`, `<Folder>/CHECKPOINT_<P>.md`. The claude.ai project holds a mirror of
@@ -14,7 +20,7 @@
 - **The code repository**: `main` at `<sha>`; the deployment archive is `git archive` of `main`.
 - **Since the previous checkpoint**: <the batches delivered, one line each, with their version and their D>.
 - **The method** is at v<n> (<what changed>).
-- **The decision log** runs up to **D<n>** (next: **D<n+1>**). “Execution is right” at <n>, the reverse at <n>.
+- **The decision log**: numbers are reserved by a push at the moment of writing (method §1a) — never from this file.
 - **Open debts**: <id — half a line each>.
 - **To do by the owner**:
   - <tag and release to set, on which commit, with which text>;
@@ -80,4 +86,4 @@ changed since last time in bold.>
 **In the `<Project>-App` repository**: the code, `bench/` (v<n>), `DEV_PROMPT_<P>.md` (v<n>), `batches/…`.
 **In the project, as a mirror**: <list>.
 **In the project, written once**: <list>.
-**Outside the project, to upload in the next session**: `PL_HANDOVER_PROMPT_<P>_v<n>.md`, **and nothing else**.
+**Nothing to upload to the next session**: it resumes with the fixed line at the top of this file.

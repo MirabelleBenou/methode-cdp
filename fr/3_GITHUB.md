@@ -91,8 +91,9 @@ un rapport chacun.
 - `git pull` avant d'écrire, `git fetch origin main` avant de pousser.
 - Il modifie par remplacements ciblés ; **la version d'un document est dans son en-tête, l'historique dans git** ; les
   noms de fichiers restent stables.
-- **Deux CdP peuvent partager les vivants** (deux chantiers en parallèle) : chacun fait `pull` avant de réécrire, prend
-  le numéro de version suivant ; un conflit se voit au `pull` au lieu de s'écraser. Tu dis lequel est actif.
+- **Plusieurs CdP peuvent partager les vivants**, un par domaine (méthode §1 bis) : chacun son checkpoint et son
+  témoin ; registre, plan et chantiers en ajout seul ; un numéro ou une version se réserve par un push ; `pull` avant
+  chaque écriture, un conflit se voit au `pull` au lieu de s'écraser.
 - **Le miroir au projet** : à chaque clôture, chaque fichier modifié se recopie par l'outil du projet en envoyant le
   fichier depuis le clone (`project_write` avec `local_path`), sous le même nom. **Jamais depuis le texte que rend
   l'outil du projet** : il rend tout en texte, sans preuve à l'octet. Un « Sync now » GitHub du projet n'est pas
@@ -168,6 +169,5 @@ CdP n'écrit pas le livré » s'applique au code, pas à la documentation, que l
 
 - les secrets, jetons, mots de passe, `.env` réels ;
 - les données de production (journaux, dumps, exports) : elles se téléversent dans la session qui en a besoin ;
-- le prompt de reprise du CdP : il se téléverse ;
 - les images à faire valider par toi : elles passent dans la discussion (ou dans `lots/<version>/maquette/` quand le
   cadrage les commande).

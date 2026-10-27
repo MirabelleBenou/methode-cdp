@@ -44,5 +44,6 @@ Tell me at the end what you wrote: repository, commit, path.
 
 ## C · Resuming a project already under the method (next PL session)
 
-*No need for this file: upload the handover prompt the previous PL gave you (`PL_HANDOVER_PROMPT_<P>_vN.md`,
-template in `templates/`). It names the repositories, the checkpoint to read and the baseline ritual.*
+*No need for this file: paste the domain's fixed line, which the PL gives at every handover and the living-docs README
+holds — “You are Opus-PL-<Domain>. Resume: attach `<owner>/<Project>` (push access), git pull, read
+`<domain checkpoint>` in full (§0 first) and follow it.” Nothing to upload.*

@@ -47,9 +47,46 @@
     instruction la commande du §2. Son rapport et ses arrêts reviennent au CdP. **Le porteur ne parle qu'au CdP.**
 - **L'outillage est du code** : un outil manquant se commande par un **lot d'outillage**, avec un cadrage court. Le
   banc est tenu par le dev.
-- **Deux CdP peuvent partager les vivants** (deux chantiers en parallèle) : `git pull` avant de réécrire, numéro de
-  version suivant ; le porteur dit lequel est actif.
+- **Plusieurs CdP peuvent travailler en même temps**, un par domaine, sur les mêmes vivants : §1 bis.
 - Les **contrôles mécaniques** appartiennent au CdP et au dev ; les **contrôles visuels** au porteur.
+
+---
+
+## §1 bis · Plusieurs CdP en même temps
+
+*À deux, « `git pull` avant d'écrire » suffit. À quatre, des numéros de décision sortent en double, des compteurs
+dérivent, des versions se répartissent par des messages que le porteur relaie (premier projet, quatre CdP en parallèle).*
+
+**Cinq principes** :
+1. **Un CdP en activité = un domaine = un checkpoint à lui.** Personne n'écrit dans le checkpoint d'un autre.
+2. **Ce qui est partagé s'écrit en ajout seul** (registre, plan, `chantiers.yaml`) : aucun récapitulatif réécrit,
+   aucune ligne « dernière mise à jour », aucune version d'en-tête sur un fichier partagé — l'historique est dans git.
+3. **Tout ce qui est numéroté se réserve par un push** : un push refusé est la seule opération atomique dont on dispose.
+4. **Ce qui se calcule ne s'écrit pas** : totaux, tableau. Après un conflit, on régénère ; on ne fusionne jamais à la main.
+5. **Un fichier qui n'est pas en ajout seul a un seul propriétaire** : cette méthode, le prompt du dev, le README des
+   vivants et le package méthode appartiennent à **la session de maintenance de la méthode**.
+
+**Les domaines** : ⟨une ligne par CdP — son nom (`Opus-CdP-<Domaine>`), ce qu'il porte, son checkpoint
+(`<Dossier>/CHECKPOINT_<DOMAINE>.md`) ; plus la session de méthode et son checkpoint⟩. Le README des vivants porte la
+même table, avec la ligne de reprise de chacun.
+
+**Les numéros de décision** : avant d'écrire une entrée, pousser seule, sur `main`, la ligne
+`| **R<n>** | *réservé — <CdP>, <date>* | | |` après la dernière entrée. Push refusé → `git pull`, numéro suivant ;
+accepté → l'entrée se rédige à sa place. Une entrée ne porte pas de total : elle marque `[exécution +1]` ou
+`[inverse +1]` (§5).
+
+**Les versions de code** : un lot en vol porte dans `chantiers.yaml` `statut: en-vol`, `cdp:` et `version:` ; pousser
+l'entrée réserve la version, au cadrage, avant la branche. Les lots se fusionnent dans l'ordre de leurs versions ; un lot
+dépassé se rebase sur le nouveau `main` et refait sa réception. Un fichier d'un autre domaine se déclare (`touche:`).
+
+**Entre CdP** : un signalement pour un autre domaine devient un chantier de son module, `statut: a-cadrer`,
+`pour: <CdP>` ; **après chaque `pull`, un CdP lit les entrées `pour:` qui le visent**. Le porteur ne relaie plus. Une leçon
+générique est un chantier `module: methode`, `pour:` la session de méthode.
+
+**Le témoin** : chaque checkpoint porte en tête `Session en activité : <identifiant court>, depuis <heure>` (ou
+« aucune — libre depuis <heure> »). La session qui reprend le pose par un push, c'est son premier geste ; une session qui
+trouve après un `pull` un autre identifiant que le sien n'écrit plus aux vivants et le dit au porteur ; une session qui
+attend un geste du porteur garde le témoin.
 
 ---
 
@@ -208,7 +245,7 @@ installées sous la bonne version, les services démarrés dans la commande qui 
 - le registre (la décision, et « ce que le lot apprend » quand il y a une leçon) ;
 - `chantiers.yaml`, **puis `chantiers.html` régénéré** (ci-dessous) ;
 - **un commit « Lot v<X.Y> clos »** au dépôt des vivants, puis **le miroir au projet** ;
-- le checkpoint, à la passation.
+- le checkpoint **du domaine**, à la passation.
 
 Deux lots reçus le même jour peuvent se clore ensemble.
 
@@ -252,8 +289,8 @@ jamais à la racine ; un ancien rejoint son dossier à sa prochaine mise à jour
 | `<Dossier>/Specs/` · `<Dossier>/GuideDeStyle/` | les références du produit |
 | ⟨`<SousProjet>/`⟩ | ⟨un dossier par sous-projet⟩ |
 
-**Ce qui se téléverse encore** dans la session qui en a besoin : le prompt de reprise du CdP, et les données de
-production, qui n'entrent dans aucun dépôt. **Les images** passent dans la discussion, jamais par les fichiers du projet.
+**Ce qui se téléverse encore** dans la session qui en a besoin : les données de production, qui n'entrent dans aucun
+dépôt. **Plus de prompt de reprise** (la passation, ci-dessous). **Les images** passent dans la discussion, jamais par les fichiers du projet.
 
 **La passation se mesure, elle ne se devine pas** :
 - **Ce qui se mesure** : la taille du contexte au dernier tour, par `python3 -B <Dossier>/outils_cdp/contexte.py` (copié
@@ -262,10 +299,17 @@ production, qui n'entrent dans aucun dépôt. **Les images** passent dans la dis
 - **À 600 000 jetons, le CdP prévient le porteur**, en tête de sa réponse : « Contexte : ~N jetons — passation à prévoir ».
   Il ne lance plus de lot neuf ; il finit celui en cours.
 - **À 700 000 jetons au plus tard**, ou à une fin de file naturelle avant, **il passe la main**, sans attendre qu'on le
-  lui demande :
-  1. le checkpoint réécrit sur l'état réel, au dépôt et en miroir ;
-  2. le prompt de reprise `PROMPT_REPRISE_CDP_<P>_v<n>.md` (modèle du package), **remis en fichier** dans la discussion ;
-  3. une ligne pour le porteur : « **Opus · conversation neuve dans le projet** : téléverse ce fichier et écris « Reprends ». »
+  lui demande, d'un bloc, en une réponse :
+  1. le §0 du checkpoint du domaine réécrit sur l'état réel (où on en est, ce qui bloque, ce qui attend le porteur) ;
+  2. le témoin remis à « aucune — libre depuis <heure> » ;
+  3. push, puis le miroir au projet ;
+  4. **la ligne fixe du domaine**, sous « **Opus · conversation neuve dans le projet** » : « Tu es <CdP>. Reprends :
+     rattache `<owner>/<Projet>` (accès push), fais git pull, lis `<checkpoint du domaine>` en entier (§0 d'abord) et
+     suis-le. »
+- **Rien ne voyage hors du dépôt** : pas de prompt de reprise, ni « prochain numéro », ni version réservée dans un texte
+  remis au porteur — un texte qui recopie l'état vieillit pendant que les autres CdP avancent.
+- **La reprise peut être lancée par la session elle-même** : une tâche planifiée unique dont le prompt est la ligne
+  fixe ; le porteur ouvre la session dans sa liste de tâches. Quand le porteur n'est pas là pour l'ouvrir, la ligne fixe suffit.
 - **Au premier signe de saturation** avant le seuil (pertes de fil, contradictions, une décision oubliée) : même
   passation, tout de suite.
 - Le contexte d'un sous-agent dev ne compte pas dans celui du CdP ; son crédit, si.

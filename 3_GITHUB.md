@@ -93,8 +93,9 @@ one report each.
 - `git pull` before writing, `git fetch origin main` before pushing.
 - It edits by targeted replacements; **a document's version is in its header, the history in git**; file
   names stay stable.
-- **Two PLs can share the living docs** (two workstreams in parallel): each one does `pull` before rewriting, takes the
-  next version number; a conflict shows at the `pull` instead of being overwritten. You say which one is active.
+- **Several PLs can share the living docs**, one per domain (method §1a): each its own checkpoint and baton; decision
+  log, plan and workstreams append-only; a number or a version is reserved by a push; `pull` before every write, a
+  conflict shows at the `pull` instead of being overwritten.
 - **The mirror in the project**: at every close-out, each modified file is copied over with the project tool by sending
   the file from the clone (`project_write` with `local_path`), under the same name. **Never from the text the project
   tool returns**: it returns everything as text, with no byte-exact proof. A GitHub “Sync now” of the project is not
@@ -174,6 +175,5 @@ separately.
 
 - secrets, tokens, passwords, real `.env` files;
 - production data (logs, dumps, exports): they are uploaded into the session that needs them;
-- the PL handover prompt: it is uploaded;
 - images for you to validate: they go through the conversation (or into `batches/<version>/mock-up/` when the
   brief orders them).

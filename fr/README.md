@@ -17,4 +17,4 @@ un lot à la fois ; toi, qui décides et valides à l'écran. Tout circule par G
 | `modeles/` | méthode, prompt du dev, cadrage, commande du dev, exécutant local, vivants, squelettes de dépôts |
 | `skill/SKILL.md` | la skill personnelle `methode-cdp`, à personnaliser (§1 et §8) puis installer |
 
-*Package v5 — historique dans `LISEZ_MOI.md` §7. Licence MIT.*
+*Package v6 — historique dans `LISEZ_MOI.md` §7. Licence MIT.*

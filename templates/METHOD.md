@@ -48,9 +48,45 @@
     only to the PL.**
 - **Tooling is code**: a missing tool is ordered through a **tooling batch**, with a short brief. The test bench is
   maintained by the dev.
-- **Two PLs can share the living docs** (two workstreams in parallel): `git pull` before rewriting, next version
-  number; the owner says which one is active.
+- **Several PLs can work at the same time**, one per domain, on the same living docs: §1a.
 - The **mechanical checks** belong to the PL and the dev; the **visual checks** to the owner.
+
+---
+
+## §1a · Several PLs at the same time
+
+*With two, “`git pull` before writing” is enough. With four, decision numbers come out twice, counters drift, versions
+are shared out through messages the owner relays (first project, four PLs in parallel).*
+
+**Five principles**:
+1. **One active PL = one domain = a checkpoint of its own.** Nobody writes in someone else's checkpoint.
+2. **What is shared is written append-only** (decision log, plan, `workstreams.yaml`): no rewritten summary, no “last
+   updated” line, no header version on a shared file — the history is in git.
+3. **Anything numbered is reserved by a push**: a refused push is the only atomic operation available.
+4. **What can be computed is not written**: totals, the board. After a conflict, regenerate; never merge by hand.
+5. **A file that is not append-only has a single owner**: this method, the dev prompt, the living-docs README and the
+   method package belong to **the method-maintenance session**.
+
+**The domains**: ⟨one line per PL — its name (`Opus-PL-<Domain>`), what it carries, its checkpoint
+(`<Folder>/CHECKPOINT_<DOMAIN>.md`); plus the method session and its checkpoint⟩. The living-docs README holds the same
+table, with each one's resume line.
+
+**Decision numbers**: before writing an entry, push alone, on `main`, the line
+`| **D<n>** | *reserved — <PL>, <date>* | | |` after the last entry. Push refused → `git pull`, next number;
+accepted → the entry is written in its place. An entry carries no total: it marks `[execution +1]` or
+`[reverse +1]` (§5).
+
+**Code versions**: a batch in flight carries in `workstreams.yaml` `status: in-flight`, `pl:` and `version:`; pushing
+the entry reserves the version, at the brief, before the branch. Batches are merged in the order of their versions; an
+overtaken batch rebases on the new `main` and redoes its acceptance. A file of another domain is declared (`touches:`).
+
+**Between PLs**: a report for another domain becomes a workstream of its module, `status: to-brief`, `for: <PL>`;
+**after every `pull`, a PL reads the `for:` entries addressed to it**. The owner no longer relays. A generic lesson is a
+workstream `module: method`, `for:` the method session.
+
+**The baton**: each checkpoint carries at the top `Session active: <short id>, since <time>` (or “none — free since
+<time>”). The resuming session sets it by a push, its first move; a session that finds another id than its own after a
+`pull` stops writing to the living docs and tells the owner; a session waiting for the owner keeps the baton.
 
 ---
 
@@ -210,7 +246,7 @@ the dependencies installed under the right version, the services started in the 
 - the decision log (the decision, and “what the batch teaches” when there is a lesson);
 - `workstreams.yaml`, **then `workstreams.html` regenerated** (below);
 - **a commit “Batch v<X.Y> closed”** in the living-docs repository, then **the mirror in the project**;
-- the checkpoint, at handover.
+- the checkpoint **of the domain**, at handover.
 
 Two batches accepted the same day can be closed together.
 
@@ -256,8 +292,8 @@ created in its folder, never at the root; an old one joins its folder at its nex
 | `<Folder>/Specs/` · `<Folder>/StyleGuide/` | the product references |
 | ⟨`<SubProject>/`⟩ | ⟨one folder per sub-project⟩ |
 
-**What is still uploaded** into the session that needs it: the PL's handover prompt, and production data, which go
-into no repository. **Images** go through the conversation, never through the project files.
+**What is still uploaded** into the session that needs it: production data, which go into no repository. **No more
+handover prompt** (the handover, below). **Images** go through the conversation, never through the project files.
 
 **The handover is measured, not guessed**:
 - **What is measured**: the context size at the last turn, with `python3 -B <Folder>/pl_tools/context.py` (copied
@@ -266,11 +302,16 @@ into no repository. **Images** go through the conversation, never through the pr
 - **At 600,000 tokens, the PL warns the owner**, at the top of their answer: “Context: ~N tokens — handover ahead”.
   They no longer launch a new batch; they finish the one in progress.
 - **At 700,000 tokens at the latest**, or at a natural end of a queue before that, **they hand over**, without waiting
-  to be asked:
-  1. the checkpoint rewritten on the real state, in the repository and as a mirror;
-  2. the handover prompt `PL_HANDOVER_PROMPT_<P>_v<n>.md` (template from the package), **handed over as a file** in
-     the conversation;
-  3. a line for the owner: “**Opus · new conversation in the project**: upload this file and write “Resume”.”
+  to be asked, in one go, in a single answer:
+  1. §0 of the domain's checkpoint rewritten on the real state (where things stand, what blocks, what awaits the owner);
+  2. the baton set back to “none — free since <time>”;
+  3. push, then the mirror in the project;
+  4. **the domain's fixed line**, under “**Opus · new conversation in the project**”: “You are <PL>. Resume: attach
+     `<owner>/<Project>` (push access), git pull, read `<domain checkpoint>` in full (§0 first) and follow it.”
+- **Nothing travels outside the repository**: no handover prompt, no “next number”, no reserved version in a text handed
+  to the owner — a text that copies the state ages while the other PLs move on.
+- **The resume can be started by the session itself**: a one-off scheduled task whose prompt is the fixed line; the
+  owner opens the session in their task list. When the owner is not there to open it, the fixed line is enough.
 - **At the first sign of saturation** before the threshold (losing the thread, contradictions, a forgotten decision):
   same handover, right away.
 - A dev sub-agent's context does not count in the PL's; its credit does.

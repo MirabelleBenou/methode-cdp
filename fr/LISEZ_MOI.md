@@ -1,4 +1,4 @@
-# PACKAGE MÉTHODE CdP · v5
+# PACKAGE MÉTHODE CdP · v6
 ### 26 octobre 2026 · pour démarrer un nouveau projet sous la méthode CdP
 
 *Ce package reproduit une façon de travailler éprouvée lot après lot : un **chef de projet** (CdP, Opus) qui décide
@@ -29,7 +29,6 @@ qui décides et valides à l'écran. Tout circule par GitHub ; tu ne téléverse
 | `modeles/chantiers.yaml` | la source unique des chantiers (à venir, dettes, livrés) | dépôt des vivants, miroir au projet |
 | `modeles/contexte.py` | mesure le contexte de la session du CdP : prévenir à 600 000 jetons, passer la main à 700 000 | `outils_cdp/` du dépôt des vivants |
 | `modeles/generer_tableau.py` | fabrique `chantiers.html`, la page lisible des chantiers, à chaque écriture du yaml | dépôt des vivants, miroir au projet |
-| `modeles/PROMPT_REPRISE_CDP.md` | le message de passation d'une session de CdP à la suivante | téléversé dans la session suivante |
 | `modeles/EXECUTANT_LOCAL.md` | l'exécutant Claude Code local sur le PC, piloté par fichiers (`sync\`) | sert au CdP et à l'exécutant |
 | `modeles/depot-vivants/` | `README.md` du dépôt des vivants | dépôt des vivants |
 | `modeles/depot-app/` | `.gitattributes`, `.gitignore`, `CHANGELOG.md` du dépôt de code | dépôt de code |
@@ -111,7 +110,6 @@ se déploie.
 | Specs, guide de style, études | projet, écrits une fois | — | CdP | une fois, jamais réécrits |
 | Données de production, journaux | **aucun dépôt** | non | toi | téléversés dans la session qui en a besoin |
 | Images (tuiles, visuels) | **dans la discussion** | jamais | toi | l'import au projet les corrompt sans prévenir |
-| Prompt de reprise du CdP | hors de tout | non | CdP | téléversé dans la session suivante |
 
 **Le projet claude.ai ne porte que** les miroirs des vivants (recopiés par le CdP à chaque clôture, depuis son clone)
 et les références écrites une fois, rangés en dossiers par thème (`Methode/`, `<SousProjet>/`, `Archives/`…).
@@ -165,4 +163,6 @@ le premier lot de produit.*
 écriture ; un dépôt `-Lots` privé quand le code est public ; l'exécutant local (Claude Code sur le PC, piloté
 par fichiers) ; la passation mesurée (prévenir à 600 000 jetons, passer la main à 700 000). v3 — un seul dépôt de
 lots pour une suite de plusieurs dépôts de code, préfixe de module dans le nom des lots. v4 — un texte à coller se
-remet prêt, sans champ à remplir. v5 — la version publique.
+remet prêt, sans champ à remplir. v5 — la version publique. v6, le 27 octobre 2026 — plusieurs CdP en même temps
+(un checkpoint et un témoin par domaine, numéros et versions réservés par un push, ajout seul, totaux calculés,
+messages par chantier) ; la passation sans prompt de reprise, par une ligne fixe par domaine.

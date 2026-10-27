@@ -43,5 +43,6 @@ Dis-moi à la fin ce que tu as écrit : dépôt, commit, chemin.
 
 ## C · Reprendre un projet déjà sous la méthode (session de CdP suivante)
 
-*Pas besoin de ce fichier : téléverse le prompt de reprise que le CdP précédent t'a remis (`PROMPT_REPRISE_CDP_<P>_vN.md`,
-modèle dans `modeles/`). Il nomme les dépôts, le checkpoint à lire et le rituel de la base.*
+*Pas besoin de ce fichier : colle la ligne fixe du domaine, que donne le CdP à chaque passation et que porte le README
+des vivants — « Tu es Opus-CdP-<Domaine>. Reprends : rattache `<owner>/<Projet>` (accès push), fais git pull, lis
+`<checkpoint du domaine>` en entier (§0 d'abord) et suis-le. » Rien à téléverser.*

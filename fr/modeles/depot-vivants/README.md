@@ -18,4 +18,6 @@ code, `<owner>/<Projet>-App`.
 **Règles** : noms stables (la version est dans l'en-tête, l'historique dans git) ; `git pull` avant d'écrire ; un commit
 « Lot v<X.Y> clos » à chaque clôture ; le projet claude.ai en porte un miroir, recopié par le CdP depuis son clone.
 
-**Jamais ici** : secrets, données de production, prompt de reprise, images.
+**Jamais ici** : secrets, données de production, images.
+
+**Reprendre un domaine** : ⟨la table des CdP, de leur checkpoint et de leur ligne fixe de reprise (méthode §1 bis)⟩.
