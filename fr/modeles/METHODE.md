@@ -88,6 +88,10 @@ générique est un chantier `module: methode`, `pour:` la session de méthode.
 trouve après un `pull` un autre identifiant que le sien n'écrit plus aux vivants et le dit au porteur ; une session qui
 attend un geste du porteur garde le témoin.
 
+**Le titre de la session** : `<nom du CdP> · <chantier en cours>`, changé à chaque chantier ; `-2` pour un second CdP sur
+le même domaine, avec son propre checkpoint. La session se renomme si elle le peut, sinon elle donne le titre au porteur
+en tête de réponse.
+
 ---
 
 ## §2 · Le cycle d'un lot

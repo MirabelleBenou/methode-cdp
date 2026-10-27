@@ -88,6 +88,10 @@ workstream `module: method`, `for:` the method session.
 <time>”). The resuming session sets it by a push, its first move; a session that finds another id than its own after a
 `pull` stops writing to the living docs and tells the owner; a session waiting for the owner keeps the baton.
 
+**The session title**: `<PL name> · <current workstream>`, changed at each workstream; `-2` for a second PL on the same
+domain, with its own checkpoint. The session renames itself if it can, otherwise it gives the title to the owner at the
+top of its reply.
+
 ---
 
 ## §2 · The cycle of a batch
