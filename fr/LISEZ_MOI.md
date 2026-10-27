@@ -165,4 +165,4 @@ par fichiers) ; la passation mesurée (prévenir à 600 000 jetons, passer la ma
 lots pour une suite de plusieurs dépôts de code, préfixe de module dans le nom des lots. v4 — un texte à coller se
 remet prêt, sans champ à remplir. v5 — la version publique. v6, le 27 octobre 2026 — plusieurs CdP en même temps
 (un checkpoint et un témoin par domaine, numéros et versions réservés par un push, ajout seul, totaux calculés,
-messages par chantier) ; la passation sans prompt de reprise, par une ligne fixe par domaine.
+messages par chantier) ; la passation sans prompt de reprise, par une ligne fixe par domaine ; le coordinateur.

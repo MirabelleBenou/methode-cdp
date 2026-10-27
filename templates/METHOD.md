@@ -65,11 +65,16 @@ are shared out through messages the owner relays (first project, four PLs in par
 3. **Anything numbered is reserved by a push**: a refused push is the only atomic operation available.
 4. **What can be computed is not written**: totals, the board. After a conflict, regenerate; never merge by hand.
 5. **A file that is not append-only has a single owner**: this method, the dev prompt, the living-docs README and the
-   method package belong to **the method-maintenance session**.
+   method package belong to **the coordination session** (Opus-Coordination).
 
-**The domains**: ⟨one line per PL — its name (`Opus-PL-<Domain>`), what it carries, its checkpoint
-(`<Folder>/CHECKPOINT_<DOMAIN>.md`); plus the method session and its checkpoint⟩. The living-docs README holds the same
-table, with each one's resume line.
+**The domains**: ⟨one line per PL — its name (`Opus-PL-<Product>[-<Module>]`, a module only when a product has several
+PLs), what it carries, its checkpoint (`<Folder>/CHECKPOINT_<PRODUCT>_<MODULE>.md`); plus the coordinator and its
+checkpoint⟩. The living-docs README holds the same table, with each one's resume line.
+
+**Opening a domain**: the owner tells the coordinator what they want to do; the coordinator gives the fixed line of an
+existing domain with a free baton, or opens the domain (line here and in the README, seeded checkpoint, workstreams
+attached), then gives each PL's title and line — or starts the session through a scheduled task. A product with several
+module PLs keeps a **product sheet** (what is common: ritual, bench, circuit, pitfalls), held by the coordinator.
 
 **Decision numbers**: before writing an entry, push alone, on `main`, the line
 `| **D<n>** | *reserved — <PL>, <date>* | | |` after the last entry. Push refused → `git pull`, next number;

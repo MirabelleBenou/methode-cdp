@@ -3,7 +3,7 @@ name: "methode-cdp"
 description: "Use when working with Claude in project lead / executor mode (Opus briefs, launches the dev as a subagent and accepts; Sonnet executes): roles, briefs, GitHub repositories, batch acceptance, living docs, how to dialogue."
 ---
 
-# PL method — working with the owner · v7
+# PL method — working with the owner · v8
 
 This method is generic: it applies to every project of the owner. The rules specific to a project (repository names, test bench and gates, versioning, conventions, state of progress) live in that project's instructions and files, and **take precedence over this one** in case of conflict. At the start of a PL session, read the project's checkpoint and method before briefing or accepting.
 
@@ -62,8 +62,9 @@ Each brief specifies:
 2. **what is shared is written append-only** (decision log, plan, workstreams): no rewritten summary, no “last updated”, no header version;
 3. **anything numbered is reserved by a push**: a decision number (the “reserved” line pushed alone, then the entry in its place; push refused → `pull`, next number), a version (the workstream's `in-flight` entry, with `pl:` and `version:`); batches are merged in version order;
 4. **what can be computed is not written**: counts are marked (`[execution +1]`, `[reverse +1]`), the board is regenerated, never merged by hand;
-5. **a file that is not append-only has a single owner**: the method, the dev prompt, the living-docs README and the package belong to the method-maintenance session; a PL files a lesson there as a workstream `module: method`.
+5. **a file that is not append-only has a single owner**: the method, the dev prompt, the living-docs README and the package belong to **the coordination session** (§11); a PL files a lesson there as a workstream `module: method`, `for:` the coordinator.
 A message for another domain is a workstream of its module, `for: <PL>`; after every `pull`, a PL reads those addressed to it.
+**A PL's name**: `Opus-PL-<Product>[-<Module>]`, a module only when a product has several PLs at the same time; its checkpoint and session title follow that name.
 
 **The PL in the living-docs repository**: clones it at the start of the session (`add_repo`, `push`); `git pull` before writing, `git fetch origin main` before pushing; targeted replacements; the version in the header of single-owner files only, the history in git; says what they wrote (repository, commit, path). **The claude.ai project files are a mirror**: at every close-out, each modified file is copied over from the clone (`project_write` with `local_path`), under the same name — never from the text the project tool returns.
 
@@ -127,3 +128,11 @@ A message for another domain is a workstream of its module, `for: <PL>`; after e
 - Deliver your report as a named `.md` on the branch, starting with “What I'm not sure about”.
 - Modify neither the test bench, nor the dev prompt, nor the brief, nor the style guides, nor the decision logs, nor the living-docs repository.
 - No secret in a commit; no command for the owner to run.
+
+## 11. If you are the coordination session
+
+- You are **Opus-Coordination**: you hold the project's method, the table of domains, the launching of PLs, the method package and the skill, and the arbiter if there is one. **You brief no batch**: that is the PLs' job.
+- **The owner tells you what they want to do** (“today, this module of this product”): you look at the table; an existing domain with a free baton → you give its fixed line; a baton taken → you say so; otherwise you open the domain — its line in the method and the living-docs README, its checkpoint seeded with the module's state, its workstreams attached — then you give, for each PL, the conversation title and its fixed line, or you start the session through a one-off scheduled task the owner only has to open. You flag overlaps (shared versions, common files).
+- When a product has several module PLs, its checkpoint becomes a **product sheet** that you hold: what is common (ritual, bench, circuit, pitfalls), not the state.
+- **Any method change that affects the active PLs** reaches them through a ready-to-paste message handed to the owner; you then check their answers in the repository.
+- A generic lesson is carried over into the package (private source, then the anonymized bilingual copy published); the skill is offered to the owner at each version.

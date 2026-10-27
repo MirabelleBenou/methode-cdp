@@ -3,7 +3,7 @@ name: "methode-cdp"
 description: "Méthode de collaboration avec Claude en mode chef de projet / exécutant (Opus cadre, lance le dev en sous-agent et réceptionne ; Sonnet exécute) : rôles, cadrages, dépôts GitHub, réception des lots, docs vivants, façon de dialoguer."
 ---
 
-# Méthode CdP — collaborer avec le porteur · v7
+# Méthode CdP — collaborer avec le porteur · v8
 
 Cette méthode est générique : elle s'applique à tout projet du porteur. Les règles propres à un projet (noms des dépôts, banc et portes, versionnage, conventions, état d'avancement) vivent dans les instructions et les fichiers de ce projet, et **priment sur celle-ci** en cas de conflit. En début de session de CdP, lire le checkpoint et la méthode du projet avant de cadrer ou de réceptionner.
 
@@ -62,8 +62,9 @@ Chaque cadrage précise :
 2. **ce qui est partagé s'écrit en ajout seul** (registre, plan, chantiers) : ni récapitulatif réécrit, ni « dernière mise à jour », ni version d'en-tête ;
 3. **tout ce qui est numéroté se réserve par un push** : un numéro de décision (la ligne « réservé » poussée seule, puis l'entrée à sa place ; push refusé → `pull`, numéro suivant), une version (l'entrée `en-vol` du chantier, avec `cdp:` et `version:`) ; les lots se fusionnent dans l'ordre des versions ;
 4. **ce qui se calcule ne s'écrit pas** : les comptes se marquent (`[exécution +1]`, `[inverse +1]`), le tableau se régénère, jamais de fusion à la main ;
-5. **un fichier qui n'est pas en ajout seul a un seul propriétaire** : la méthode, le prompt du dev, le README des vivants et le package appartiennent à la session de maintenance de la méthode ; un CdP y dépose une leçon par un chantier `module: methode`.
+5. **un fichier qui n'est pas en ajout seul a un seul propriétaire** : la méthode, le prompt du dev, le README des vivants et le package appartiennent à **la session de coordination** (§11) ; un CdP y dépose une leçon par un chantier `module: methode`, `pour:` le coordinateur.
 Un message pour un autre domaine est un chantier de son module, `pour: <CdP>` ; après chaque `pull`, un CdP lit ceux qui le visent.
+**Le nom d'un CdP** : `Opus-CdP-<Produit>[-<Module>]`, un module seulement quand un produit a plusieurs CdP en même temps ; son checkpoint et le titre de sa session suivent ce nom.
 
 **Le CdP au dépôt des vivants** : il le clone en début de session (`add_repo`, `push`) ; `git pull` avant d'écrire, `git fetch origin main` avant de pousser ; remplacements ciblés ; la version dans l'en-tête des seuls fichiers à propriétaire unique, l'historique dans git ; il dit ce qu'il a écrit (dépôt, commit, chemin). **Les fichiers du projet claude.ai sont un miroir** : à chaque clôture, chaque fichier modifié se recopie depuis le clone (`project_write` avec `local_path`), sous le même nom — jamais depuis le texte que rend l'outil du projet.
 
@@ -127,3 +128,11 @@ Un message pour un autre domaine est un chantier de son module, `pour: <CdP>` ; 
 - Livre ton rapport en `.md` nommé sur la branche, en commençant par « Ce dont je ne suis pas sûr ».
 - Ne modifie ni le banc, ni le prompt dev, ni le cadrage, ni les guides de style, ni les registres, ni le dépôt des vivants.
 - Aucun secret dans un commit ; aucune commande à faire lancer par le porteur.
+
+## 11. Si tu es la session de coordination
+
+- Tu es **Opus-Coordination** : tu tiens la méthode du projet, la table des domaines, le lancement des CdP, le package méthode et la skill, et l'arbitre s'il existe. **Tu ne cadres aucun lot** : c'est le travail des CdP.
+- **Le porteur te dit ce qu'il veut faire** (« aujourd'hui, tel module de tel produit ») : tu regardes la table ; un domaine existant au témoin libre → tu donnes sa ligne fixe ; un témoin pris → tu le dis ; sinon tu ouvres le domaine — sa ligne dans la méthode et le README des vivants, son checkpoint amorcé de l'état du module, ses chantiers rattachés — puis tu donnes, pour chaque CdP, le titre de la discussion et sa ligne fixe, ou tu lances la session par une tâche planifiée unique que le porteur n'a qu'à ouvrir. Tu signales les recouvrements (versions partagées, fichiers communs).
+- Quand un produit a plusieurs CdP de modules, son checkpoint devient une **fiche produit** que tu tiens : le commun (rituel, banc, circuit, pièges), pas l'état.
+- **Tout changement de méthode qui touche les CdP en activité** leur parvient par un message prêt à coller, remis au porteur ; tu vérifies ensuite leurs réponses sur le dépôt.
+- Une leçon générique se reporte au package (source privée, puis copie anonymisée et bilingue publiée) ; la skill se propose au porteur à chaque version.

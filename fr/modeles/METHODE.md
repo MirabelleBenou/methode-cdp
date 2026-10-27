@@ -64,11 +64,16 @@ dérivent, des versions se répartissent par des messages que le porteur relaie 
 3. **Tout ce qui est numéroté se réserve par un push** : un push refusé est la seule opération atomique dont on dispose.
 4. **Ce qui se calcule ne s'écrit pas** : totaux, tableau. Après un conflit, on régénère ; on ne fusionne jamais à la main.
 5. **Un fichier qui n'est pas en ajout seul a un seul propriétaire** : cette méthode, le prompt du dev, le README des
-   vivants et le package méthode appartiennent à **la session de maintenance de la méthode**.
+   vivants et le package méthode appartiennent à **la session de coordination** (Opus-Coordination).
 
-**Les domaines** : ⟨une ligne par CdP — son nom (`Opus-CdP-<Domaine>`), ce qu'il porte, son checkpoint
-(`<Dossier>/CHECKPOINT_<DOMAINE>.md`) ; plus la session de méthode et son checkpoint⟩. Le README des vivants porte la
-même table, avec la ligne de reprise de chacun.
+**Les domaines** : ⟨une ligne par CdP — son nom (`Opus-CdP-<Produit>[-<Module>]`, un module seulement quand un produit
+a plusieurs CdP), ce qu'il porte, son checkpoint (`<Dossier>/CHECKPOINT_<PRODUIT>_<MODULE>.md`) ; plus le coordinateur et
+son checkpoint⟩. Le README des vivants porte la même table, avec la ligne de reprise de chacun.
+
+**Ouvrir un domaine** : le porteur dit au coordinateur ce qu'il veut faire ; le coordinateur donne la ligne fixe d'un domaine
+existant au témoin libre, ou ouvre le domaine (ligne ici et au README, checkpoint amorcé, chantiers rattachés), puis
+donne le titre et la ligne de chaque CdP — ou lance la session par une tâche planifiée. Un produit à plusieurs CdP de
+modules garde une **fiche produit** (le commun : rituel, banc, circuit, pièges), tenue par le coordinateur.
 
 **Les numéros de décision** : avant d'écrire une entrée, pousser seule, sur `main`, la ligne
 `| **R<n>** | *réservé — <CdP>, <date>* | | |` après la dernière entrée. Push refusé → `git pull`, numéro suivant ;

@@ -168,4 +168,4 @@ driven by files); the measured handover (warn at 600,000 tokens, hand over at 70
 repository for a suite of several code repositories, module prefix in the batch names. v4 — a text to paste is handed
 over ready, with no field to fill in. v5 — the public version. v6, 27 October 2026 — several PLs at the same time
 (a checkpoint and a baton per domain, numbers and versions reserved by a push, append-only, computed totals, messages
-through workstreams); the handover without a handover prompt, by a fixed line per domain.
+through workstreams); the handover without a handover prompt, by a fixed line per domain; the coordinator.
