@@ -17,7 +17,8 @@
 #   rank       : order of value within a status (optional)
 #   pl         : the PL holding the workstream in flight — required when in-flight (method §1a)
 #   deliverable: the code repository the release comes out of; one batch in flight per deliverable, pushing the in-flight entry takes it
-#   waits      : the id of the batch in flight this suspended batch waits for (same deliverable)
+#   waits      : the id of the batch in flight this suspended batch waits for (same deliverable or same resource)
+#   resource   : a shared resource occupied during the flight (the owner's machine, a game…); one batch in flight per resource
 #   version    : computed when the batch takes the deliverable (main + 1), never announced before
 #   for        : the PL a workstream from another domain is addressed to, read after every pull
 #   touches    : the files or modules of another domain the batch will touch

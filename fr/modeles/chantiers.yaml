@@ -17,7 +17,8 @@
 #   rang       : ordre de valeur à l'intérieur d'un statut (facultatif)
 #   cdp        : le CdP qui tient le chantier en vol — obligatoire en en-vol (méthode §1 bis)
 #   livrable   : le dépôt de code d'où sort la release ; un seul lot en vol par livrable, pousser l'entrée en-vol le prend
-#   attend     : l'id du lot en vol dont ce lot suspendu attend la fin (même livrable)
+#   attend     : l'id du lot en vol dont ce lot suspendu attend la fin (même livrable ou même ressource)
+#   ressource  : une ressource partagée occupée pendant le vol (la machine du porteur, un jeu…) ; un seul lot en vol par ressource
 #   version    : calculée quand le lot prend le livrable (main + 1), jamais annoncée avant
 #   pour       : le CdP à qui s'adresse un chantier venu d'un autre domaine, lu après chaque pull
 #   touche     : les fichiers ou modules d'un autre domaine que le lot va toucher

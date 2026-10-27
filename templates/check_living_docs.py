@@ -27,13 +27,20 @@ The eight checks, in this order:
   7. version log: the last version of the log (the last line of the plan that
      starts with "| `v…` |") has a workstreams.yaml entry in "status: accepted"
      whose id or version contains it;
-  8. deliverables: a deliverable ("deliverable:", the code repository the
-     release comes out of) has a single batch in flight at a time, and a batch
-     that waits ("waits: <id>") is suspended. Three rules: (a) for each value of
-     "deliverable:", at most one entry in "status: in-flight"; (b) every "waits:"
-     names the id of an entry that exists; (c) an entry that carries "waits:" is
-     not in "status: in-flight". This check depends on "--workstreams" only: it
-     always runs.
+  8. deliverables and resources: a deliverable ("deliverable:", the code
+     repository the release comes out of) and a shared resource ("resource:", a
+     machine or a piece of software two batches cannot occupy at the same time)
+     each have a single batch in flight at a time, and a batch that waits
+     ("waits: <id>") is suspended. Three rules: (a) for each value of
+     "deliverable:" and for each value of "resource:", at most one entry in
+     "status: in-flight" (the two namespaces are separate: a deliverable and a
+     resource of the same name do not mix; an entry may carry both and then
+     counts for each); (b) every "waits:" names the id of an entry that exists;
+     (c) an entry that carries "waits:" is not in "status: in-flight". The count
+     is "<n> deliverables, <r> resources, <m> in flight, <k> waiting": distinct
+     values of each field, in-flight entries that carry a deliverable or a
+     resource (an entry carrying both counts once), entries that carry "waits:".
+     This check depends on "--workstreams" only: it always runs.
 
 Output: one line per check (OK, GAP or warning, with a count), the details of
 the gaps indented below, then a last line "LIVING DOCS · …".
@@ -192,22 +199,27 @@ def check_log(workstreams: list[dict], plan: Path):
 
 
 def check_deliverables(workstreams: list[dict]):
-    deliverables: dict[str, list[str]] = {}  # deliverable -> ids of the entries in flight
+    # field -> value -> ids of the entries in flight; one namespace per field
+    spaces: dict[str, dict[str, list[str]]] = {"deliverable": {}, "resource": {}}
     for c in workstreams:
-        if c.get("deliverable"):
-            deliverables.setdefault(c["deliverable"], [])
-            if c.get("status") == "in-flight":
-                deliverables[c["deliverable"]].append(name(c))
+        for field, values in spaces.items():
+            if c.get(field):
+                values.setdefault(c[field], [])
+                if c.get("status") == "in-flight":
+                    values[c[field]].append(name(c))
     ids = {c["id"] for c in workstreams if c.get("id")}
-    details = [f"deliverable {deliverable}: {len(in_flight)} batches in flight ({', '.join(in_flight)})"
-               for deliverable, in_flight in deliverables.items() if len(in_flight) > 1]
+    details = [f"{field} {value}: {len(in_flight)} batches in flight ({', '.join(in_flight)})"
+               for field, values in spaces.items()
+               for value, in_flight in values.items() if len(in_flight) > 1]
     waiting = [c for c in workstreams if c.get("waits")]
     details += [f"{name(c)} waits for {c['waits']}, which does not exist"
                 for c in waiting if c["waits"] not in ids]
     details += [f"{name(c)} is in flight but waits for {c['waits']}"
                 for c in waiting if c.get("status") == "in-flight"]
-    in_flight = sum(len(v) for v in deliverables.values())
-    count = f"{len(deliverables)} deliverables, {in_flight} in flight, {len(waiting)} waiting"
+    in_flight = sum(1 for c in workstreams
+                    if c.get("status") == "in-flight" and (c.get("deliverable") or c.get("resource")))
+    count = (f"{len(spaces['deliverable'])} deliverables, {len(spaces['resource'])} resources, "
+             f"{in_flight} in flight, {len(waiting)} waiting")
     return ("GAP" if details else "OK"), count, details
 
 
@@ -256,7 +268,7 @@ def main(argv: list[str]) -> int:
         ("board", (lambda: check_board(workstreams, f["workstreams"], f["board"], f["generator"]))
          if "board" in f else None),
         ("version log", (lambda: check_log(workstreams, f["plan"])) if "plan" in f else None),
-        ("deliverables", lambda: check_deliverables(workstreams)),
+        ("deliverables and resources", lambda: check_deliverables(workstreams)),
     ]
     gaps = 0
     for rank, (label, check) in enumerate(checks, start=1):

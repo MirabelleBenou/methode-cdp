@@ -27,13 +27,21 @@ Les huit contrôles, dans cet ordre :
   7. journal : la dernière version du journal (dernière ligne du plan qui
      commence par « | `v…` | ») a une entrée de chantiers.yaml en
      « statut: recette » dont l'id ou la version la contient ;
-  8. livrables : un livrable (« livrable: », le dépôt de code d'où sort la
-     release) n'a qu'un seul lot en vol à la fois, et un lot qui attend
+  8. livrables et ressources : un livrable (« livrable: », le dépôt de code d'où
+     sort la release) et une ressource partagée (« ressource: », une machine ou
+     un logiciel que deux lots ne peuvent pas occuper en même temps) n'ont
+     chacun qu'un seul lot en vol à la fois, et un lot qui attend
      (« attend: <id> ») est suspendu. Trois règles : (a) pour chaque valeur de
-     « livrable: », au plus une entrée en « statut: en-vol » ; (b) chaque
-     « attend: » désigne l'id d'une entrée qui existe ; (c) une entrée qui porte
-     « attend: » n'est pas en « statut: en-vol ». Ce contrôle ne dépend que de
-     « --chantiers » : il tourne toujours.
+     « livrable: » et pour chaque valeur de « ressource: », au plus une entrée en
+     « statut: en-vol » (les deux espaces de noms sont séparés : un livrable et
+     une ressource de même nom ne se mélangent pas ; une entrée peut porter les
+     deux et compte alors pour chacun) ; (b) chaque « attend: » désigne l'id
+     d'une entrée qui existe ; (c) une entrée qui porte « attend: » n'est pas en
+     « statut: en-vol ». Le compte est « <n> livrables, <r> ressources, <m> en
+     vol, <k> en attente » : valeurs distinctes de chaque champ, entrées en vol
+     qui portent un livrable ou une ressource (une entrée qui porte les deux
+     compte une fois), entrées qui portent « attend: ». Ce contrôle ne dépend que
+     de « --chantiers » : il tourne toujours.
 
 Sortie : une ligne par contrôle (OK, ÉCART ou avertissement, avec un compte),
 le détail des écarts indenté dessous, puis une dernière ligne « VIVANTS · … ».
@@ -193,22 +201,27 @@ def controle_journal(chantiers: list[dict], journal: Path):
 
 
 def controle_livrables(chantiers: list[dict]):
-    livrables: dict[str, list[str]] = {}  # livrable -> ids des entrées en vol
+    # champ -> valeur -> ids des entrées en vol ; un espace de noms par champ
+    espaces: dict[str, dict[str, list[str]]] = {"livrable": {}, "ressource": {}}
     for c in chantiers:
-        if c.get("livrable"):
-            livrables.setdefault(c["livrable"], [])
-            if c.get("statut") == "en-vol":
-                livrables[c["livrable"]].append(nom(c))
+        for champ, valeurs in espaces.items():
+            if c.get(champ):
+                valeurs.setdefault(c[champ], [])
+                if c.get("statut") == "en-vol":
+                    valeurs[c[champ]].append(nom(c))
     ids = {c["id"] for c in chantiers if c.get("id")}
-    details = [f"livrable {livrable} : {len(en_vol)} lots en vol ({', '.join(en_vol)})"
-               for livrable, en_vol in livrables.items() if len(en_vol) > 1]
+    details = [f"{champ} {valeur} : {len(en_vol)} lots en vol ({', '.join(en_vol)})"
+               for champ, valeurs in espaces.items()
+               for valeur, en_vol in valeurs.items() if len(en_vol) > 1]
     attendent = [c for c in chantiers if c.get("attend")]
     details += [f"{nom(c)} attend {c['attend']}, qui n'existe pas"
                 for c in attendent if c["attend"] not in ids]
     details += [f"{nom(c)} est en vol mais attend {c['attend']}"
                 for c in attendent if c.get("statut") == "en-vol"]
-    en_vol = sum(len(v) for v in livrables.values())
-    compte = f"{len(livrables)} livrables, {en_vol} en vol, {len(attendent)} en attente"
+    en_vol = sum(1 for c in chantiers
+                 if c.get("statut") == "en-vol" and (c.get("livrable") or c.get("ressource")))
+    compte = (f"{len(espaces['livrable'])} livrables, {len(espaces['ressource'])} ressources, "
+              f"{en_vol} en vol, {len(attendent)} en attente")
     return ("ÉCART" if details else "OK"), compte, details
 
 
@@ -257,7 +270,7 @@ def main(argv: list[str]) -> int:
         ("tableau", (lambda: controle_tableau(chantiers, f["chantiers"], f["tableau"], f["generateur"]))
          if "tableau" in f else None),
         ("journal", (lambda: controle_journal(chantiers, f["journal"])) if "journal" in f else None),
-        ("livrables", lambda: controle_livrables(chantiers)),
+        ("livrables et ressources", lambda: controle_livrables(chantiers)),
     ]
     ecarts = 0
     for rang, (libelle, controle) in enumerate(controles, start=1):

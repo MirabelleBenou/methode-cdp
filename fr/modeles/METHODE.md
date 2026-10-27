@@ -92,7 +92,12 @@ critères, textes, sans version ni attendus) peut se pousser au dépôt des lots
 devient le cadrage quand le lot prend le livrable. **Personne ne décide d'un numéro de version à l'avance** : la version
 se calcule quand le lot prend le livrable (`main` plus un), s'écrit alors dans `version:` et le cadrage ; un lot
 suspendu qui reprend la calcule sur le nouveau `main` et refait sa base. Un fichier d'un autre livrable se déclare
-(`touche:`).
+(`touche:`). Un lot sans release (une sonde, une étude jouée, de la documentation) ne porte pas de `livrable:`.
+
+**Une ressource partagée se prend comme un livrable** : la machine du porteur et ce qu'elle fait tourner pour un lot
+(l'exécutant local, un jeu, un logiciel piloté) n'accueillent qu'un lot à la fois, quel que soit son domaine. Le lot qui
+l'occupe porte `ressource: <nom>` dans son entrée `en-vol` ; un autre attend (`attend: <id>`), l'étude et le
+pré-cadrage restant libres. Elle se libère quand l'exécutant a rendu son dernier rapport et que le CdP l'a réceptionné.
 
 **Entre CdP** : un signalement pour un autre domaine devient un chantier de son module, `statut: a-cadrer`,
 `pour: <CdP>` ; **après chaque `pull`, un CdP lit les entrées `pour:` qui le visent**. Le porteur ne relaie plus. Une leçon

@@ -17,4 +17,4 @@ batch at a time; you, who decide and validate on screen. Everything flows throug
 | `templates/` | method, dev prompt, brief, dev command, local runner, living docs, repository skeletons |
 | `skill/SKILL.md` | the personal skill `methode-cdp`, to customize (§1 and §8) then install |
 
-*Package v8 — history in `GUIDE.md` §7. MIT License.*
+*Package v9 — history in `GUIDE.md` §7. MIT License.*

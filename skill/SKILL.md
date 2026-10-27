@@ -3,7 +3,7 @@ name: "methode-cdp"
 description: "Use when working with Claude in project lead / executor mode (Opus briefs, launches the dev as a subagent and accepts; Sonnet executes): roles, briefs, GitHub repositories, batch acceptance, living docs, how to dialogue."
 ---
 
-# PL method — working with the owner · v10
+# PL method — working with the owner · v11
 
 This method is generic: it applies to every project of the owner. The rules specific to a project (repository names, test bench and gates, versioning, conventions, state of progress) live in that project's instructions and files, and **take precedence over this one** in case of conflict. At the start of a PL session, read the project's checkpoint and method before briefing or accepting.
 
@@ -36,6 +36,7 @@ This method is generic: it applies to every project of the owner. The rules spec
 - Save tokens, except on structural decisions.
 - Look for inspiration in other tools, not competition.
 - When the owner reopens a discarded option after seeing a mock-up: redo it rather than defend it.
+- **At the end of a discussion, a summary of what is still pending** — for the owner, for the other PLs, for yourself: discussions chain topics and the thread gets lost. Short, in lists, without repeating what is closed.
 - **The handover is measured** (`context.py` from the package: the context size at the last turn, not the cumulative consumption), at every close-out, before every dev launch and at least every ten exchanges. **At 600,000 tokens, warn the owner** at the top of the reply and launch no new batch; **at 700,000 at the latest** — or earlier, at a natural end of queue or at the first sign of saturation (losing the thread, contradictions) —, **hand over without waiting to be asked**, in one go: §0 of the domain's checkpoint rewritten (the state only), the baton released, push and mirror, then **the domain's fixed line** under “Opus · new conversation in the project”: “You are <PL>. Resume: attach <living-docs repository> (push access), git pull, read <domain checkpoint> in full (§0 first) and follow it.” **No more handover prompt**: nothing travels outside the repository, neither a number nor a reserved version. The resume can also be started by a one-off scheduled task whose prompt is that line, when the owner is there to open the session.
 - **On resuming, the first move is the baton**: `Session active: <short id>, since <time>` at the top of the domain's checkpoint, set by a push. A session that finds another id than its own after a `pull` stops writing to the living docs and tells the owner. A session waiting for the owner keeps the baton.
 - **The session title**: `<PL name> · <current workstream>` (“Opus-PL-<Domain> · resume”, then the chosen workstream), changed at each workstream; `-2` for a second PL on the same domain, with its own checkpoint. If the session can rename its conversation, it does; otherwise it gives the title to the owner in one line, at the top of its reply.
@@ -60,7 +61,7 @@ Each brief specifies:
 **Several PLs at the same time** (one per domain, on the same living docs):
 1. **one domain = one PL = a checkpoint of its own**, with its baton; nobody writes in someone else's;
 2. **what is shared is written append-only** (decision log, plan, workstreams): no rewritten summary, no “last updated”, no header version;
-3. **whatever can be taken only once is taken by a push**: a decision number (the “reserved” line pushed alone, then the entry in its place; push refused → `pull`, next number); a **deliverable** (the code repository the release comes out of) — **a single batch in flight per deliverable**, taken by the push of its `in-flight` entry (`pl:`, `deliverable:`); another batch of the same deliverable, even from another PL, is suspended (`waits: <id>`, no brief pushed, no branch, no dev; **study and pre-brief stay free**, the pre-brief with no version and no expected results) until the first one is validated and merged; **nobody announces a version in advance**: it is computed when the batch takes the deliverable (`main` + 1);
+3. **whatever can be taken only once is taken by a push**: a decision number (the “reserved” line pushed alone, then the entry in its place; push refused → `pull`, next number); a **deliverable** (the code repository the release comes out of) — **a single batch in flight per deliverable**, taken by the push of its `in-flight` entry (`pl:`, `deliverable:`); another batch of the same deliverable, even from another PL, is suspended (`waits: <id>`, no brief pushed, no branch, no dev; **study and pre-brief stay free**, the pre-brief with no version and no expected results) until the first one is validated and merged; **nobody announces a version in advance**: it is computed when the batch takes the deliverable (`main` + 1); **a shared resource** (the owner's machine and what it runs for a batch: local runner, game) **is taken the same way** (`resource: <name>`), one batch at a time, whatever the domain; a batch with no release carries no `deliverable:`;
 4. **what can be computed is not written**: counts are marked (`[execution +1]`, `[reverse +1]`), the board is regenerated, never merged by hand;
 5. **a file that is not append-only has a single owner**: the method, the dev prompt, the living-docs README and the package belong to **the coordination session** (§11); a PL files a lesson there as a workstream `module: method`, `for:` the coordinator.
 A message for another domain is a workstream of its module, `for: <PL>`; after every `pull`, a PL reads those addressed to it.
@@ -84,6 +85,7 @@ A message for another domain is a workstream of its module, `for: <PL>`; after e
 - **Project space**: everything under `<root>\<Project>\` (`briefs\`, `reports\`, `tools\`, `out\`, `sync\`), never in an application's folders; the PL creates the tree. The data produced stays on the PC; briefs and reports go to the `-Batches` repository, the code to the code repository, at close-out.
 - **Dialogue through files** in `sync\`: the runner writes `STATUS.txt` and a check file, waits for `GO.txt`; a question → `QUESTION.txt` / `ANSWER.txt`. No question in its chat. The PL looks at the check before the go-ahead and follows `STATUS`; the owner pastes only one line per brief or addendum.
 - `STATUS` frozen = the runner is waiting for an authorization visible only in the Desktop app: tell the owner.
+- **The machine is a shared resource** (§5, point 3): one batch runs on it at a time; the batch that occupies it carries `resource:` in its in-flight entry.
 - PC-specific paths in a local `config.json` ignored by git. Details: `templates/LOCAL_RUNNER.md` in the package.
 
 ## 6. Accepting a batch

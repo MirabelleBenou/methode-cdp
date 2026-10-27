@@ -93,7 +93,13 @@ free**: the pre-brief (rules, criteria, texts, no version, no expected results) 
 under `batches/<batch>/PRE_BRIEF.md`; it becomes the brief when the batch takes the deliverable. **Nobody decides a version
 number in advance**: the version is computed when the batch takes the deliverable (`main` plus one), then written in
 `version:` and the brief; a suspended batch that resumes computes it on the new `main` and redoes its base. A file of
-another deliverable is declared (`touches:`).
+another deliverable is declared (`touches:`). A batch with no release (a probe, a played study, documentation) carries
+no `deliverable:`.
+
+**A shared resource is taken like a deliverable**: the owner's machine and what it runs for a batch (the local runner,
+a game, a driven piece of software) host one batch at a time, whatever its domain. The batch that occupies it carries
+`resource: <name>` in its `in-flight` entry; another one waits (`waits: <id>`), study and pre-brief staying free. It is
+released when the runner has returned its last report and the PL has accepted it.
 
 **Between PLs**: a report for another domain becomes a workstream of its module, `status: to-brief`, `for: <PL>`;
 **after every `pull`, a PL reads the `for:` entries addressed to it**. The owner no longer relays. A generic lesson is a

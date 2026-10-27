@@ -1,4 +1,4 @@
-# PL METHOD PACKAGE · v8
+# PL METHOD PACKAGE · v9
 ### 27 October 2026 · to start a new project under the PL method
 
 *This package reproduces a way of working proven batch after batch: a **project lead** (PL, Opus) who decides
@@ -174,4 +174,6 @@ through workstreams); the handover without a handover prompt, by a fixed line pe
 or deployed, trial feedback makes a batch of the next version; the coordinator briefs the tooling of the method and of
 the living docs; `check_living_docs.py`. v8, 27 October 2026 — one deliverable, a single batch in flight: another batch
 of the same deliverable is suspended until the first one is validated and merged; nobody announces a version in
-advance, it is computed when the batch takes the deliverable; the “deliverables” check of `check_living_docs.py`.
+advance, it is computed when the batch takes the deliverable; the “deliverables” check of `check_living_docs.py`. v9,
+27 October 2026 — a shared resource (the owner's machine and its game) is taken like a deliverable; a batch with no
+release carries no deliverable; the end-of-discussion summary; check 8 of `check_living_docs.py` counts resources.
