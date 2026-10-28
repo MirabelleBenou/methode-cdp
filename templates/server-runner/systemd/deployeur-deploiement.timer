@@ -1,0 +1,10 @@
+[Unit]
+Description=Deployeur : un passage de la file deploiement par minute
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=1min
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

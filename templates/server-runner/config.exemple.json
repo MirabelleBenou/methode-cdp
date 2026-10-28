@@ -1,0 +1,51 @@
+{
+  "repertoire_etat": "/var/lib/deployeur",
+  "git": {
+    "cle_ordres": "/etc/deployeur/cle_ordres",
+    "cle_application": "/etc/deployeur/cle_app",
+    "known_hosts": "/etc/deployeur/known_hosts",
+    "identite_nom": "Deployeur",
+    "identite_courriel": "deployeur@localhost"
+  },
+  "depot_ordres": {
+    "url": "git@github.com:exemple/ordres.git",
+    "branche": "main"
+  },
+  "application": {
+    "projet": "monprojet",
+    "dossier": "/opt/monapp",
+    "fichier_compose": "docker-compose.yml",
+    "service_app": "app",
+    "service_db": "db",
+    "conteneur_db": "monprojet-db-1",
+    "volume_base": "monprojet_donnees",
+    "montage_base": "/var/lib/postgresql/data",
+    "volume_ecussons": "monprojet_images",
+    "volume_depots_bruts": "monprojet_bruts",
+    "prefixe_sauvegarde": "monprojet",
+    "url_sante": "http://127.0.0.1:8000/api/version",
+    "depot_url": "git@github.com:exemple/application.git",
+    "tables_histoire": ["membres", "evenements"],
+    "chemins_proteges": [],
+    "place_min_deploiement_go": 3,
+    "sauvegardes_garder": 10,
+    "delai_sante_s": 180
+  },
+  "suites": {
+    "suite-a": {
+      "depot": "exemple/depot",
+      "chemin": "dist/suite_a.html",
+      "dossier": "/srv/suites",
+      "fichier": "suite_a.html"
+    }
+  },
+  "hote_fichiers_bruts": "raw.githubusercontent.com",
+  "zones": {
+    "donnees": {"chemin": "/srv/donnees", "place_min_go": 20},
+    "echange": {"chemin": "/srv/donnees/echange", "place_min_go": 20}
+  },
+  "zone_transfert": "echange",
+  "depots_publics": ["exemple/depot", "exemple/outils"],
+  "hotes_autorises": ["exemple.org"],
+  "intervalle_en_cours_s": 300
+}

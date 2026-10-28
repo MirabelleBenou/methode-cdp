@@ -1,0 +1,15 @@
+[Unit]
+Description=Deployeur : passage de la file fichiers
+Documentation=file:///opt/deployeur/courant/docs/ORDRES.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/deployeur/courant
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/usr/bin/python3 -m deployeur --file fichiers
+TimeoutStartSec=infinity
+Nice=10
+IOSchedulingClass=idle

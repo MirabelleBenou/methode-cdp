@@ -1,0 +1,13 @@
+[Unit]
+Description=Deployeur : passage de la file deploiement
+Documentation=file:///opt/deployeur/courant/docs/ORDRES.md
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/deployeur/courant
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/usr/bin/python3 -m deployeur --file deploiement
+TimeoutStartSec=30min

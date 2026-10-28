@@ -1,5 +1,5 @@
-# PACKAGE MÉTHODE CdP · v9
-### 27 octobre 2026 · pour démarrer un nouveau projet sous la méthode CdP
+# PACKAGE MÉTHODE CdP · v10
+### 28 octobre 2026 · pour démarrer un nouveau projet sous la méthode CdP
 
 *Ce package reproduit une façon de travailler éprouvée lot après lot : un **chef de projet** (CdP, Opus) qui décide
 avec toi, cadre, lance le dev et réceptionne ; un **dev** (Sonnet par défaut) qui construit un lot à la fois ; **toi**,
@@ -31,6 +31,8 @@ qui décides et valides à l'écran. Tout circule par GitHub ; tu ne téléverse
 | `modeles/generer_tableau.py` | fabrique `chantiers.html`, la page lisible des chantiers, à chaque écriture du yaml | dépôt des vivants, miroir au projet |
 | `modeles/verifier_vivants.py` | contrôle les vivants partagés (numéros de décision, chantiers, versions réservées, chantiers en vol, tableau, journal) quand plusieurs CdP y écrivent ; lecture seule | dépôt des vivants, lancé par le coordinateur et l'arbitre |
 | `modeles/EXECUTANT_LOCAL.md` | l'exécutant Claude Code local sur le PC, piloté par fichiers (`sync\`) | sert au CdP et à l'exécutant |
+| `modeles/EXECUTANT_SERVEUR.md` | **facultatif** — l'exécutant serveur : un programme déterministe sur le serveur de production, piloté par un dépôt d'ordres ; le CdP déploie sur ton « go » (guide pas à pas). **Pas de serveur de production : sautez-le** | sert au CdP et à toi, à l'installation |
+| `../templates/server-runner/` (à la racine du dépôt public, non traduit) | **facultatif** — son implémentation de référence (Python, systemd, installateur, tests), en français, valeurs d'exemple | dépôt de code du projet, puis le serveur |
 | `modeles/depot-vivants/` | `README.md` du dépôt des vivants | dépôt des vivants |
 | `modeles/depot-app/` | `.gitattributes`, `.gitignore`, `CHANGELOG.md` du dépôt de code | dépôt de code |
 | `skill/SKILL.md` | la skill personnelle `methode-cdp`, **à personnaliser (§1 et §8) puis installer** | tes skills claude.ai |
@@ -68,6 +70,58 @@ elle ne remplace pas un document versionné qu'un dev neuf peut lire.
 
 ---
 
+## 2 bis · Trois façons de s'organiser
+
+```
+A · UN CdP          B · MODULES INDÉPENDANTS     C · MODULES LIÉS
+porteur             porteur                      porteur
+   │                   │                            │
+  CdP ── dev        ┌──┴─────┐                Coordinateur ── méthode,
+   │               CdP-1   CdP-2                    │      domaines, arbitre
+vivants + code     (chacun son dev)           ┌─────┼─────┐
+                       │       │             CdP-a  CdP-b  CdP-c
+                    vivants partagés         vivants partagés ;
+                    en ajout seul,           livrables, ressources
+                    un checkpoint chacun ;   et fichiers communs
+                    code et livrables à part
+```
+
+**A — un projet, un CdP** : une application à un seul module. Un checkpoint, un témoin, aucune règle de partage à
+appliquer ; le CdP tient aussi la méthode et le package. Le plus simple : y rester tant qu'un seul domaine avance à la
+fois.
+
+**B — plusieurs modules indépendants, un CdP chacun** : par exemple une application web et deux outils autonomes, chacun
+son dépôt de code et sa release. Un checkpoint et un témoin par domaine ; les vivants partagés en ajout seul (registre,
+plan, chantiers) ; le numéro de décision pris par un push ; pas de livrable commun, donc pas d'attente entre eux ; les
+rares messages d'un domaine à l'autre passent par un chantier `pour:`. La méthode garde **un seul propriétaire** : une
+session désignée (le premier CdP, ou un coordinateur dès que le projet grandit).
+
+**C — plusieurs modules liés, un CdP par domaine et un coordinateur** : des modules qui partagent un livrable (une même
+application), une ressource (ta machine), des fichiers ou un serveur. Tout ce qui est en B, plus : un seul lot en vol
+par livrable et par ressource (pris par le push de l'entrée en vol ; l'autre lot `attend:`, l'étude et le pré-cadrage
+restent libres) ; `touche:` pour un fichier d'un autre domaine ; **la session de coordination** ouvre et ferme les
+domaines, donne les lignes fixes, tient la méthode, le prompt du dev, le package, l'outillage des vivants et l'arbitre
+(le contrôle quotidien des vivants, s'il existe) ; une fiche produit quand un produit a plusieurs CdP de modules.
+
+**Passer d'un mode à l'autre** : on commence en A ; on passe en B quand un second module indépendant démarre ; en C dès
+que deux CdP partagent un livrable, une ressource ou des fichiers, ou qu'un changement transverse apparaît. Rien ne se
+migre : on ajoute un checkpoint, une ligne à la table des domaines, et le coordinateur.
+
+**Comment les CdP se parlent** :
+
+| canal | ce qu'il porte | qui écrit | qui lit |
+|---|---|---|---|
+| chantier `pour: <CdP>` dans `chantiers.yaml` | un signalement ou une demande pour un autre domaine ; une leçon pour la méthode (`pour:` le coordinateur) | n'importe quel CdP, l'arbitre | le CdP visé, après chaque `pull` |
+| entrée `en-vol` (`cdp:`, `livrable:`, `ressource:`, `attend:`) | qui tient quel livrable ou quelle ressource | le CdP qui prend, par un push | tous, avant de cadrer |
+| registre des décisions | les décisions, numéro réservé par un push | le CdP qui clôt | tous |
+| témoin du checkpoint | qui est en activité sur un domaine | la session qui reprend, par un push | le coordinateur, toi, l'arbitre |
+| message prêt à coller | un changement de méthode qui touche un CdP en activité | le coordinateur | toi, qui le colles au CdP ; il vérifie ensuite son chantier `pour:` |
+| **jamais** | un message que tu relaies de mémoire, ni un texte de reprise qui voyage hors du dépôt | — | — |
+
+En A, aucun de ces canaux n'est nécessaire ; en B, les chantiers `pour:` et le registre suffisent ; en C, tous.
+
+---
+
 ## 3 · Démarrer un nouveau projet — tes gestes, dans l'ordre
 
 1. **Sur GitHub, crée deux dépôts privés vides** (sans README) :
@@ -90,7 +144,8 @@ elle ne remplace pas un document versionné qu'un dev neuf peut lire.
 
 Ensuite, tu ne parles qu'au CdP. Tes seuls gestes manuels restants : **valider à l'écran**, poser **les tags et les
 releases**, **supprimer les branches fusionnées** sur GitHub (une session ne peut pas), et déposer le livrable là où il
-se déploie.
+se déploie — sauf si le projet a un exécutant serveur (`modeles/EXECUTANT_SERVEUR.md`) : tu dis alors « go » en nommant
+l'action, le CdP déploie, tu valides à l'écran ; la remise du livrable ne sert plus qu'en repli.
 
 ---
 
@@ -127,7 +182,8 @@ les vivants au dépôt et leur miroir ; la fusion en avance rapide après ta val
 - **le banc** : l'outillage qui mesure une archive (compte de fichiers, tests, lint, i18n, CSS, empreintes) ;
 - **les portes** du dev (P0 à Pn) et ce qu'il ne touche jamais ;
 - **le versionnage** : qui fait monter la version, de combien, avec ton accord ou pré-autorisé ;
-- **le livrable** : zip de déploiement, fichier HTML unique, PDF, archive d'un agent… et où il se dépose ;
+- **le livrable** : zip de déploiement, fichier HTML unique, PDF, archive d'un agent… et où il se dépose — ou, s'il
+  tourne sur un serveur de production que tu administres, comment il s'y déploie (l'exécutant serveur, facultatif) ;
 - **la preuve propre au type de projet** : rebuild à l'octet pour un HTML buildé, tests et migration pour une app,
   rejeu pour un moteur de calcul, contrôles par le DOM pour une page.
 
@@ -174,3 +230,6 @@ validation et la fusion du premier ; personne n'annonce une version à l'avance,
 le livrable ; le contrôle « livrables » de `verifier_vivants.py`.
 v9, le 27 octobre 2026 — une ressource partagée (la machine du porteur et son jeu) se prend comme un livrable ;
 un lot sans release ne porte pas de livrable ; la synthèse de fin de discussion ; le contrôle 8 compte les ressources.
+v10, le 28 octobre 2026 — l'exécutant serveur : un programme déterministe sur le serveur de production tire ses
+ordres d'un dépôt privé, le CdP déploie sur le go du porteur, la remise devient le repli ; guide et implémentation
+de référence facultatifs ; la question du serveur à l'amorçage ; trois façons de s'organiser (§2 bis).

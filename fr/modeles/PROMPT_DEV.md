@@ -155,6 +155,8 @@ prédiction.
 - ⛔ **`banc/`, ce prompt, `.gitattributes`, le cadrage et ses addenda** : s'ils échouent ou se contredisent, tu
   t'arrêtes et tu le dis ; tu ne les corriges pas.
 - ⛔ Les documents du projet claude.ai et le dépôt des vivants : ils sont au CdP.
+- ⛔ ⟨Projet avec un exécutant serveur :⟩ le dépôt d'ordres : tu ne le lis ni ne l'écris, même s'il est rattaché à la
+  session ; un ordre ne se pousse que par le CdP, et le déploiement n'est jamais ton geste.
 - ⛔ Aucun secret dans un commit ; seul `.env.example` porte des valeurs, factices.
 - ⛔ Aucune commande donnée au porteur, aucun fichier à lui faire lancer.
 

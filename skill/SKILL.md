@@ -3,7 +3,7 @@ name: "methode-cdp"
 description: "Use when working with Claude in project lead / executor mode (Opus briefs, launches the dev as a subagent and accepts; Sonnet executes): roles, briefs, GitHub repositories, batch acceptance, living docs, how to dialogue."
 ---
 
-# PL method — working with the owner · v11
+# PL method — working with the owner · v12
 
 This method is generic: it applies to every project of the owner. The rules specific to a project (repository names, test bench and gates, versioning, conventions, state of progress) live in that project's instructions and files, and **take precedence over this one** in case of conflict. At the start of a PL session, read the project's checkpoint and method before briefing or accepting.
 
@@ -22,7 +22,7 @@ This method is generic: it applies to every project of the owner. The rules spec
 - **Project lead (PL, Opus)**: diagnoses, measures, decides with the owner, writes the briefs, **launches the dev**, accepts, closes, keeps the living documents. Reasons as a web developer AND as a designer: recommends on the code and on the visual / creative side.
 - **The PL does not write the delivered code**, neither in the repository nor written out in full in a brief: a brief carries rules, criteria and the texts the user will read. Nor does the PL write durable tooling (test bench, acceptance script): a missing tool becomes a tooling batch. The PL writes their throwaway measurement, probe or mock-up scripts, which are never passed to the dev. The PL may edit the documentation, with the owner's authorization. Reason: avoid desynchronization and avoid the PL becoming the executor.
 - **Developer (Sonnet by default, Opus for a delicate batch)**: executes a brief, **launched by the PL as a subagent** of their session, without the PL's context, like a new session.
-- **The owner talks only to the PL.** They decide and validate the visuals, on screen or in production; they create tags and releases and delete merged branches on GitHub (a session cannot). Mechanical checks belong to the PL and the dev; visual checks to the owner.
+- **The owner talks only to the PL.** They decide and validate the visuals, on screen or in production; **when the project has a server runner (§5b), they no longer drop anything on the server: they give a “go” that names the action**, and the PL deploys; they create tags and releases and delete merged branches on GitHub (a session cannot). Mechanical checks belong to the PL and the dev; visual checks to the owner.
 - A purely technical decision may be delegated to the PL: the PL settles it, records it in the decision log and says so in their reply.
 - Style guides, decision logs and design documents are maintained by the PL alone, after validation; the dev never touches them.
 - The number of PL sessions is not a question to ask the owner: a session carries a domain or a series of features, handovers do the rest.
@@ -56,7 +56,7 @@ Each brief specifies:
 
 ## 5. The GitHub repositories
 
-**Two families** — the **living-docs repository** (private: method, checkpoint, decision log, plan, workstreams, expected results, PL scripts; only PL sessions write to it) and the **code repositories** (the code at the root; `bench/`, the dev prompt and `batches/<version>/` kept out of the archive by `export-ignore`). **A public code repository receives only the code, its tests and the test bench if it names no one**: the dev prompt and `batches/` (briefs, addenda, stops, reports) go into a separate private repository, `<Project>-Batches`, from the first commit — a pushed file stays in the public history. **Several code repositories of the same suite share a single `-Batches`**, each batch there carrying a module prefix (`batch/<prefix>-<batch>`), the code going out from the module's repository on `batch/<batch>`. The PL reviews every diff pushed to the public one.
+**Two families, and a third if there is a production server** — the **living-docs repository** (private: method, checkpoint, decision log, plan, workstreams, expected results, PL scripts; only PL sessions write to it) and the **code repositories** (the code at the root; `bench/`, the dev prompt and `batches/<version>/` kept out of the archive by `export-ignore`). **A public code repository receives only the code, its tests and the test bench if it names no one**: the dev prompt and `batches/` (briefs, addenda, stops, reports) go into a separate private repository, `<Project>-Batches`, from the first commit — a pushed file stays in the public history. **Several code repositories of the same suite share a single `-Batches`**, each batch there carrying a module prefix (`batch/<prefix>-<batch>`), the code going out from the module's repository on `batch/<batch>`. The PL reviews every diff pushed to the public one. **The orders repository** (private, §5b): the orders the PL pushes, the reports the server pushes; **never read or written by the dev**.
 
 **Several PLs at the same time** (one per domain, on the same living docs):
 1. **one domain = one PL = a checkpoint of its own**, with its baton; nobody writes in someone else's;
@@ -74,7 +74,7 @@ A message for another domain is a workstream of its module, `for: <PL>`; after e
 2. **The PL launches the dev as a subagent** (Agent tool, in the background, model and effort from the brief), with a command in four parts: who it is and what it executes (branch, starting commit, documents to read, expected report); the practical conditions, which take precedence (repositories already attached, clones in a separate folder, push to the batch branch only, never `main`, tag or `--force`); the stops; its final reply (full hashes, criteria OK/DEVIATION, what it is not sure about). **Fallback**: a line the owner pastes word for word, with above it “Sonnet · Medium · new conversation”.
 3. **A stop**: the dev pushes `batches/<version>/STOP_<n>.md`; the PL pushes `ADDENDUM_<n>.md` on the same branch and relaunches the dev.
 4. **The delivery**: the delivery commit, then `DEV_REPORT.md` in a separate commit.
-5. **The acceptance** (§6) on the `git archive` of the delivery commit.
+5. **The acceptance** (§6) on the `git archive` of the delivery commit, then **the deployment**: by an order if the project has a server runner (§5b), otherwise by handing over the deliverable.
 6. **After the owner's validation in production**: `git push origin batch/<version>:main` as a fast-forward, never `--force`. Then the close-out.
 
 **Session pitfalls**: a repository is attached per session, one clone at a time, generous command timeout; no tag, no release, no branch deletion, no repository creation from a session — the owner does them, with the text the PL gives; a single-branch clone only tracks that branch (`git fetch origin main:refs/remotes/origin/main`); a dev session opened by hand may fail to attach a private repository, the subagent inherits the PL's repositories; a subagent consumes the PL session's credit; the sandbox keeps nothing from one session to the next.
@@ -88,13 +88,21 @@ A message for another domain is a workstream of its module, `for: <PL>`; after e
 - **The machine is a shared resource** (§5, point 3): one batch runs on it at a time; the batch that occupies it carries `resource:` in its in-flight entry.
 - PC-specific paths in a local `config.json` ignored by git. Details: `templates/LOCAL_RUNNER.md` in the package.
 
+## 5b. The server runner (what runs on a production server)
+
+- Optional: only when the project has a server the owner administers (a VM). A **deterministic** program, installed on the server, pulls its orders from a private **orders repository** (outbound connections only, a one-minute timer), executes only **an allow-list of actions** (status, deploy the application, deploy a static file, roll back, file operations on declared zones) and pushes a report. **No AI in the deployment path.** Its name in a project: the deployer.
+- **The circuit**: after an acceptance with no discrepancy, for an application that has users, the PL asks the owner for **a go that names the action** (“go deploy v1.2.3”) and quotes it in the order; a static file with instant rollback is deployed without a go. The order designates **the accepted commit** (and the sha256 for a file); its identifier (`YYYY-MM-DD-NN`) is taken by the push, like a decision number. The PL reads the report through a **bounded wait**, summarizes it for the owner (version served, health, backup, counts), who validates; then the merge.
+- **Data is never lost**: the database service is never touched, the right project is checked, a re-read backup precedes every deployment, counts before and after stop the queue at the slightest drop, **never an automatic restore** — the database is restored by hand, on the owner's decision. A stopped queue reopens only on their go.
+- **Handing over the deliverable becomes the fallback**: deployer silent, server down.
+- The dev never touches the orders repository; the program, its installer and any agent stay outside the product batch circuit. Details, reference implementation and lessons: the package's `templates/SERVER_RUNNER.md`.
+
 ## 6. Accepting a batch
 
 - The PL **re-measures independently, cold, on the delivered archive**: criteria as deltas, syntax check on the output actually produced, diff reviewed against the brief's rules, nothing outside the authorized files.
 - The expected results are never copied from the dev report.
 - **The PL looks at the renders of the touched screens themselves** before the verdict: the dev reviews no screenshot, so no one else sees the screen before the owner.
 - The PL validates or issues a fix. **One delivery = one new number**: whatever is handed over or deployed carries a version never handed over before; a fix or trial feedback after a hand-over makes a batch of the next version, on its own branch; an addendum under the same version only serves while nothing has been handed over or deployed (lifting a stop, correcting a gap found at acceptance).
-- **The deliverable is handed to the owner as is**, under its exact name, with its sha256; a single file to drop on a server is handed over outside a zip.
+- **The deliverable is deployed by an order** when the project has a server runner (§5b): the verdict names the commit and the version (the sha256 for a file); handing it over becomes the fallback. **Otherwise it is handed to the owner as is**, under its exact name, with its sha256; a single file to drop on a server is handed over outside a zip.
 - No pixel acceptance against the base nor screenshots required from the dev, unless the brief asks for it.
 - A justified stop by the dev is never a reproach: execution is often right against the brief. The decision log keeps the count, and the reverse count of the PL's defects seen in production.
 - No version change without the owner's explicit agreement, unless a contrary rule is written in the project.
@@ -114,7 +122,8 @@ A message for another domain is a workstream of its module, `for: <PL>`; after e
 
 - ⟨If they work without a development workstation (tablet, phone, without Python)⟩: any generation or regeneration of a file falls to Claude; never make them run a script or a command.
 - A web page produced is also delivered as a downloadable `.html` file, not only as an artifact.
-- Long server commands: an executable shell script to drop and run, not commands to copy-paste.
+- Long server commands: an executable shell script to drop and run, not commands to copy-paste; a read-only probe first, the script tried on a simulated machine, rollback included.
+- **On a production server, deployment stays deterministic**: no AI in its path; an agent on that server, if there is one, is bounded — no secrets, no database writes, no root rights.
 - Images (tiles, visuals) go directly through the discussion, never through the project files (silent corruption).
 - Image generation: the PL chooses the suitable tool (photorealistic, illustrative, vector with transparency) and provides the prompt. ⟨Your preferred tools.⟩
 
@@ -128,7 +137,7 @@ A message for another domain is a workstream of its module, `for: <PL>`; after e
 - You push only your batch's branch, never `main`, never `--force`, never a tag; outside the code, you write only in `batches/<version>/`; before stopping, push your branch with `STOP_<n>.md`.
 - Measure the criteria on the archive of your delivery commit, never on your clone, as deltas. Review no screenshot outside a commanded mock-up.
 - Deliver your report as a named `.md` on the branch, starting with “What I'm not sure about”.
-- Modify neither the test bench, nor the dev prompt, nor the brief, nor the style guides, nor the decision logs, nor the living-docs repository.
+- Modify neither the test bench, nor the dev prompt, nor the brief, nor the style guides, nor the decision logs, nor the living-docs repository; neither read nor write the orders repository, deploy nothing.
 - No secret in a commit; no command for the owner to run.
 
 ## 11. If you are the coordination session

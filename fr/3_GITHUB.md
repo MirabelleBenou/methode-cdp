@@ -7,7 +7,7 @@ reconstitue depuis les dépôts.*
 
 ---
 
-## 1 · Les deux familles de dépôts
+## 1 · Les familles de dépôts
 
 | dépôt | visibilité | porte | qui y écrit |
 |---|---|---|---|
@@ -20,6 +20,17 @@ poussé sur un dépôt public y reste dans l'historique même retiré ensuite : 
 
 **Pourquoi deux dépôts** : le dev lit tout le dépôt de code ; il ne doit pas lire les attendus de la réception, ni les
 décisions en cours, ni les autres chantiers. Les vivants restent au CdP.
+
+**Une troisième famille, facultative — le dépôt d'ordres** : quand le projet a un serveur de production et un exécutant
+serveur (`modeles/EXECUTANT_SERVEUR.md`), le CdP y déploie par des ordres.
+
+| dépôt | visibilité | porte | qui y écrit |
+|---|---|---|---|
+| **`<owner>/<Projet>-Ordres`** — les ordres | privé | `ordres/<id>.json` ; `resultats/<id>.md` ; `LISEZ_MOI.md`, le format des ordres | **le CdP** (les ordres) et **le serveur** (les comptes rendus, par une clé de déploiement en écriture sur ce seul dépôt) ; **jamais le dev** |
+
+Le serveur lit le dépôt de code par une seconde clé de déploiement, **en lecture seule**. Chaque CdP qui déploie
+rattache le dépôt d'ordres en écriture ; le dev ne le rattache pas. Un ordre ne se réécrit jamais ; son identifiant se
+prend par le push, comme un numéro de décision.
 
 ---
 
@@ -91,6 +102,8 @@ sert que tant que rien n'a été remis ni déployé.
 - `git pull` avant d'écrire, `git fetch origin main` avant de pousser.
 - Il modifie par remplacements ciblés ; **la version d'un document est dans son en-tête, l'historique dans git** ; les
   noms de fichiers restent stables.
+- **Un seul CdP, des modules indépendants, ou des modules liés avec un coordinateur** : `LISEZ_MOI.md` §2 bis dit
+  ce qui s'applique dans chaque cas.
 - **Plusieurs CdP peuvent partager les vivants**, un par domaine (méthode §1 bis) : chacun son checkpoint et son
   témoin ; registre, plan et chantiers en ajout seul ; un numéro de décision se réserve par un push ; un livrable n'a qu'un lot en vol, sa version se
   calcule quand le lot le prend ; `pull` avant

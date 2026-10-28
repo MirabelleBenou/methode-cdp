@@ -17,6 +17,7 @@
 | `<owner>/<Projet>` (privé) | les vivants : cette méthode, le plan, le registre, `chantiers.yaml`, le checkpoint, les attendus et les scripts du CdP | les sessions de CdP seules |
 | `<owner>/<Projet>-App` (⟨privé / public⟩) | le code à la racine (l'archive de déploiement est `git archive` du commit de livraison), le banc dans `banc/` ; ⟨privé :⟩ le prompt du dev et `lots/<version>/` | le CdP sur `main` et pour le cadrage ; le dev sur la branche de son lot |
 | ⟨code public seulement :⟩ `<owner>/<Projet>-Lots` (privé) | le prompt du dev, `lots/<lot>/` — **jamais au dépôt public** | le CdP (cadrage, addenda) ; le dev (arrêts, rapport) |
+| ⟨serveur de production avec un exécutant serveur :⟩ `<owner>/<Projet>-Ordres` (privé) — le dépôt d'ordres | `ordres/<id>.json`, `resultats/<id>.md`, le format des ordres en `LISEZ_MOI.md` (§4 bis) | le CdP (les ordres) ; l'exécutant serveur (les comptes rendus) ; **jamais le dev** |
 
 ⟨Plusieurs dépôts de code :⟩ ils partagent **un seul `<Projet>-Lots`**, et chaque lot y porte un préfixe de module
 (`lot/<préfixe>-<lot>`) ; le code part du dépôt du module, sur `lot/<lot>` (`3_GITHUB.md` §6 C).
@@ -25,7 +26,8 @@
 
 ## §1 · Qui fait quoi
 
-- **Le porteur** décide et valide : à l'écran quand le lot montre une maquette, sinon en production.
+- **Le porteur** décide et valide : à l'écran quand le lot montre une maquette, sinon en production. ⟨Avec un exécutant
+  serveur : il ne dépose plus rien ; il dit « go » en nommant l'action, puis valide (§4 bis).⟩
   - ⟨S'il lit sur tablette ou téléphone, sans Python : **tout fichier se régénère chez Claude** ; on ne lui fait
     jamais lancer un script ni une commande⟩.
   - On lui écrit court, en **options numérotées avec une recommandation**.
@@ -48,6 +50,8 @@
 - **L'outillage est du code** : un outil manquant se commande par un **lot d'outillage**, avec un cadrage court. Le
   banc est tenu par le dev.
 - **Plusieurs CdP peuvent travailler en même temps**, un par domaine, sur les mêmes vivants : §1 bis.
+- ⟨**L'exécutant serveur** (un programme sur le serveur de production) déploie les ordres du CdP ; il ne décide rien
+  (§4 bis).⟩
 - Les **contrôles mécaniques** appartiennent au CdP et au dev ; les **contrôles visuels** au porteur.
 
 ---
@@ -56,6 +60,8 @@
 
 *À deux, « `git pull` avant d'écrire » suffit. À quatre, des numéros de décision sortent en double, des compteurs
 dérivent, des versions se répartissent par des messages que le porteur relaie (premier projet, quatre CdP en parallèle).*
+*Un seul CdP, des modules indépendants, ou des modules liés avec un coordinateur : ce qui s'applique dans chaque cas est
+au `LISEZ_MOI.md` §2 bis du package méthode.*
 
 **Cinq principes** :
 1. **Un CdP en activité = un domaine = un checkpoint à lui.** Personne n'écrit dans le checkpoint d'un autre.
@@ -135,7 +141,8 @@ en tête de réponse.
    aussi les rapports précédents). **Un addendum ne reprend jamais un lot remis au porteur** (étape 6).
 4. **La livraison** : le commit de livraison, puis `RAPPORT_DEV.md` dans un commit à part.
 5. **La réception** (§4), puis le verdict au porteur, avec la prédiction pour la production, et **le livrable remis tel
-   quel**, sous son nom exact, avec son sha256.
+   quel**, sous son nom exact, avec son sha256 — ⟨avec un exécutant serveur : **déployé par un ordre** (§4 bis), la
+   remise devenant le repli⟩.
 6. **Une livraison = un nouveau numéro.** Ce qui se remet au porteur ou se déploie porte une version qui n'a jamais été
    remise. Un correctif ou des retours d'essai après une remise font **un lot de la version suivante**, qui garde le
    livrable, sur sa propre branche partie de celle du lot, dans la même session de dev si elle est encore
@@ -243,9 +250,42 @@ installées sous la bonne version, les services démarrés dans la commande qui 
 6. **Le rendu, regardé par le CdP lui-même** : le dev ne relit aucune capture, donc personne d'autre ne voit l'écran
    avant le porteur. Ce que les critères ne mesurent pas ne se voit que là. Avec une maquette : comparaison au pixel.
 7. **Le livrable remis au porteur tel quel** : sous son nom exact, avec son sha256 dans le verdict. Un fichier unique à
-   déposer (une page HTML) se remet **hors zip**.
+   déposer (une page HTML) se remet **hors zip**. ⟨Avec un exécutant serveur : l'archive reste produite et gardée ;
+   **l'ordre désigne le commit reçu** (et le sha256 pour un fichier statique) ; la remise devient le repli (§4 bis).⟩
 8. **Le verdict** : conforme, ou un correctif (version suivante). **Un arrêt juste du dev n'est jamais un reproche** :
    l'exécution a souvent raison contre le cadrage.
+
+---
+
+## §4 bis · Le déploiement ⟨facultatif : projet avec un serveur de production et un exécutant serveur⟩
+
+*Sans serveur de production que le porteur administre : supprimer cette section ; le livrable se remet (§4, étape 7). Le
+guide et l'implémentation de référence : `modeles/EXECUTANT_SERVEUR.md` et `modeles/executant-serveur/` du package (copie publique :
+`templates/server-runner/`).*
+
+**Le principe** : un programme déterministe sur le serveur (⟨son nom dans ce projet⟩) tire chaque minute les ordres du
+dépôt d'ordres, n'exécute qu'une liste blanche d'actions et y pousse son compte rendu. **Aucune IA dans le chemin du
+déploiement** ; un agent sur un serveur de production, s'il existe, est borné (ni secrets, ni écriture en base, ni root).
+
+**Le circuit, après une réception sans écart** :
+1. **Une application qui a des utilisateurs** : le CdP demande au porteur **un « go » qui nomme l'action** (« go déploiement
+   v<X.Y> ») et le cite dans le champ `go` de l'ordre. **Des fichiers statiques à retour instantané** (une page HTML
+   autoportante) : déploiement direct, sans go.
+2. Il pousse `ordres/<id>.json` ; l'identifiant `AAAA-MM-JJ-NN` est **le suivant au dépôt, pris par le push** (push
+   refusé → `pull`, numéro suivant).
+3. Il lit `resultats/<id>.md` par une **attente bornée** (une à deux minutes en temps normal), jamais une boucle sans fin.
+4. Il dit au porteur la version servie, la santé, la sauvegarde prise, les comptes avant et après ; le porteur valide à l'écran ;
+   **puis** la fusion dans `main` (§2, étape 7).
+5. **Le retour** : `revenir` — sur go pour l'application, refusé après une migration ; sans go pour un fichier statique.
+   **Les opérations de fichiers** : action `fichiers`, dans les zones déclarées sur le serveur ; vider la corbeille sur go.
+6. **Un compte rendu en échec** : le CdP le dit, avec le nom de la sauvegarde ; une file arrêtée ne se rouvre que sur la
+   décision du porteur. **Jamais de restauration de base par l'exécutant serveur** : procédure manuelle ⟨où elle est écrite⟩.
+
+**Le repli** : l'exécutant serveur en panne, le livrable se remet au porteur tel quel (§4, étape 7) et la procédure manuelle
+s'applique. **Chaque CdP qui déploie rattache le dépôt d'ordres en écriture ; le dev ne le lit ni ne l'écrit jamais.**
+
+⟨Ce qui est propre au projet : les actions en service, les fichiers statiques et les zones, les tables comptées, la
+procédure manuelle, la date de mise en service.⟩
 
 ---
 
@@ -257,6 +297,9 @@ installées sous la bonne version, les services démarrés dans la commande qui 
 - ⟨Les invariants du projet : un fichier, un module ou une empreinte qui ne bougent que sur autorisation écrite du
   porteur portée par le cadrage.⟩
 - **Les textes produits restent neutres en genre** : jamais présumer le genre d'une personne d'après un pseudonyme.
+- ⟨Avec un exécutant serveur : jamais d'ordre d'application sans le go du porteur qui nomme l'action ; jamais d'action
+  hors de la liste blanche ; un ordre ne se réécrit pas ; ni secret ni donnée de production dans un ordre ou au dépôt
+  d'ordres ; les invariants des données (`EXECUTANT_SERVEUR.md` §8).⟩
 - ⟨Code public : le prompt du dev et `lots/` au dépôt privé des lots, jamais au public ; zéro référence privée dans le
   diff poussé (prénom, profil, méthode, registre) — un fichier poussé reste dans l'historique public.⟩
 - **Le compte de « l'exécution a raison »** se tient au registre : chaque arrêt ou signalement juste du dev s'y ajoute.
@@ -353,6 +396,8 @@ dépôt. **Plus de prompt de reprise** (la passation, ci-dessous). **Les images*
 - **Exécuter un script crée des caches** (`.pyc`…) qui faussent les comptes : mesurer d'abord, tester sur une copie.
 - **`cut -c` coupe l'UTF-8** : les documents se lisent avec un vrai langage.
 - **Les fichiers du projet ne sont pas sur le disque** : l'outil du projet les rend en texte.
+- ⟨Avec un exécutant serveur : rattacher le dépôt d'ordres en écriture en début de session ; relire `resultats/` par
+  une attente bornée, jamais une boucle sans fin.⟩
 
 **Git et GitHub** : voir `3_GITHUB.md` §5 du package — tags, releases et suppressions de branche par le porteur ; clone
 d'une seule branche ; lignes d'attribution ; aucun secret.

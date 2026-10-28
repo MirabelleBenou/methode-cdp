@@ -1,5 +1,5 @@
-# PL METHOD PACKAGE · v9
-### 27 October 2026 · to start a new project under the PL method
+# PL METHOD PACKAGE · v10
+### 28 October 2026 · to start a new project under the PL method
 
 *This package reproduces a way of working proven batch after batch: a **project lead** (PL, Opus) who decides
 with you, writes the briefs, launches the dev and accepts; a **dev** (Sonnet by default) who builds one batch at a time;
@@ -31,6 +31,8 @@ with you, writes the briefs, launches the dev and accepts; a **dev** (Sonnet by 
 | `templates/make_board.py` | builds `workstreams.html`, the readable page of the workstreams, at every write of the yaml | living-docs repository, mirror in the project |
 | `templates/check_living_docs.py` | checks the shared living docs (decision numbers, workstreams, reserved versions, workstreams in flight, board, log) when several PLs write to them; read-only | living-docs repository, run by the coordinator and the arbiter |
 | `templates/LOCAL_RUNNER.md` | the local Claude Code runner on the PC, driven by files (`sync\`) | used by the PL and the runner |
+| `templates/SERVER_RUNNER.md` | **optional** — the server runner: a deterministic program on the production server, driven by an orders repository; the PL deploys on your “go” (step-by-step guide). **No production server: skip it** | used by the PL, and by you at installation |
+| `templates/server-runner/` | **optional** — its reference implementation (Python, systemd, installer, tests), in French, with example values | the project's code repository, then the server |
 | `templates/living-docs-repo/` | `README.md` of the living-docs repository | living-docs repository |
 | `templates/code-repo/` | `.gitattributes`, `.gitignore`, `CHANGELOG.md` of the code repository | code repository |
 | `skill/SKILL.md` | the personal skill `methode-cdp`, **to customize (§1 and §8) then install** | your claude.ai skills |
@@ -69,6 +71,58 @@ it does not replace a versioned document that a fresh dev can read.
 
 ---
 
+## 2a · Three ways to organize
+
+```
+A · ONE PL          B · INDEPENDENT MODULES      C · LINKED MODULES
+owner               owner                        owner
+   │                   │                            │
+  PL ── dev         ┌──┴─────┐                Coordinator ── method,
+   │               PL-1    PL-2                     │      domains, arbiter
+living docs        (each its own dev)         ┌─────┼─────┐
++ code                 │       │             PL-a   PL-b   PL-c
+                    shared living docs,      shared living docs;
+                    append-only,             common deliverables,
+                    one checkpoint each;     resources and files
+                    separate code, releases
+```
+
+**A — one project, one PL**: an application with a single module. One checkpoint, one baton, no sharing rule to
+apply; the PL also keeps the method and the package. The simplest: stay there as long as only one domain moves at a
+time.
+
+**B — several independent modules, one PL each**: for example a web application and two standalone tools, each with its
+own code repository and release. One checkpoint and one baton per domain; the shared living docs append-only (decision
+log, plan, workstreams); the decision number taken by a push; no common deliverable, so no waiting between them; the
+rare messages from one domain to another go through a `for:` workstream. The method keeps **a single owner**: a
+designated session (the first PL, or a coordinator as soon as the project grows).
+
+**C — several linked modules, one PL per domain and a coordinator**: modules that share a deliverable (the same
+application), a resource (your machine), files or a server. Everything in B, plus: a single batch in flight per
+deliverable and per resource (taken by the push of the in-flight entry; the other batch `waits:`, the study and the
+pre-brief stay free); `touches:` for a file of another domain; **the coordination session** opens and closes the
+domains, gives the fixed lines, keeps the method, the dev prompt, the package, the living-docs tooling and the arbiter
+(the daily check of the living docs, if there is one); a product sheet when a product has several module PLs.
+
+**Moving from one mode to another**: you start in A; you move to B when a second independent module starts; to C as soon
+as two PLs share a deliverable, a resource or files, or a cross-cutting change appears. Nothing is migrated: you add a
+checkpoint, a line to the domain table, and the coordinator.
+
+**How the PLs talk to each other**:
+
+| channel | what it carries | who writes | who reads |
+|---|---|---|---|
+| workstream `for: <PL>` in `workstreams.yaml` | a report or a request for another domain; a lesson for the method (`for:` the coordinator) | any PL, the arbiter | the PL addressed, after every `pull` |
+| `in-flight` entry (`pl:`, `deliverable:`, `resource:`, `waits:`) | who holds which deliverable or which resource | the PL who takes it, by a push | everyone, before briefing |
+| decision log | the decisions, number reserved by a push | the PL who closes | everyone |
+| checkpoint baton | who is active on a domain | the session that resumes, by a push | the coordinator, you, the arbiter |
+| message ready to paste | a method change that affects an active PL | the coordinator | you, who paste it to the PL; it then checks its `for:` workstream |
+| **never** | a message you relay from memory, nor a resume text travelling outside the repository | — | — |
+
+In A, none of these channels is needed; in B, the `for:` workstreams and the decision log are enough; in C, all of them.
+
+---
+
 ## 3 · Starting a new project — your actions, in order
 
 1. **On GitHub, create two empty private repositories** (without README):
@@ -92,7 +146,8 @@ it does not replace a versioned document that a fresh dev can read.
 
 From then on, you talk only to the PL. Your only remaining manual actions: **validate on screen**, set **the tags and
 releases**, **delete the merged branches** on GitHub (a session cannot), and drop the deliverable where it is
-deployed.
+deployed — unless the project has a server runner (`templates/SERVER_RUNNER.md`): you then say “go” naming the action,
+the PL deploys, you validate on screen; handing over the deliverable only serves as a fallback.
 
 ---
 
@@ -129,7 +184,8 @@ the living docs in the repository and their mirror; the fast-forward merge after
 - **the test bench**: the tooling that measures an archive (file count, tests, lint, i18n, CSS, hashes);
 - **the gates** of the dev (P0 to Pn) and what it never touches;
 - **versioning**: who bumps the version, by how much, with your agreement or pre-authorized;
-- **the deliverable**: deployment zip, single HTML file, PDF, an agent's archive… and where it is dropped;
+- **the deliverable**: deployment zip, single HTML file, PDF, an agent's archive… and where it is dropped — or, if it
+  runs on a production server you administer, how it is deployed there (the server runner, optional);
 - **the proof specific to the type of project**: byte-exact rebuild for a built HTML, tests and migration for an app,
   replay for a calculation engine, DOM checks for a page.
 
@@ -177,3 +233,6 @@ of the same deliverable is suspended until the first one is validated and merged
 advance, it is computed when the batch takes the deliverable; the “deliverables” check of `check_living_docs.py`. v9,
 27 October 2026 — a shared resource (the owner's machine and its game) is taken like a deliverable; a batch with no
 release carries no deliverable; the end-of-discussion summary; check 8 of `check_living_docs.py` counts resources.
+v10, 28 October 2026 — the server runner: a deterministic program on the production server pulls its orders from a
+private repository, the PL deploys on the owner's go, the hand-over becomes the fallback; optional guide and reference
+implementation; the server question at bootstrap; three ways to organize (§2a).

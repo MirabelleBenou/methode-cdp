@@ -156,6 +156,8 @@ prediction.
 - ⛔ **`bench/`, this prompt, `.gitattributes`, the brief and its addenda**: if they fail or contradict each other, you
   stop and say so; you do not fix them.
 - ⛔ The claude.ai project documents and the living-docs repository: they belong to the PL.
+- ⛔ ⟨Project with a server runner:⟩ the orders repository: you neither read nor write it, even if it is attached to the
+  session; an order is pushed by the PL only, and deployment is never your action.
 - ⛔ No secret in a commit; only `.env.example` carries values, dummy ones.
 - ⛔ No command given to the owner, no file for them to run.
 

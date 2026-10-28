@@ -7,7 +7,7 @@ everything is rebuilt from the repositories.*
 
 ---
 
-## 1 · The two families of repositories
+## 1 · The families of repositories
 
 | repository | visibility | holds | who writes there |
 |---|---|---|---|
@@ -21,6 +21,17 @@ commit**.
 
 **Why two repositories**: the dev reads the whole code repository; it must not read the acceptance expected results,
 nor the pending decisions, nor the other workstreams. The living docs stay with the PL.
+
+**A third family, optional — the orders repository**: when the project has a production server and a server runner
+(`templates/SERVER_RUNNER.md`), the PL deploys there through orders.
+
+| repository | visibility | holds | who writes there |
+|---|---|---|---|
+| **`<owner>/<Project>-Orders`** — the orders | private | `ordres/<id>.json` (orders); `resultats/<id>.md` (reports); `LISEZ_MOI.md`, the order format | **the PL** (the orders) and **the server** (the reports, through a deploy key with write access to this repository only); **never the dev** |
+
+The server reads the code repository through a second deploy key, **read-only**. Each PL who deploys attaches the orders
+repository with write access; the dev does not attach it. An order is never rewritten; its identifier is taken by the
+push, like a decision number.
 
 ---
 
@@ -93,6 +104,8 @@ serves while nothing has been handed over or deployed.
 - `git pull` before writing, `git fetch origin main` before pushing.
 - It edits by targeted replacements; **a document's version is in its header, the history in git**; file
   names stay stable.
+- **A single PL, independent modules, or linked modules with a coordinator**: `GUIDE.md` §2a says what applies in
+  each case.
 - **Several PLs can share the living docs**, one per domain (method §1a): each its own checkpoint and baton; decision
   log, plan and workstreams append-only; a decision number is reserved by a push; a deliverable has a single batch in flight, its
   version is computed when the batch takes it; `pull` before every write, a

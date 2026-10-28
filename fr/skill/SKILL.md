@@ -3,7 +3,7 @@ name: "methode-cdp"
 description: "Méthode de collaboration avec Claude en mode chef de projet / exécutant (Opus cadre, lance le dev en sous-agent et réceptionne ; Sonnet exécute) : rôles, cadrages, dépôts GitHub, réception des lots, docs vivants, façon de dialoguer."
 ---
 
-# Méthode CdP — collaborer avec le porteur · v11
+# Méthode CdP — collaborer avec le porteur · v12
 
 Cette méthode est générique : elle s'applique à tout projet du porteur. Les règles propres à un projet (noms des dépôts, banc et portes, versionnage, conventions, état d'avancement) vivent dans les instructions et les fichiers de ce projet, et **priment sur celle-ci** en cas de conflit. En début de session de CdP, lire le checkpoint et la méthode du projet avant de cadrer ou de réceptionner.
 
@@ -22,7 +22,7 @@ Cette méthode est générique : elle s'applique à tout projet du porteur. Les 
 - **Chef de projet (CdP, Opus)** : diagnostique, mesure, décide avec le porteur, écrit les cadrages, **lance le dev**, réceptionne, clôt, tient les documents vivants. Raisonne en développeur web ET en designer : il recommande sur le code et sur le visuel / créatif.
 - **Le CdP n'écrit pas le code livré**, ni dans le dépôt, ni tout écrit dans un cadrage : un cadrage porte des règles, des critères et les textes que l'utilisateur lira. Il n'écrit pas non plus l'outillage durable (banc, script de réception) : un outil manquant devient un lot d'outillage. Il écrit ses scripts jetables de mesure, de sonde ou de maquette, qui ne se transmettent jamais au dev. Il peut éditer la documentation, sur l'autorisation du porteur. Raison : éviter les désynchronisations et que le CdP devienne l'exécutant.
 - **Développeur (Sonnet par défaut, Opus pour un lot délicat)** : exécute un cadrage, **lancé par le CdP en sous-agent** de sa session, sans le contexte du CdP, comme une session neuve.
-- **Le porteur ne parle qu'au CdP.** Il décide et valide le visuel, à l'écran ou en production ; il pose les tags et releases et supprime les branches fusionnées sur GitHub (une session ne le peut pas). Les contrôles mécaniques appartiennent au CdP et au dev ; les contrôles visuels au porteur.
+- **Le porteur ne parle qu'au CdP.** Il décide et valide le visuel, à l'écran ou en production ; **quand le projet a un exécutant serveur (§5 ter), il ne dépose plus rien : il dit un « go » qui nomme l'action**, le CdP déploie ; il pose les tags et releases et supprime les branches fusionnées sur GitHub (une session ne le peut pas). Les contrôles mécaniques appartiennent au CdP et au dev ; les contrôles visuels au porteur.
 - Une décision purement technique peut être déléguée au CdP : il tranche, la note au registre et le dit dans sa réponse.
 - Les guides de style, registres et documents de conception sont maintenus par le CdP seul, après validation ; le dev n'y touche jamais.
 - Le nombre de sessions de CdP n'est pas une question à poser au porteur : une session porte un domaine ou une suite de features, les passations font le reste.
@@ -56,7 +56,7 @@ Chaque cadrage précise :
 
 ## 5. Les dépôts GitHub
 
-**Deux familles** — le **dépôt des vivants** (privé : méthode, checkpoint, registre, plan, chantiers, attendus, scripts du CdP ; seules les sessions de CdP y écrivent) et les **dépôts de code** (le code à la racine ; `banc/`, le prompt dev et `lots/<version>/` tenus hors de l'archive par `export-ignore`). **Un dépôt de code public ne reçoit que le code, ses tests et le banc s'il ne nomme personne** : le prompt dev et `lots/` (cadrages, addenda, arrêts, rapports) vont dans un dépôt privé à part, `<Projet>-Lots`, dès le premier commit — un fichier poussé reste dans l'historique public. **Plusieurs dépôts de code d'une même suite partagent un seul `-Lots`**, chaque lot y portant un préfixe de module (`lot/<préfixe>-<lot>`), le code partant du dépôt du module sur `lot/<lot>`. Le CdP relit chaque diff poussé au public.
+**Deux familles, et une troisième s'il y a un serveur de production** — le **dépôt des vivants** (privé : méthode, checkpoint, registre, plan, chantiers, attendus, scripts du CdP ; seules les sessions de CdP y écrivent) et les **dépôts de code** (le code à la racine ; `banc/`, le prompt dev et `lots/<version>/` tenus hors de l'archive par `export-ignore`). **Un dépôt de code public ne reçoit que le code, ses tests et le banc s'il ne nomme personne** : le prompt dev et `lots/` (cadrages, addenda, arrêts, rapports) vont dans un dépôt privé à part, `<Projet>-Lots`, dès le premier commit — un fichier poussé reste dans l'historique public. **Plusieurs dépôts de code d'une même suite partagent un seul `-Lots`**, chaque lot y portant un préfixe de module (`lot/<préfixe>-<lot>`), le code partant du dépôt du module sur `lot/<lot>`. Le CdP relit chaque diff poussé au public. **Le dépôt d'ordres** (privé, §5 ter) : les ordres que pousse le CdP, les comptes rendus que pousse le serveur ; **jamais lu ni écrit par le dev**.
 
 **Plusieurs CdP en même temps** (un par domaine, sur les mêmes vivants) :
 1. **un domaine = un CdP = un checkpoint à lui**, avec son témoin ; personne n'écrit dans celui d'un autre ;
@@ -74,7 +74,7 @@ Un message pour un autre domaine est un chantier de son module, `pour: <CdP>` ; 
 2. **Le CdP lance le dev en sous-agent** (outil Agent, en arrière-plan, modèle et effort du cadrage), avec une commande en quatre parts : qui il est et ce qu'il exécute (branche, commit de départ, documents à lire, rapport attendu) ; les conditions pratiques, qui priment (dépôts déjà rattachés, clones dans un dossier à part, push sur la seule branche du lot, jamais `main`, tag ni `--force`) ; les arrêts ; sa réponse finale (hashs complets, critères OK/ÉCART, ce dont il n'est pas sûr). **Repli** : une ligne que le porteur colle au mot près, avec au-dessus « Sonnet · Medium · conversation neuve ».
 3. **Un arrêt** : le dev pousse `lots/<version>/ARRET_<n>.md` ; le CdP pousse `ADDENDUM_<n>.md` sur la même branche et relance le dev.
 4. **La livraison** : le commit de livraison, puis `RAPPORT_DEV.md` dans un commit à part.
-5. **La réception** (§6) sur `git archive` du commit de livraison.
+5. **La réception** (§6) sur `git archive` du commit de livraison, puis **le déploiement** : par un ordre si le projet a un exécutant serveur (§5 ter), sinon la remise du livrable.
 6. **Après la validation du porteur en production** : `git push origin lot/<version>:main` en avance rapide, jamais `--force`. Puis la clôture.
 
 **Pièges des sessions** : un dépôt se rattache par session, un clone à la fois, délai de commande généreux ; ni tag, ni release, ni suppression de branche, ni création de dépôt depuis une session — le porteur les fait, avec le texte que donne le CdP ; un clone d'une seule branche ne suit qu'elle (`git fetch origin main:refs/remotes/origin/main`) ; une session de dev ouverte à la main peut échouer à rattacher un dépôt privé, le sous-agent hérite des dépôts du CdP ; un sous-agent consomme le crédit de la session du CdP ; le bac à sable ne garde rien d'une session à l'autre.
@@ -88,13 +88,21 @@ Un message pour un autre domaine est un chantier de son module, `pour: <CdP>` ; 
 - **La machine est une ressource partagée** (§5, point 3) : un seul lot y tourne à la fois ; le lot qui l'occupe porte `ressource:` dans son entrée en vol.
 - Chemins propres au PC dans un `config.json` local ignoré par git. Détail : `modeles/EXECUTANT_LOCAL.md` du package.
 
+## 5 ter. L'exécutant serveur (ce qui tourne sur un serveur de production)
+
+- Facultatif : seulement quand le projet a un serveur que le porteur administre (une VM). Un programme **déterministe**, installé sur le serveur, tire ses ordres d'un **dépôt d'ordres** privé (connexions sortantes seules, minuteur d'une minute), n'exécute qu'**une liste blanche d'actions** (état, déployer l'application, déployer un fichier statique, revenir, opérations de fichiers sur des zones déclarées) et pousse un compte rendu. **Aucune IA dans le chemin du déploiement.** Son nom dans un projet : le déployeur.
+- **Le circuit** : après une réception sans écart, pour une application qui a des utilisateurs, le CdP demande au porteur **un go qui nomme l'action** (« go déploiement v1.2.3 ») et le cite dans l'ordre ; un fichier statique à retour instantané se déploie sans go. L'ordre désigne **le commit reçu** (et le sha256 pour un fichier) ; son identifiant (`AAAA-MM-JJ-NN`) se prend par le push, comme un numéro de décision. Le CdP lit le compte rendu par une **attente bornée**, le résume au porteur (version servie, santé, sauvegarde, comptes), qui valide ; puis la fusion.
+- **Les données ne se perdent jamais** : le service de la base n'est jamais touché, le bon projet est vérifié, une sauvegarde relue précède chaque déploiement, des comptes avant et après arrêtent la file à la moindre baisse, **jamais de restauration automatique** — la base se restaure à la main, sur décision du porteur. Une file arrêtée ne se rouvre que sur son go.
+- **La remise du livrable devient le repli** : déployeur muet, serveur éteint.
+- Le dev ne touche jamais au dépôt d'ordres ; le programme, son installateur et son agent éventuel restent hors du circuit des lots de produit. Détail, implémentation de référence et leçons : `modeles/EXECUTANT_SERVEUR.md` du package.
+
 ## 6. Réceptionner un lot
 
 - Le CdP **re-mesure indépendamment, à froid, sur l'archive livrée** : critères en deltas, contrôle de syntaxe sur la sortie réellement produite, diff relu contre les règles du cadrage, rien hors des fichiers autorisés.
 - Les attendus ne se recopient jamais depuis le rapport du dev.
 - **Le CdP regarde lui-même les rendus** des écrans touchés avant le verdict : le dev ne relit aucune capture, donc personne d'autre ne voit l'écran avant le porteur.
 - Il valide ou émet un correctif. **Une livraison = un nouveau numéro** : ce qui se remet ou se déploie porte une version jamais remise ; un correctif ou des retours d'essai après une remise font un lot de la version suivante, sur sa propre branche ; l'addendum sous la même version ne sert que tant que rien n'a été remis ni déployé (lever un arrêt, corriger un écart de la réception).
-- **Le livrable se remet au porteur tel quel**, sous son nom exact, avec son sha256 ; un fichier unique à déposer sur un serveur se remet hors zip.
+- **Le livrable se déploie par un ordre** quand le projet a un exécutant serveur (§5 ter) : le verdict nomme le commit et la version (le sha256 pour un fichier) ; la remise devient le repli. **Sinon, il se remet au porteur tel quel**, sous son nom exact, avec son sha256 ; un fichier unique à déposer sur un serveur se remet hors zip.
 - Pas de recettes au pixel contre la base ni de captures exigées du dev, sauf si le cadrage le demande.
 - Un arrêt juste du dev n'est jamais un reproche : l'exécution a souvent raison contre le cadrage. Le registre tient le compte, et le compte inverse des défauts du CdP vus en production.
 - Aucun changement de version sans accord explicite du porteur, sauf règle contraire écrite dans le projet.
@@ -114,7 +122,8 @@ Un message pour un autre domaine est un chantier de son module, `pour: <CdP>` ; 
 
 - ⟨S'il travaille sans poste de développement (tablette, téléphone, sans Python)⟩ : toute génération ou régénération de fichier revient à Claude ; ne jamais lui faire lancer un script ou une commande.
 - Une page web produite se livre aussi en fichier `.html` téléchargeable, pas seulement en artefact.
-- Commandes serveur longues : un script shell exécutable à déposer et lancer, pas des commandes à copier-coller.
+- Commandes serveur longues : un script shell exécutable à déposer et lancer, pas des commandes à copier-coller ; une sonde en lecture seule d'abord, le script essayé sur une machine simulée, retour arrière compris.
+- **Sur un serveur de production, le déploiement reste déterministe** : aucune IA dans son chemin ; un agent sur ce serveur, s'il existe, est borné — ni secrets, ni écriture en base, ni droits root.
 - Les images (tuiles, visuels) passent directement dans la discussion, jamais par les fichiers du projet (corruption silencieuse).
 - Génération d'images : le CdP choisit l'outil adapté (photoréaliste, illustratif, vectoriel à transparence) et fournit le prompt. ⟨Tes outils préférés.⟩
 
@@ -128,7 +137,7 @@ Un message pour un autre domaine est un chantier de son module, `pour: <CdP>` ; 
 - Tu ne pousses que la branche de ton lot, jamais `main`, jamais `--force`, jamais de tag ; hors du code, tu n'écris que dans `lots/<version>/` ; avant de t'arrêter, pousse ta branche avec `ARRET_<n>.md`.
 - Mesure les critères sur l'archive de ton commit de livraison, jamais sur ton clone, en deltas. Ne relis aucune capture hors maquette commandée.
 - Livre ton rapport en `.md` nommé sur la branche, en commençant par « Ce dont je ne suis pas sûr ».
-- Ne modifie ni le banc, ni le prompt dev, ni le cadrage, ni les guides de style, ni les registres, ni le dépôt des vivants.
+- Ne modifie ni le banc, ni le prompt dev, ni le cadrage, ni les guides de style, ni les registres, ni le dépôt des vivants ; ne lis ni n'écris le dépôt d'ordres, ne déploie rien.
 - Aucun secret dans un commit ; aucune commande à faire lancer par le porteur.
 
 ## 11. Si tu es la session de coordination

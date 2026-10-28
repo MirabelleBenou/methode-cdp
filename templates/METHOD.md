@@ -17,6 +17,7 @@
 | `<owner>/<Project>` (private) | the living docs: this method, the plan, the decision log, `workstreams.yaml`, the checkpoint, the expected results and the PL's scripts | the PL sessions only |
 | `<owner>/<Project>-App` (⟨private / public⟩) | the code at the root (the deployment archive is `git archive` of the delivery commit), the test bench in `bench/`; ⟨private:⟩ the dev prompt and `batches/<version>/` | the PL on `main` and for the brief; the dev on the branch of their batch |
 | ⟨public code only:⟩ `<owner>/<Project>-Batches` (private) | the dev prompt, `batches/<batch>/` — **never in the public repository** | the PL (brief, addenda); the dev (stops, report) |
+| ⟨production server with a server runner:⟩ `<owner>/<Project>-Orders` (private) — the orders repository | `ordres/<id>.json` (orders), `resultats/<id>.md` (reports), the order format in `LISEZ_MOI.md` (§4a) | the PL (the orders); the server runner (the reports); **never the dev** |
 
 ⟨Several code repositories:⟩ they share **a single `<Project>-Batches`**, and each batch there carries a module prefix
 (`batch/<prefix>-<batch>`); the code starts from the module's repository, on `batch/<batch>` (`3_GITHUB.md` §6 C).
@@ -25,7 +26,8 @@
 
 ## §1 · Who does what
 
-- **The owner** decides and validates: on screen when the batch shows a mock-up, otherwise in production.
+- **The owner** decides and validates: on screen when the batch shows a mock-up, otherwise in production. ⟨With a server
+  runner: they no longer drop anything; they say “go” naming the action, then validate (§4a).⟩
   - ⟨If they read on a tablet or phone, without Python: **every file is regenerated on Claude's side**; they are
     never asked to run a script or a command⟩.
   - You write to them briefly, in **numbered options with a recommendation**.
@@ -49,6 +51,7 @@
 - **Tooling is code**: a missing tool is ordered through a **tooling batch**, with a short brief. The test bench is
   maintained by the dev.
 - **Several PLs can work at the same time**, one per domain, on the same living docs: §1a.
+- ⟨**The server runner** (a program on the production server) deploys the PL's orders; it decides nothing (§4a).⟩
 - The **mechanical checks** belong to the PL and the dev; the **visual checks** to the owner.
 
 ---
@@ -57,6 +60,8 @@
 
 *With two, “`git pull` before writing” is enough. With four, decision numbers come out twice, counters drift, versions
 are shared out through messages the owner relays (first project, four PLs in parallel).*
+*A single PL, independent modules, or linked modules with a coordinator: what applies in each case is in the method
+package's `GUIDE.md` §2a.*
 
 **Five principles**:
 1. **One active PL = one domain = a checkpoint of its own.** Nobody writes in someone else's checkpoint.
@@ -137,7 +142,8 @@ top of its reply.
    owner** (step 6).
 4. **The delivery**: the delivery commit, then `DEV_REPORT.md` in a separate commit.
 5. **The acceptance** (§4), then the verdict to the owner, with the prediction for production, and **the deliverable
-   handed over as is**, under its exact name, with its sha256.
+   handed over as is**, under its exact name, with its sha256 — ⟨with a server runner: **deployed by an order** (§4a),
+   the hand-over becoming the fallback⟩.
 6. **One delivery = one new number.** Whatever is handed over to the owner or deployed carries a version never handed
    over before. A fix or trial feedback after a hand-over makes **a batch of the next version**, which keeps the
    deliverable, on its own branch started from the batch's branch, in the same dev session if it is still open.
@@ -246,9 +252,43 @@ the dependencies installed under the right version, the services started in the 
 6. **The rendering, looked at by the PL themselves**: the dev reviews no capture, so nobody else sees the screen
    before the owner. What the criteria do not measure can only be seen there. With a mock-up: pixel comparison.
 7. **The deliverable handed to the owner as is**: under its exact name, with its sha256 in the verdict. A single file
-   to deploy (an HTML page) is handed over **outside a zip**.
+   to deploy (an HTML page) is handed over **outside a zip**. ⟨With a server runner: the archive is still produced and
+   kept; **the order names the accepted commit** (and the sha256 for a static file); the hand-over becomes the fallback
+   (§4a).⟩
 8. **The verdict**: compliant, or a fix (next version). **A justified dev stop is never a reproach**: execution is
    often right against the brief.
+
+---
+
+## §4a · Deployment ⟨optional: project with a production server and a server runner⟩
+
+*No production server administered by the owner: delete this section; the deliverable is handed over (§4, step 7). The
+guide and the reference implementation: `templates/SERVER_RUNNER.md` and `templates/server-runner/` of the package.*
+
+**The principle**: a deterministic program on the server (⟨its name in this project⟩) pulls the orders from the orders
+repository every minute, runs only a whitelist of actions and pushes its report there. **No AI in the deployment
+path**; an agent on a production server, if there is one, is bounded (no secrets, no database writes, no root).
+
+**The circuit, after an acceptance with no gap**:
+1. **An application that has users**: the PL asks the owner for **a “go” that names the action** (“go deployment
+   v<X.Y>”) and quotes it in the order's `go` field. **Static files with instant rollback** (a self-contained HTML
+   page): direct deployment, no go.
+2. They push `ordres/<id>.json`; the identifier `YYYY-MM-DD-NN` is **the next one in the repository, taken by the push**
+   (push refused → `pull`, next number).
+3. They read `resultats/<id>.md` with a **bounded wait** (one to two minutes normally), never an endless loop.
+4. They tell the owner the version served, the health, the backup taken, the counts before and after; the owner
+   validates on screen; **then** the merge into `main` (§2, step 7).
+5. **Rollback**: `revenir` — on go for the application, refused after a migration; without go for a static file.
+   **File operations**: action `fichiers`, within the zones declared on the server; emptying the trash on go.
+6. **A failed report**: the PL says so, with the backup's name; a stopped queue only reopens on the owner's decision.
+   **Never a database restore by the server runner**: manual procedure ⟨where it is written⟩.
+
+**The fallback**: the server runner down, the deliverable is handed to the owner as is (§4, step 7) and the manual
+procedure applies. **Each PL who deploys attaches the orders repository with write access; the dev never reads or
+writes it.**
+
+⟨What is specific to the project: the actions in service, the static files and the zones, the counted tables, the
+manual procedure, the date it went into service.⟩
 
 ---
 
@@ -260,6 +300,9 @@ the dependencies installed under the right version, the services started in the 
 - ⟨The project's invariants: a file, a module or a fingerprint that only move on the owner's written authorization
   carried by the brief.⟩
 - **Produced texts remain gender-neutral**: never presume a person's gender from a pseudonym.
+- ⟨With a server runner: never an application order without the owner's go naming the action; never an action
+  outside the whitelist; an order is never rewritten; neither secret nor production data in an order or in the orders
+  repository; the data invariants (`SERVER_RUNNER.md` §8).⟩
 - ⟨Public code: the dev prompt and `batches/` in the private batches repository, never in the public one; zero
   private reference in the pushed diff (first name, profile, method, decision log) — a pushed file stays in the
   public history.⟩
@@ -358,6 +401,8 @@ handover prompt** (the handover, below). **Images** go through the conversation,
 - **Running a script creates caches** (`.pyc`…) that skew the counts: measure first, test on a copy.
 - **`cut -c` cuts UTF-8**: documents are read with a real language.
 - **The project files are not on disk**: the project tool returns them as text.
+- ⟨With a server runner: attach the orders repository with write access at the start of the session; re-read
+  `resultats/` with a bounded wait, never an endless loop.⟩
 
 **Git and GitHub**: see `3_GITHUB.md` §5 of the package — tags, releases and branch deletions by the owner; clone of
 a single branch; attribution lines; no secrets.
