@@ -69,9 +69,13 @@ fusion dans main
 1. **Une application qui a des utilisateurs** : après une réception sans écart, le CdP demande au porteur **un « go » qui
    nomme l'action** — « go déploiement v1.2.3 », pas « go » ni « ok » — et le cite mot pour mot dans le champ `go` de
    l'ordre (leçon ④).
-2. **Il pousse `ordres/<id>.json`** au dépôt d'ordres. L'identifiant est `AAAA-MM-JJ-NN` : **le suivant au dépôt, pris
-   par le push** — push refusé → `git pull`, numéro suivant, comme un numéro de décision. Un ordre ne se réécrit jamais :
-   pour corriger, un nouvel ordre.
+2. **Il pousse `ordres/<id>.json`** au dépôt d'ordres. L'identifiant est `AAAA-MM-JJ-NN` : **le suivant au dépôt, lu
+   après `git pull` et pris par le push** — push refusé → `git pull`, numéro suivant, comme un numéro de décision.
+   **Un ordre ne s'écrit jamais sur un fichier qui existe** : l'écriture refuse l'écrasement (`set -o noclobber` avant
+   `cat >`, ou un test `[ -e ordres/<id>.json ]` qui arrête tout) et, avant le push, `git diff --cached --name-status` ne
+   montre qu'**une ligne `A ordres/<id>.json`** — un `M` arrête tout. Leçon vécue : un identifiant pris sur une liste lue
+   avant le `git pull` a écrasé, par `cat >`, l'ordre déjà joué d'une autre session ; le push n'a rien refusé (une
+   modification, pas un ajout). Un ordre ne se réécrit jamais : pour corriger, un nouvel ordre.
 3. **Il lit `resultats/<id>.md`** : une à deux minutes en temps normal. **Attente bornée** (une relecture toutes les
    20 à 30 s, quelques minutes au plus), **jamais une boucle sans fin** ; passé le délai, il le dit au porteur et lance
    `etat`.

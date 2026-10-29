@@ -1,4 +1,4 @@
-# PACKAGE MÉTHODE CdP · v11
+# PACKAGE MÉTHODE CdP · v12
 ### 29 octobre 2026 · pour démarrer un nouveau projet sous la méthode CdP
 
 *Ce package reproduit une façon de travailler éprouvée lot après lot : un **chef de projet** (CdP, Opus) qui décide
@@ -29,8 +29,9 @@ qui décides et valides à l'écran. Tout circule par GitHub ; tu ne téléverse
 | `modeles/chantiers.yaml` | la source unique des chantiers (à venir, dettes, livrés) | dépôt des vivants, miroir au projet |
 | `modeles/contexte.py` | mesure le contexte de la session du CdP : prévenir à 600 000 jetons, passer la main à 700 000 | `outils_cdp/` du dépôt des vivants |
 | `modeles/generer_tableau.py` | fabrique `chantiers.html`, la page lisible des chantiers, à chaque écriture du yaml | dépôt des vivants, miroir au projet |
-| `modeles/verifier_vivants.py` | contrôle les vivants partagés (numéros de décision, chantiers, versions réservées, chantiers en vol, tableau, journal) quand plusieurs CdP y écrivent ; lecture seule | dépôt des vivants, lancé par le coordinateur et l'arbitre |
-| `modeles/ARBITRE.md` | **facultatif, mode C** — l'arbitre des vivants : une session neuve lancée chaque matin par une tâche planifiée, qui contrôle les vivants partagés et signale sans corriger ; sa procédure, son journal, la configuration de la tâche (heure, prompt, notifications), l'essai | `Methode/ARBITRE.md` du dépôt des vivants, lu par la tâche planifiée |
+| `modeles/verifier_vivants.py` | contrôle les vivants partagés (numéros de décision, chantiers, versions réservées, chantiers en vol, tableau, journal) quand plusieurs CdP y écrivent ; lecture seule ; avec `--archives <dossier>`, les contrôles 3 (identifiants) et 7 (journal) lisent aussi les archives de chantiers | dépôt des vivants, lancé par le coordinateur et l'arbitre |
+| `modeles/archiver_chantiers.py` | archive les chantiers en recette : date `recette-le:` toute entrée qui entre en recette, sort vers `Archives/CHANTIERS_<AAAA-MM>.yaml` celles qui y sont depuis 15 jours (sans perte, idempotent, `--a-blanc`) ; `chercher` retrouve un chantier, vivant ou archivé | dépôt des vivants, lancé par l'arbitre à chaque passage, sinon par le CdP ou le coordinateur à sa clôture |
+| `modeles/ARBITRE.md` | **facultatif, mode C** — l'arbitre des vivants : une session neuve lancée chaque matin par une tâche planifiée, qui contrôle les vivants partagés, signale sans corriger **et archive** les chantiers en recette ; sa procédure, son journal, la configuration de la tâche (heure, prompt, notifications), l'essai | `Methode/ARBITRE.md` du dépôt des vivants, lu par la tâche planifiée |
 | `modeles/EXECUTANT_LOCAL.md` | l'exécutant Claude Code local sur le PC, piloté par fichiers (`sync\`) | sert au CdP et à l'exécutant |
 | `modeles/EXECUTANT_SERVEUR.md` | **facultatif** — l'exécutant serveur : un programme déterministe sur le serveur de production, piloté par un dépôt d'ordres ; le CdP déploie sur ton « go » (guide pas à pas). **Pas de serveur de production : sautez-le** | sert au CdP et à toi, à l'installation |
 | `../templates/server-runner/` (à la racine du dépôt public, non traduit) | **facultatif** — son implémentation de référence (Python, systemd, installateur, tests), en français, valeurs d'exemple | dépôt de code du projet, puis le serveur |
@@ -110,12 +111,14 @@ migre : on ajoute un checkpoint, une ligne à la table des domaines, et le coord
 
 **L'arbitre : quand il compte.** Une session neuve, lancée chaque matin par une tâche planifiée, qui contrôle les
 vivants partagés (`verifier_vivants.py`, les témoins), dépose un chantier `pour:` par écart nouveau, tient un journal
-daté et résume — **elle signale, elle ne corrige rien**. **Inutile en A** : un seul CdP écrit, il voit ce qu'il écrit.
+daté et résume — **elle signale, elle ne corrige rien** ; sa seule écriture, mécanique : **elle archive** les chantiers
+en recette depuis 15 jours (`archiver_chantiers.py`, après ses constats). **Inutile en A** : un seul CdP écrit, il voit ce qu'il écrit.
 **Facultatif en B** : utile si les vivants partagés grossissent. **Recommandé en C**, dès que plusieurs CdP écrivent
 les mêmes vivants le même jour : des numéros de décision en double, des chantiers en vol sans `cdp:`, un tableau
 désaligné, des sessions oubliées qui gardent un témoin — ce que personne ne voit autrement, puisque chaque CdP ne lit
 que son domaine. Le coordinateur l'installe et le juge avec toi après une semaine d'essai ; procédure, prompt de la
-tâche et notifications : `modeles/ARBITRE.md`.
+tâche et notifications : `modeles/ARBITRE.md`. **Qui archive** les chantiers en recette : l'arbitre, s'il existe ; sans
+lui (modes A et B), le CdP ou le coordinateur lance `archiver_chantiers.py` à sa clôture.
 
 **Comment les CdP se parlent** :
 
@@ -170,6 +173,7 @@ l'action, le CdP déploie, tu valides à l'écran ; la remise du livrable ne ser
 | Registre des arbitrages | dépôt des vivants | oui | CdP | à chaque lot clos |
 | Plan + journal | dépôt des vivants | oui | CdP | à chaque lot qui prend une version |
 | `chantiers.yaml` et `chantiers.html` | dépôt des vivants | oui, et la page en artefact | CdP | à chaque écriture du yaml |
+| `Archives/CHANTIERS_<AAAA-MM>.yaml` | dépôt des vivants | oui | l'archivage (`archiver_chantiers.py`) | à chaque passage de l'arbitre, sinon à la clôture du CdP |
 | Attendus de réception | dépôt des vivants `attendus/<version>/` | non | CdP | au cadrage |
 | Scripts jetables du CdP | dépôt des vivants `outils_cdp/` | non | CdP | au besoin |
 | Code, banc, `CHANGELOG` | dépôt de code | non | dev | dans un lot |
@@ -246,3 +250,8 @@ ordres d'un dépôt privé, le CdP déploie sur le go du porteur, la remise devi
 de référence facultatifs ; la question du serveur à l'amorçage ; trois façons de s'organiser (§2 bis).
 v11, le 29 octobre 2026 — l'arbitre des vivants : rôle, quand il compte, configuration de la tâche planifiée,
 journal, notifications ; la ligne fixe nomme tous les dépôts du domaine ; le témoin se juge à son silence.
+v12, le 29 octobre 2026 — l'archivage des chantiers en recette : `archiver_chantiers.py` date chaque entrée qui
+entre en recette et sort vers `Archives/CHANTIERS_<AAAA-MM>.yaml` celles qui y sont depuis 15 jours, `chercher` les
+retrouve, `verifier_vivants.py --archives` contrôle les identifiants et le journal sur les archives ; l'arbitre
+archive aussi (sinon le CdP ou le coordinateur, à sa clôture) ; un ordre ne s'écrit jamais sur un fichier qui
+existe (exécutant serveur).

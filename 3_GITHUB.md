@@ -11,7 +11,7 @@ everything is rebuilt from the repositories.*
 
 | repository | visibility | holds | who writes there |
 |---|---|---|---|
-| **`<owner>/<Project>`** — the living docs | private | `README.md`; `Method/METHOD_<P>.md`; `<Folder>/`: checkpoint, decision log, plan, `workstreams.yaml`, statuses of the subprojects; `<Folder>/expected/<version>/`; `<Folder>/pl_tools/`; `<Folder>/Archives/` | **PL sessions only** |
+| **`<owner>/<Project>`** — the living docs | private | `README.md`; `Method/METHOD_<P>.md`; `<Folder>/`: checkpoint, decision log, plan, `workstreams.yaml`, statuses of the subprojects; `<Folder>/expected/<version>/`; `<Folder>/pl_tools/`; `<Folder>/Archives/` (frozen: the archiving of accepted workstreams writes `WORKSTREAMS_<YYYY-MM>.yaml` there, the PL the rest) | **PL sessions only** |
 | **`<owner>/<Project>-App`** — the code | private (public: §6 B) | the code at the root; `bench/`; `DEV_PROMPT_<P>.md`; `batches/<version>/`; `.gitattributes`, `.gitignore`, `CHANGELOG.md` | the PL on `main` (merge, brief); the dev on the branch of its batch |
 
 **The code repository is public** (GitHub Pages, open license): **the dev prompt and `batches/` never go there** — they

@@ -7,9 +7,13 @@ le registre des arbitrages, la source des chantiers (chantiers.yaml), la page
 qui s'en régénère (chantiers.html) et le journal des lots du plan.
 
     python3 -B verifier_vivants.py --chantiers <chantiers.yaml> --registre <registre.md> \\
-        [--tableau <chantiers.html> --generateur <generer_tableau.py>] [--journal <plan.md>]
+        [--tableau <chantiers.html> --generateur <generer_tableau.py>] [--journal <plan.md>] \\
+        [--archives <dossier>]
 
 « --tableau » et « --generateur » vont ensemble ; « --journal » est facultatif.
+« --archives » donne le dossier des archives de chantiers (les fichiers CHANTIERS_*.yaml,
+même forme que chantiers.yaml, que fait archiver_chantiers.py) ; il doit exister. Sans cette
+option, rien ne change. Avec elle, deux contrôles s'étendent aux archives : le 3 et le 7.
 Un contrôle dont les fichiers ne sont pas donnés s'affiche « non demandé ».
 
 Les huit contrôles, dans cet ordre :
@@ -17,7 +21,9 @@ Les huit contrôles, dans cet ordre :
      double et aucun trou entre le plus petit et le plus grand ;
   2. réservations : une ligne « | **R<n>** | *réservé … » encore présente est un
      avertissement, pas un écart (une réservation vit le temps d'écrire l'entrée) ;
-  3. identifiants de chantier : aucune « id: » en double dans chantiers.yaml ;
+  3. identifiants de chantier : aucune « id: » en double dans chantiers.yaml ; avec
+     « --archives », aussi : aucun id de chantiers.yaml qui figure dans une archive, aucun id
+     présent deux fois dans les archives, et le compte devient « <n> chantiers, <a> archivés » ;
   4. versions des lots : aucune valeur de « version: » portée par deux entrées ;
   5. chantiers en vol : chaque entrée « statut: en-vol » porte un « cdp: » non vide ;
   6. tableau : la régénération de chantiers.yaml par le générateur, dans un
@@ -26,7 +32,8 @@ Les huit contrôles, dans cet ordre :
      (le générateur date la page du jour où il tourne) ;
   7. journal : la dernière version du journal (dernière ligne du plan qui
      commence par « | `v…` | ») a une entrée de chantiers.yaml en
-     « statut: recette » dont l'id ou la version la contient ;
+     « statut: recette » dont l'id ou la version la contient ; avec « --archives », cette
+     entrée se cherche aussi dans les archives (une entrée archivée était en recette) ;
   8. livrables et ressources : un livrable (« livrable: », le dépôt de code d'où
      sort la release) et une ressource partagée (« ressource: », une machine ou
      un logiciel que deux lots ne peuvent pas occuper en même temps) n'ont
@@ -72,14 +79,14 @@ def lire_texte(chemin: Path) -> str:
 
 
 def lire_chantiers(chemin: Path) -> list[dict]:
-    """Même lecteur que le générateur ; chaque entrée garde sa ligne source."""
+    """Même lecteur que le générateur ; chaque entrée garde sa ligne source (et son fichier)."""
     chantiers: list[dict] = []
     for numero, ligne in enumerate(lire_texte(chemin).split("\n"), start=1):
         nue = ligne.strip()
         if not nue or nue.startswith("#"):
             continue
         if nue.startswith("- "):
-            chantiers.append({"_ligne": numero})
+            chantiers.append({"_ligne": numero, "_fichier": chemin.name})
             nue = nue[2:]
         if ":" not in nue or not chantiers:
             continue
@@ -137,14 +144,31 @@ def controle_reservations(registre: Path):
     return "OK", "aucune réservation en cours", []
 
 
-def controle_identifiants(chantiers: list[dict]):
+def controle_identifiants(chantiers: list[dict], archives: list[dict] | None = None):
     vus: dict[str, list[int]] = {}
     for c in chantiers:
         if c.get("id"):
             vus.setdefault(c["id"], []).append(c["_ligne"])
     details = [f"id {i} en double (lignes {', '.join(map(str, v))})"
                for i, v in vus.items() if len(v) > 1]
-    return ("ÉCART" if details else "OK"), f"{len(chantiers)} chantiers", details
+    compte = f"{len(chantiers)} chantiers"
+    if archives is not None:
+        details += ecarts_archives(vus, archives)
+        compte += f", {len(archives)} archivés"
+    return ("ÉCART" if details else "OK"), compte, details
+
+
+def ecarts_archives(vivants: dict[str, list[int]], archives: list[dict]) -> list[str]:
+    """Les id de chantiers.yaml aussi archivés, puis les id présents deux fois dans les archives."""
+    archives_par_id: dict[str, list[str]] = {}
+    for c in archives:
+        if c.get("id"):
+            archives_par_id.setdefault(c["id"], []).append(f"{c['_fichier']}:{c['_ligne']}")
+    details = [f"id {i} aussi archivé ({emplacements[0]})"
+               for i, emplacements in archives_par_id.items() if i in vivants]
+    details += [f"id {i} en double dans les archives ({', '.join(emplacements)})"
+                for i, emplacements in archives_par_id.items() if len(emplacements) > 1]
+    return details
 
 
 def controle_versions(chantiers: list[dict]):
@@ -230,9 +254,17 @@ class Analyseur(argparse.ArgumentParser):
         raise ValueError(message.replace("expected one argument", "valeur manquante"))
 
 
+def lire_archives(dossier: Path) -> list[dict]:
+    """Les entrées de toutes les archives du dossier, par ordre de nom de fichier."""
+    archives: list[dict] = []
+    for fichier in sorted(p for p in dossier.glob("CHANTIERS_*.yaml") if p.is_file()):
+        archives += lire_chantiers(fichier)
+    return archives
+
+
 def lire_arguments(argv: list[str]):
     p = Analyseur(prog="verifier_vivants.py", allow_abbrev=False, add_help=False)
-    for option in ("chantiers", "registre", "tableau", "generateur", "journal"):
+    for option in ("chantiers", "registre", "tableau", "generateur", "journal", "archives"):
         p.add_argument(f"--{option}")
     a, inconnus = p.parse_known_args(argv)
     if inconnus:
@@ -243,9 +275,9 @@ def lire_arguments(argv: list[str]):
     if bool(a.tableau) != bool(a.generateur):
         raise ValueError("--tableau et --generateur vont ensemble")
     chemins = {option: Path(getattr(a, option)) for option in
-               ("chantiers", "registre", "tableau", "generateur", "journal") if getattr(a, option)}
+               ("chantiers", "registre", "tableau", "generateur", "journal", "archives") if getattr(a, option)}
     for option, chemin in chemins.items():
-        if not chemin.is_file():
+        if not (chemin.is_dir() if option == "archives" else chemin.is_file()):
             raise ValueError(f"fichier introuvable : --{option} {chemin}")
     return chemins
 
@@ -254,6 +286,7 @@ def main(argv: list[str]) -> int:
     try:
         f = lire_arguments(argv)
         chantiers = lire_chantiers(f["chantiers"])
+        archives = lire_archives(f["archives"]) if "archives" in f else None
         for option in ("registre", "journal"):  # lecture d'essai : un fichier illisible est un appel invalide
             if option in f:
                 lire_texte(f[option])
@@ -264,12 +297,12 @@ def main(argv: list[str]) -> int:
     controles = [
         ("numéros du registre", lambda: controle_numeros(f["registre"])),
         ("réservations", lambda: controle_reservations(f["registre"])),
-        ("identifiants de chantier", lambda: controle_identifiants(chantiers)),
+        ("identifiants de chantier", lambda: controle_identifiants(chantiers, archives)),
         ("versions des lots", lambda: controle_versions(chantiers)),
         ("chantiers en vol", lambda: controle_en_vol(chantiers)),
         ("tableau", (lambda: controle_tableau(chantiers, f["chantiers"], f["tableau"], f["generateur"]))
          if "tableau" in f else None),
-        ("journal", (lambda: controle_journal(chantiers, f["journal"])) if "journal" in f else None),
+        ("journal", (lambda: controle_journal(chantiers + (archives or []), f["journal"])) if "journal" in f else None),
         ("livrables et ressources", lambda: controle_livrables(chantiers)),
     ]
     ecarts = 0

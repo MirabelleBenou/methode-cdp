@@ -69,8 +69,13 @@ merge into main
    action** — “go deployment v1.2.3”, not “go” or “ok” — and quotes it word for word in the order's `go` field
    (lesson ④).
 2. **They push `ordres/<id>.json`** to the orders repository. The identifier is `YYYY-MM-DD-NN`: **the next one in the
-   repository, taken by the push** — push refused → `git pull`, next number, like a decision number. An order is never
-   rewritten: to correct, a new order.
+   repository, read after `git pull` and taken by the push** — push refused → `git pull`, next number, like a decision
+   number. **An order is never written onto a file that exists**: the write refuses to overwrite (`set -o noclobber`
+   before `cat >`, or an `[ -e ordres/<id>.json ]` test that stops everything) and, before the push,
+   `git diff --cached --name-status` shows only **one line `A ordres/<id>.json`** — an `M` stops everything. A lesson learned the hard way:
+   an identifier taken from a list read before the `git pull` overwrote, by `cat >`, the already-played order of
+   another session; the push refused nothing (a modification, not an addition). An order is never rewritten: to
+   correct, a new order.
 3. **They read `resultats/<id>.md`**: one to two minutes normally. **Bounded wait** (a re-read every 20 to 30 s, a few
    minutes at most), **never an endless loop**; past the delay, they tell the owner and run `etat`.
 4. **They tell the owner** the version served, the health, the backup taken and the counts before and after. The owner

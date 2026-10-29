@@ -275,7 +275,12 @@ déploiement** ; un agent sur un serveur de production, s'il existe, est borné 
    v<X.Y> ») et le cite dans le champ `go` de l'ordre. **Des fichiers statiques à retour instantané** (une page HTML
    autoportante) : déploiement direct, sans go.
 2. Il pousse `ordres/<id>.json` ; l'identifiant `AAAA-MM-JJ-NN` est **le suivant au dépôt, pris par le push** (push
-   refusé → `pull`, numéro suivant).
+   refusé → `pull`, numéro suivant). **Un ordre ne s'écrit jamais sur un fichier qui existe** : l'identifiant se lit
+   **après** `git pull`, jamais sur une liste lue avant ; l'écriture refuse l'écrasement (`set -o noclobber` avant
+   `cat >`, ou un test `[ -e ordres/<id>.json ]` qui arrête tout) ; avant le push, `git diff --cached --name-status` ne
+   montre qu'**une ligne `A ordres/<id>.json`** — un `M` arrête tout. Un ordre ne se réécrit jamais : pour corriger, un
+   nouvel ordre. *(Leçon vécue : une session a pris un identifiant sur une liste lue avant son `pull` et a écrasé, par
+   `cat >`, l'ordre déjà joué d'une autre session ; le push n'a rien refusé — une modification, pas un ajout.)*
 3. Il lit `resultats/<id>.md` par une **attente bornée** (une à deux minutes en temps normal), jamais une boucle sans fin.
 4. Il dit au porteur la version servie, la santé, la sauvegarde prise, les comptes avant et après ; le porteur valide à l'écran ;
    **puis** la fusion dans `main` (§2, étape 7).
@@ -325,9 +330,24 @@ Deux lots reçus le même jour peuvent se clore ensemble.
 - vivent au dépôt des vivants **sous des noms stables** ; la version est dans l'en-tête, l'historique dans git ;
 - se modifient par remplacements ciblés, ou se remplacent en entier en retirant l'obsolète ;
 - **restent courts** : quand l'un redevient long, ce qui ne vit plus part dans une **archive neuve**
-  (`Archives/<NOM>_ARCHIVE_<plage>.md`), figée, jamais réécrite ;
+  (`Archives/<NOM>_ARCHIVE_<plage>.md`), figée, jamais réécrite ; pour `chantiers.yaml`, l'archivage est automatique
+  (ci-dessous) et `chercher` retrouve une entrée ;
 - **le projet en porte un miroir**, recopié à chaque clôture par `project_write` avec `local_path` depuis le clone ;
   **jamais depuis le texte servi par l'outil du projet**.
+
+**Les chantiers en recette — l'archivage** :
+- à la clôture, l'entrée passe en `statut: recette`, puis **n'est plus touchée à la main** : la ligne `recette-le: <date>`
+  est posée par `archiver_chantiers.py` (elle ne s'écrit ni ne se corrige à la main), et retirée par lui d'une entrée
+  rouverte ;
+- une entrée en recette depuis 15 jours sort vers `<Dossier>/Archives/CHANTIERS_<AAAA-MM>.yaml` (le mois du passage ;
+  on n'y fait qu'ajouter, figé à la fin du mois) ; le script contrôle l'absence de perte avant d'écrire ;
+- **qui archive** : l'arbitre, s'il existe, à chaque passage (`Methode/ARBITRE.md` §1.4 bis) ; **sans arbitre**, le CdP
+  ou le coordinateur lance à sa clôture
+  `python3 -B <Dossier>/archiver_chantiers.py archiver --chantiers <Dossier>/chantiers.yaml --archives <Dossier>/Archives`,
+  puis régénère le tableau et commite ;
+- **un id archivé ne se réutilise pas** ;
+- le vérificateur se lance avec `--archives <Dossier>/Archives` : un id à la fois vivant et archivé est un écart, et la
+  dernière version du journal se cherche aussi dans les archives.
 
 **Le tableau des chantiers** — la page lisible de `chantiers.yaml` :
 - **Chaque fois que le CdP écrit `chantiers.yaml`** — à la clôture, mais aussi en cours d'échange (un chantier ajouté,
@@ -401,6 +421,9 @@ dépôt. **Plus de prompt de reprise** (la passation, ci-dessous). **Les images*
 - **Exécuter un script crée des caches** (`.pyc`…) qui faussent les comptes : mesurer d'abord, tester sur une copie.
 - **`cut -c` coupe l'UTF-8** : les documents se lisent avec un vrai langage.
 - **Les fichiers du projet ne sont pas sur le disque** : l'outil du projet les rend en texte.
+- **Un chantier introuvable dans `chantiers.yaml` est peut-être archivé** : le chercher par
+  `python3 -B <Dossier>/archiver_chantiers.py chercher <id ou mot> --chantiers <Dossier>/chantiers.yaml --archives <Dossier>/Archives`
+  (`--partout` : dans toutes les valeurs), jamais en recréant l'entrée.
 - ⟨Avec un exécutant serveur : rattacher le dépôt d'ordres en écriture en début de session ; relire `resultats/` par
   une attente bornée, jamais une boucle sans fin.⟩
 

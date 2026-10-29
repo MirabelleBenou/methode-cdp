@@ -1,4 +1,4 @@
-# PL METHOD PACKAGE · v11
+# PL METHOD PACKAGE · v12
 ### 29 October 2026 · to start a new project under the PL method
 
 *This package reproduces a way of working proven batch after batch: a **project lead** (PL, Opus) who decides
@@ -29,8 +29,9 @@ with you, writes the briefs, launches the dev and accepts; a **dev** (Sonnet by 
 | `templates/workstreams.yaml` | the single source of the workstreams (upcoming, debts, delivered) | living-docs repository, mirror in the project |
 | `templates/context.py` | measures the context of the PL session: warn at 600,000 tokens, hand over at 700,000 | `pl_tools/` in the living-docs repository |
 | `templates/make_board.py` | builds `workstreams.html`, the readable page of the workstreams, at every write of the yaml | living-docs repository, mirror in the project |
-| `templates/check_living_docs.py` | checks the shared living docs (decision numbers, workstreams, reserved versions, workstreams in flight, board, log) when several PLs write to them; read-only | living-docs repository, run by the coordinator and the arbiter |
-| `templates/ARBITER.md` | **optional, mode C** — the living-docs arbiter: a fresh session started every morning by a scheduled task, which checks the shared living docs and reports without correcting; its procedure, its log, the task's configuration (time, prompt, notifications), the trial | `Method/ARBITER.md` in the living-docs repository, read by the scheduled task |
+| `templates/check_living_docs.py` | checks the shared living docs (decision numbers, workstreams, reserved versions, workstreams in flight, board, log) when several PLs write to them; read-only; with `--archives <folder>`, checks 3 (identifiers) and 7 (log) also read the workstream archives | living-docs repository, run by the coordinator and the arbiter |
+| `templates/archive_workstreams.py` | archives the accepted workstreams: dates `accepted-on:` on every entry that becomes accepted, moves out to `Archives/WORKSTREAMS_<YYYY-MM>.yaml` those accepted for 15 days (lossless, idempotent, `--dry-run`); `search` finds a workstream, living or archived | living-docs repository, run by the arbiter at every run, otherwise by the PL or the coordinator at their close-out |
+| `templates/ARBITER.md` | **optional, mode C** — the living-docs arbiter: a fresh session started every morning by a scheduled task, which checks the shared living docs, reports without correcting **and archives** the accepted workstreams; its procedure, its log, the task's configuration (time, prompt, notifications), the trial | `Method/ARBITER.md` in the living-docs repository, read by the scheduled task |
 | `templates/LOCAL_RUNNER.md` | the local Claude Code runner on the PC, driven by files (`sync\`) | used by the PL and the runner |
 | `templates/SERVER_RUNNER.md` | **optional** — the server runner: a deterministic program on the production server, driven by an orders repository; the PL deploys on your “go” (step-by-step guide). **No production server: skip it** | used by the PL, and by you at installation |
 | `templates/server-runner/` | **optional** — its reference implementation (Python, systemd, installer, tests), in French, with example values | the project's code repository, then the server |
@@ -111,12 +112,14 @@ checkpoint, a line to the domain table, and the coordinator.
 
 **The arbiter: when it matters.** A fresh session, started every morning by a scheduled task, that checks the shared
 living docs (`check_living_docs.py`, the batons), files one `for:` workstream per new gap, keeps a dated log and
-summarizes — **it reports, it corrects nothing**. **Useless in A**: a single PL writes, and sees what they write.
+summarizes — **it reports, it corrects nothing**; its only write, mechanical: **it archives** the workstreams accepted
+for 15 days (`archive_workstreams.py`, after its findings). **Useless in A**: a single PL writes, and sees what they write.
 **Optional in B**: useful if the shared living docs grow. **Recommended in C**, as soon as several PLs write the same
 living docs on the same day: duplicate decision numbers, workstreams in flight without `pl:`, a board out of step,
 forgotten sessions that keep a baton — what nobody sees otherwise, since each PL only reads their own domain. The
 coordinator sets it up and judges it with you after a one-week trial; procedure, task prompt and notifications:
-`templates/ARBITER.md`.
+`templates/ARBITER.md`. **Who archives** the accepted workstreams: the arbiter, if there is one; without it (modes A and
+B), the PL or the coordinator runs `archive_workstreams.py` at their close-out.
 
 **How the PLs talk to each other**:
 
@@ -172,6 +175,7 @@ the PL deploys, you validate on screen; handing over the deliverable only serves
 | Decision log | living-docs repository | yes | PL | at every closed batch |
 | Plan + version log | living-docs repository | yes | PL | at every batch that takes a version |
 | `workstreams.yaml` and `workstreams.html` | living-docs repository | yes, and the page as an artifact | PL | at every write of the yaml |
+| `Archives/WORKSTREAMS_<YYYY-MM>.yaml` | living-docs repository | yes | the archiving (`archive_workstreams.py`) | at every arbiter run, otherwise at the PL's close-out |
 | Acceptance expected results | living-docs repository `expected/<version>/` | no | PL | at the brief |
 | The PL's throwaway scripts | living-docs repository `pl_tools/` | no | PL | as needed |
 | Code, test bench, `CHANGELOG` | code repository | no | dev | within a batch |
@@ -249,3 +253,8 @@ private repository, the PL deploys on the owner's go, the hand-over becomes the 
 implementation; the server question at bootstrap; three ways to organize (§2a).
 v11, 29 October 2026 — the living-docs arbiter: role, when it matters, configuration of the scheduled task, log,
 notifications; the fixed line names all the domain's repositories; a baton is judged by its silence.
+v12, 29 October 2026 — the archiving of accepted workstreams: `archive_workstreams.py` dates every entry that becomes
+accepted and moves out to `Archives/WORKSTREAMS_<YYYY-MM>.yaml` those accepted for 15 days, `search` finds them again,
+`check_living_docs.py --archives` checks the identifiers and the log against the archives; the arbiter archives too
+(otherwise the PL or the coordinator, at their close-out); an order is never written onto a file that exists (server
+runner).

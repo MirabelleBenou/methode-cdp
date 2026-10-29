@@ -10,6 +10,9 @@
 #
 #   statut     : a-venir | a-cadrer | en-vol | dette | recette
 #                (recette = livré et validé ; on garde l'entrée, pour l'historique)
+#   recette-le : la date d'entrée en recette, posée par archiver_chantiers.py (jamais écrite ni corrigée à la main) ;
+#                15 jours après, l'entrée sort vers Archives/CHANTIERS_<AAAA-MM>.yaml — la retrouver :
+#                python3 -B archiver_chantiers.py chercher <id ou mot> --chantiers chantiers.yaml --archives Archives
 #   module     : <module-1> | <module-2> | socle | outillage | doc | exploitation
 #   categorie  : ecran | donnees | moteur | outillage | doc | exploitation
 #   priorite   : haut | moyen | faible

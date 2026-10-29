@@ -11,7 +11,7 @@ reconstitue depuis les dépôts.*
 
 | dépôt | visibilité | porte | qui y écrit |
 |---|---|---|---|
-| **`<owner>/<Projet>`** — les vivants | privé | `README.md` ; `Methode/METHODE_<P>.md` ; `<Dossier>/` : checkpoint, registre, plan, `chantiers.yaml`, statuts des sous-projets ; `<Dossier>/attendus/<version>/` ; `<Dossier>/outils_cdp/` ; `<Dossier>/Archives/` | **les sessions de CdP seules** |
+| **`<owner>/<Projet>`** — les vivants | privé | `README.md` ; `Methode/METHODE_<P>.md` ; `<Dossier>/` : checkpoint, registre, plan, `chantiers.yaml`, statuts des sous-projets ; `<Dossier>/attendus/<version>/` ; `<Dossier>/outils_cdp/` ; `<Dossier>/Archives/` (figées : l'archivage des chantiers en recette y écrit `CHANTIERS_<AAAA-MM>.yaml`, le CdP le reste) | **les sessions de CdP seules** |
 | **`<owner>/<Projet>-App`** — le code | privé (public : §6 B) | le code à la racine ; `banc/` ; `PROMPT_DEV_<P>.md` ; `lots/<version>/` ; `.gitattributes`, `.gitignore`, `CHANGELOG.md` | le CdP sur `main` (fusion, cadrage) ; le dev sur la branche de son lot |
 
 **Le dépôt de code est public** (GitHub Pages, licence ouverte) : **le prompt du dev et `lots/` n'y vont jamais** — ils

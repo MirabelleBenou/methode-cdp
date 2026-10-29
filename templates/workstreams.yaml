@@ -10,6 +10,9 @@
 #
 #   status     : upcoming | to-brief | in-flight | debt | accepted
 #                (accepted = delivered and validated; the entry is kept, for the history)
+#   accepted-on: the date it became accepted, set by archive_workstreams.py (never written or corrected by hand);
+#                15 days later, the entry moves out to Archives/WORKSTREAMS_<YYYY-MM>.yaml — to find it again:
+#                python3 -B archive_workstreams.py search <id or word> --workstreams workstreams.yaml --archives Archives
 #   module     : <module-1> | <module-2> | core | tooling | doc | operations
 #   category   : screen | data | engine | tooling | doc | operations
 #   priority   : high | medium | low

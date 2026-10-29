@@ -278,7 +278,13 @@ path**; an agent on a production server, if there is one, is bounded (no secrets
    v<X.Y>”) and quotes it in the order's `go` field. **Static files with instant rollback** (a self-contained HTML
    page): direct deployment, no go.
 2. They push `ordres/<id>.json`; the identifier `YYYY-MM-DD-NN` is **the next one in the repository, taken by the push**
-   (push refused → `pull`, next number).
+   (push refused → `pull`, next number). **An order is never written onto a file that exists**: the identifier is read
+   **after** `git pull`, never from a list read before; the write refuses to overwrite (`set -o noclobber` before
+   `cat >`, or an `[ -e ordres/<id>.json ]` test that stops everything); before the push,
+   `git diff --cached --name-status` shows only **one line `A ordres/<id>.json`** — an `M` stops everything. An order
+   is never rewritten: to correct, a new order. *(A lesson learned the hard way: a session took an identifier from a list read before its
+   `pull` and overwrote, by `cat >`, the already-played order of another session; the push refused nothing — a
+   modification, not an addition.)*
 3. They read `resultats/<id>.md` with a **bounded wait** (one to two minutes normally), never an endless loop.
 4. They tell the owner the version served, the health, the backup taken, the counts before and after; the owner
    validates on screen; **then** the merge into `main` (§2, step 7).
@@ -330,9 +336,25 @@ Two batches accepted the same day can be closed together.
 - live in the living-docs repository **under stable names**; the version is in the header, the history in git;
 - are modified by targeted replacements, or replaced in full while removing what is obsolete;
 - **stay short**: when one grows long again, what no longer lives goes into a **new archive**
-  (`Archives/<NAME>_ARCHIVE_<range>.md`), frozen, never rewritten;
+  (`Archives/<NAME>_ARCHIVE_<range>.md`), frozen, never rewritten; for `workstreams.yaml`, the archiving is automatic
+  (below) and `search` finds an entry;
 - **the project carries a mirror of them**, copied at each close-out by `project_write` with `local_path` from the
   clone; **never from the text served by the project tool**.
+
+**Accepted workstreams — the archiving**:
+- at close-out, the entry goes to `status: accepted`, then **is no longer touched by hand**: the line
+  `accepted-on: <date>` is set by `archive_workstreams.py` (it is neither written nor corrected by hand), and removed by
+  it from a reopened entry;
+- an entry accepted for 15 days moves out to `<Folder>/Archives/WORKSTREAMS_<YYYY-MM>.yaml` (the month of the run;
+  things are only appended to it, frozen at the end of the month); the script checks that nothing is lost before
+  writing;
+- **who archives**: the arbiter, if there is one, at every run (`Method/ARBITER.md` §1.4a); **without an arbiter**, the
+  PL or the coordinator runs, at their close-out,
+  `python3 -B <Folder>/archive_workstreams.py archive --workstreams <Folder>/workstreams.yaml --archives <Folder>/Archives`,
+  then regenerates the board and commits;
+- **an archived id is not reused**;
+- the checker is run with `--archives <Folder>/Archives`: an id both living and archived is a gap, and the last version
+  of the log is also looked for in the archives.
 
 **The workstreams board** — the readable page of `workstreams.yaml`:
 - **Every time the PL writes `workstreams.yaml`** — at close-out, but also mid-exchange (a workstream added, a
@@ -408,6 +430,9 @@ handover prompt** (the handover, below). **Images** go through the conversation,
 - **Running a script creates caches** (`.pyc`…) that skew the counts: measure first, test on a copy.
 - **`cut -c` cuts UTF-8**: documents are read with a real language.
 - **The project files are not on disk**: the project tool returns them as text.
+- **A workstream not found in `workstreams.yaml` may be archived**: look for it with
+  `python3 -B <Folder>/archive_workstreams.py search <id or word> --workstreams <Folder>/workstreams.yaml --archives <Folder>/Archives`
+  (`--everywhere`: in all the values), never by recreating the entry.
 - ⟨With a server runner: attach the orders repository with write access at the start of the session; re-read
   `resultats/` with a bounded wait, never an endless loop.⟩
 
