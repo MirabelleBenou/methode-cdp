@@ -1,5 +1,5 @@
-# PACKAGE MÉTHODE CdP · v10
-### 28 octobre 2026 · pour démarrer un nouveau projet sous la méthode CdP
+# PACKAGE MÉTHODE CdP · v11
+### 29 octobre 2026 · pour démarrer un nouveau projet sous la méthode CdP
 
 *Ce package reproduit une façon de travailler éprouvée lot après lot : un **chef de projet** (CdP, Opus) qui décide
 avec toi, cadre, lance le dev et réceptionne ; un **dev** (Sonnet par défaut) qui construit un lot à la fois ; **toi**,
@@ -30,6 +30,7 @@ qui décides et valides à l'écran. Tout circule par GitHub ; tu ne téléverse
 | `modeles/contexte.py` | mesure le contexte de la session du CdP : prévenir à 600 000 jetons, passer la main à 700 000 | `outils_cdp/` du dépôt des vivants |
 | `modeles/generer_tableau.py` | fabrique `chantiers.html`, la page lisible des chantiers, à chaque écriture du yaml | dépôt des vivants, miroir au projet |
 | `modeles/verifier_vivants.py` | contrôle les vivants partagés (numéros de décision, chantiers, versions réservées, chantiers en vol, tableau, journal) quand plusieurs CdP y écrivent ; lecture seule | dépôt des vivants, lancé par le coordinateur et l'arbitre |
+| `modeles/ARBITRE.md` | **facultatif, mode C** — l'arbitre des vivants : une session neuve lancée chaque matin par une tâche planifiée, qui contrôle les vivants partagés et signale sans corriger ; sa procédure, son journal, la configuration de la tâche (heure, prompt, notifications), l'essai | `Methode/ARBITRE.md` du dépôt des vivants, lu par la tâche planifiée |
 | `modeles/EXECUTANT_LOCAL.md` | l'exécutant Claude Code local sur le PC, piloté par fichiers (`sync\`) | sert au CdP et à l'exécutant |
 | `modeles/EXECUTANT_SERVEUR.md` | **facultatif** — l'exécutant serveur : un programme déterministe sur le serveur de production, piloté par un dépôt d'ordres ; le CdP déploie sur ton « go » (guide pas à pas). **Pas de serveur de production : sautez-le** | sert au CdP et à toi, à l'installation |
 | `../templates/server-runner/` (à la racine du dépôt public, non traduit) | **facultatif** — son implémentation de référence (Python, systemd, installateur, tests), en français, valeurs d'exemple | dépôt de code du projet, puis le serveur |
@@ -107,6 +108,15 @@ domaines, donne les lignes fixes, tient la méthode, le prompt du dev, le packag
 que deux CdP partagent un livrable, une ressource ou des fichiers, ou qu'un changement transverse apparaît. Rien ne se
 migre : on ajoute un checkpoint, une ligne à la table des domaines, et le coordinateur.
 
+**L'arbitre : quand il compte.** Une session neuve, lancée chaque matin par une tâche planifiée, qui contrôle les
+vivants partagés (`verifier_vivants.py`, les témoins), dépose un chantier `pour:` par écart nouveau, tient un journal
+daté et résume — **elle signale, elle ne corrige rien**. **Inutile en A** : un seul CdP écrit, il voit ce qu'il écrit.
+**Facultatif en B** : utile si les vivants partagés grossissent. **Recommandé en C**, dès que plusieurs CdP écrivent
+les mêmes vivants le même jour : des numéros de décision en double, des chantiers en vol sans `cdp:`, un tableau
+désaligné, des sessions oubliées qui gardent un témoin — ce que personne ne voit autrement, puisque chaque CdP ne lit
+que son domaine. Le coordinateur l'installe et le juge avec toi après une semaine d'essai ; procédure, prompt de la
+tâche et notifications : `modeles/ARBITRE.md`.
+
 **Comment les CdP se parlent** :
 
 | canal | ce qu'il porte | qui écrit | qui lit |
@@ -115,6 +125,7 @@ migre : on ajoute un checkpoint, une ligne à la table des domaines, et le coord
 | entrée `en-vol` (`cdp:`, `livrable:`, `ressource:`, `attend:`) | qui tient quel livrable ou quelle ressource | le CdP qui prend, par un push | tous, avant de cadrer |
 | registre des décisions | les décisions, numéro réservé par un push | le CdP qui clôt | tous |
 | témoin du checkpoint | qui est en activité sur un domaine | la session qui reprend, par un push | le coordinateur, toi, l'arbitre |
+| journal de l'arbitre (`Methode/ARBITRE_JOURNAL.md`) | une ligne datée par passage, même sans écart : la preuve qu'il a tourné | l'arbitre, en ajout seul | le coordinateur, toi |
 | message prêt à coller | un changement de méthode qui touche un CdP en activité | le coordinateur | toi, qui le colles au CdP ; il vérifie ensuite son chantier `pour:` |
 | **jamais** | un message que tu relaies de mémoire, ni un texte de reprise qui voyage hors du dépôt | — | — |
 
@@ -233,3 +244,5 @@ un lot sans release ne porte pas de livrable ; la synthèse de fin de discussion
 v10, le 28 octobre 2026 — l'exécutant serveur : un programme déterministe sur le serveur de production tire ses
 ordres d'un dépôt privé, le CdP déploie sur le go du porteur, la remise devient le repli ; guide et implémentation
 de référence facultatifs ; la question du serveur à l'amorçage ; trois façons de s'organiser (§2 bis).
+v11, le 29 octobre 2026 — l'arbitre des vivants : rôle, quand il compte, configuration de la tâche planifiée,
+journal, notifications ; la ligne fixe nomme tous les dépôts du domaine ; le témoin se juge à son silence.

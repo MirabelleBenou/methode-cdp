@@ -124,6 +124,7 @@ sert que tant que rien n'a été remis ni déployé.
 | **Suppression de branche** | refus 403 | tu supprimes les branches fusionnées ; le checkpoint les liste |
 | **Création de dépôt** | impossible depuis une session | tu crées le dépôt vide ; la session le rattache |
 | **Un dépôt par session** | chaque session rattache ses dépôts (`add_repo`) | un clone à la fois, délai de commande généreux |
+| **Rattachement non demandé** | le garde-fou d'une session refuse un dépôt que tu n'as pas demandé en toutes lettres | **la ligne fixe d'un domaine nomme tous ses dépôts**, en accès push : la ligne que tu colles vaut la demande ; un dépôt de plus en route, la session te le demande en une ligne prête (« dis-moi « rattache X » ») |
 | **Session de dev ouverte à la main** | elle peut échouer à rattacher un dépôt privé | le sous-agent du CdP hérite des dépôts de sa session |
 | **Clone d'une seule branche** | `git fetch origin main` ne crée pas `origin/main` | écrire `git fetch origin main:refs/remotes/origin/main` |
 | **Branche de lot qui suit `origin/main`** | le hook de fin de tour croit à des commits non poussés | fixer `branch.<lot>.merge` et ajouter la branche au `remote.origin.fetch` |

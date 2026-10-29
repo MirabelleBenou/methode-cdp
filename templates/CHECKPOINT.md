@@ -3,8 +3,11 @@
 **Session active: none — free since <date, time>.** *(or: `<short id>`, since <time>)*
 
 > **Resume** — the owner pastes into a new conversation of the project, with Opus: “You are Opus-PL-<Domain>.
-> Resume: attach `<owner>/<Project>` (push access), git pull, read `<Folder>/CHECKPOINT_<DOMAIN>.md` in full
+> Resume: attach with push access the repositories <owner> <Project>, <Project>-App⟨, <Project>-Batches, the domain's
+> other repositories⟩ (one clone at a time), git pull in <Project>, read `<Folder>/CHECKPOINT_<DOMAIN>.md` in full
 > (§0 first) and follow it.” First move: set the baton above by a push.
+> *The line names **all the domain's repositories**: a session's safeguard refuses an attachment the owner has not
+> asked for in so many words, and the pasted line stands for that request.*
 ### <date, time> · <PL session> · entry point of the next session · replaces the checkpoint of <date>
 
 > *Source: private repository `<owner>/<Project>`, `<Folder>/CHECKPOINT_<P>.md`. The claude.ai project holds a mirror of

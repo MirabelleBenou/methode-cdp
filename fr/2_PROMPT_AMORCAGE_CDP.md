@@ -44,5 +44,7 @@ Dis-moi à la fin ce que tu as écrit : dépôt, commit, chemin.
 ## C · Reprendre un projet déjà sous la méthode (session de CdP suivante)
 
 *Pas besoin de ce fichier : colle la ligne fixe du domaine, que donne le CdP à chaque passation et que porte le README
-des vivants — « Tu es Opus-CdP-<Domaine>. Reprends : rattache `<owner>/<Projet>` (accès push), fais git pull, lis
-`<checkpoint du domaine>` en entier (§0 d'abord) et suis-le. » Rien à téléverser.*
+des vivants — « Tu es Opus-CdP-<Domaine>. Reprends : rattache en accès push les dépôts <owner> <dépôts du domaine> (un
+clone à la fois), fais git pull dans <dépôt des vivants>, lis `<checkpoint du domaine>` en entier (§0 d'abord) et
+suis-le. » Rien à téléverser. La ligne nomme tous les dépôts du domaine : le garde-fou d'une session refuse un
+rattachement que tu n'as pas demandé en toutes lettres.*

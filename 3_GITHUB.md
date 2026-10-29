@@ -126,6 +126,7 @@ serves while nothing has been handed over or deployed.
 | **Branch deletion** | 403 refusal | you delete the merged branches; the checkpoint lists them |
 | **Repository creation** | impossible from a session | you create the empty repository; the session attaches it |
 | **One repository per session** | each session attaches its repositories (`add_repo`) | one clone at a time, generous command timeout |
+| **Attachment not asked for** | a session's safeguard refuses a repository you have not asked for in so many words | **a domain's fixed line names all its repositories**, with push access: the line you paste stands for the request; one more repository along the way, the session asks you for it in a ready line (“tell me “attach X””) |
 | **Dev session opened by hand** | it may fail to attach a private repository | the PL's sub-agent inherits the repositories of their session |
 | **Single-branch clone** | `git fetch origin main` does not create `origin/main` | write `git fetch origin main:refs/remotes/origin/main` |
 | **Batch branch tracking `origin/main`** | the end-of-turn hook believes there are unpushed commits | set `branch.<batch>.merge` and add the branch to `remote.origin.fetch` |

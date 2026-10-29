@@ -14,10 +14,19 @@ code, `<owner>/<Projet>-App`.
 | `<Dossier>/attendus/<version>/` | les attendus de réception, calculés au cadrage — jamais lus par le dev |
 | `<Dossier>/outils_cdp/` | les scripts jetables du CdP (sondes, mesures) |
 | `<Dossier>/Archives/` | les archives figées des vivants devenus longs |
+| `Methode/ARBITRE.md`, `Methode/ARBITRE_JOURNAL.md` | ⟨facultatif, plusieurs CdP⟩ la procédure de l'arbitre des vivants (tâche planifiée quotidienne, lecture et signalement seuls) et son journal, une ligne par passage |
 
 **Règles** : noms stables (la version est dans l'en-tête, l'historique dans git) ; `git pull` avant d'écrire ; un commit
 « Lot v<X.Y> clos » à chaque clôture ; le projet claude.ai en porte un miroir, recopié par le CdP depuis son clone.
 
 **Jamais ici** : secrets, données de production, images.
 
-**Reprendre un domaine** : ⟨la table des CdP, de leur checkpoint et de leur ligne fixe de reprise (méthode §1 bis)⟩.
+**Reprendre un domaine** : le porteur colle, dans une conversation neuve du projet avec Opus, la ligne fixe du domaine —
+rien à téléverser. **Elle nomme tous les dépôts du domaine** : le garde-fou d'une session refuse un rattachement que
+Le porteur n'a pas demandé en toutes lettres ; la ligne collée vaut cette demande. Un dépôt de plus en route : la session
+le demande au porteur en une ligne prête (« dis-moi « rattache X » »).
+
+| CdP | checkpoint | ligne fixe |
+|---|---|---|
+| ⟨Opus-CdP-<Domaine>⟩ | `<Dossier>/CHECKPOINT_<DOMAINE>.md` | `Tu es Opus-CdP-<Domaine>. Reprends : rattache en accès push les dépôts <owner> <Projet>, <Projet>-App⟨, <Projet>-Lots…⟩ (un clone à la fois), fais git pull dans <Projet>, lis <Dossier>/CHECKPOINT_<DOMAINE>.md en entier (§0 d'abord) et suis-le.` |
+| ⟨une ligne par CdP, et le coordinateur (méthode §1 bis)⟩ | | |

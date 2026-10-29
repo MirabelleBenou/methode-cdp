@@ -82,7 +82,8 @@ existant au témoin libre, ou ouvre le domaine (ligne ici et au README, checkpoi
 donne le titre et la ligne de chaque CdP — ou lance la session par une tâche planifiée. Un produit à plusieurs CdP de
 modules garde une **fiche produit** (le commun : rituel, banc, circuit, pièges ; jamais l'état), tenue par le
 coordinateur. Le coordinateur ne cadre aucun lot de produit ; **il cadre et lance les lots d'outillage de la méthode et
-des vivants** (`verifier_vivants.py`, `generer_tableau.py`, l'arbitre).
+des vivants** (`verifier_vivants.py`, `generer_tableau.py`, l'arbitre — `Methode/ARBITRE.md`, tiré de
+`modeles/ARBITRE.md` du package : rôle, procédure, tâche planifiée).
 
 **Les numéros de décision** : avant d'écrire une entrée, pousser seule, sur `main`, la ligne
 `| **R<n>** | *réservé — <CdP>, <date>* | | |` après la dernière entrée. Push refusé → `git pull`, numéro suivant ;
@@ -112,7 +113,9 @@ générique est un chantier `module: methode`, `pour:` la session de méthode.
 **Le témoin** : chaque checkpoint porte en tête `Session en activité : <identifiant court>, depuis <heure>` (ou
 « aucune — libre depuis <heure> »). La session qui reprend le pose par un push, c'est son premier geste ; une session qui
 trouve après un `pull` un autre identifiant que le sien n'écrit plus aux vivants et le dit au porteur ; une session qui
-attend un geste du porteur garde le témoin.
+attend un geste du porteur garde le témoin. **Un témoin se juge à son silence, pas à son âge** : une session peut vivre
+plusieurs jours en attendant le porteur ; c'est l'absence de tout commit de cette session depuis plus de 24 heures qui
+signale une session oubliée (le contrôle de l'arbitre, s'il existe).
 
 **Le titre de la session** : `<nom du CdP> · <chantier en cours>`, changé à chaque chantier ; `-2` pour un second CdP sur
 le même domaine, avec son propre checkpoint. La session se renomme si elle le peut, sinon elle donne le titre au porteur
@@ -369,12 +372,14 @@ dépôt. **Plus de prompt de reprise** (la passation, ci-dessous). **Les images*
   Il ne lance plus de lot neuf ; il finit celui en cours.
 - **À 700 000 jetons au plus tard**, ou à une fin de file naturelle avant, **il passe la main**, sans attendre qu'on le
   lui demande, d'un bloc, en une réponse :
-  1. le §0 du checkpoint du domaine réécrit sur l'état réel (où on en est, ce qui bloque, ce qui attend le porteur) ;
+  1. le §0 du checkpoint du domaine réécrit sur l'état réel (où on en est, ce qui bloque, ce qui attend le porteur), et la
+     ligne fixe en tête vérifiée : elle nomme **tous les dépôts du domaine** (§7) ;
   2. le témoin remis à « aucune — libre depuis <heure> » ;
   3. push, puis le miroir au projet ;
   4. **la ligne fixe du domaine**, sous « **Opus · conversation neuve dans le projet** » : « Tu es <CdP>. Reprends :
-     rattache `<owner>/<Projet>` (accès push), fais git pull, lis `<checkpoint du domaine>` en entier (§0 d'abord) et
-     suis-le. »
+     rattache en accès push les dépôts <owner> <dépôts du domaine> (un clone à la fois), fais git pull dans <dépôt des
+     vivants>, lis `<checkpoint du domaine>` en entier (§0 d'abord) et suis-le. » — la ligne exacte de chaque domaine
+     est au README des vivants et en tête de son checkpoint.
 - **Rien ne voyage hors du dépôt** : pas de prompt de reprise, ni « prochain numéro », ni version à venir dans un texte
   remis au porteur — un texte qui recopie l'état vieillit pendant que les autres CdP avancent.
 - **La reprise peut être lancée par la session elle-même** : une tâche planifiée unique dont le prompt est la ligne
@@ -400,7 +405,10 @@ dépôt. **Plus de prompt de reprise** (la passation, ci-dessous). **Les images*
   une attente bornée, jamais une boucle sans fin.⟩
 
 **Git et GitHub** : voir `3_GITHUB.md` §5 du package — tags, releases et suppressions de branche par le porteur ; clone
-d'une seule branche ; lignes d'attribution ; aucun secret.
+d'une seule branche ; lignes d'attribution ; aucun secret. **La ligne fixe d'un domaine nomme tous ses dépôts**, en
+accès push : le garde-fou d'une session refuse un rattachement que le porteur n'a pas demandé en toutes lettres, et la
+ligne qu'il colle vaut cette demande. Un dépôt de plus en route : la session le demande au porteur en une ligne prête
+(« dis-moi « rattache X » »).
 
 ⟨**Propres au projet** : à compléter lot après lot — chaque piège payé une fois s'écrit ici.⟩
 

@@ -82,7 +82,8 @@ existing domain with a free baton, or opens the domain (line here and in the REA
 attached), then gives each PL's title and line — or starts the session through a scheduled task. A product with several
 module PLs keeps a **product sheet** (what is common: ritual, bench, circuit, pitfalls; never the state), held by the
 coordinator. The coordinator briefs no product batch; **it briefs and launches the tooling batches of the method and of
-the living docs** (`check_living_docs.py`, `make_board.py`, the arbiter).
+the living docs** (`check_living_docs.py`, `make_board.py`, the arbiter — `Method/ARBITER.md`, drawn from
+`templates/ARBITER.md` of the package: role, procedure, scheduled task).
 
 **Decision numbers**: before writing an entry, push alone, on `main`, the line
 `| **D<n>** | *reserved — <PL>, <date>* | | |` after the last entry. Push refused → `git pull`, next number;
@@ -112,7 +113,10 @@ workstream `module: method`, `for:` the method session.
 
 **The baton**: each checkpoint carries at the top `Session active: <short id>, since <time>` (or “none — free since
 <time>”). The resuming session sets it by a push, its first move; a session that finds another id than its own after a
-`pull` stops writing to the living docs and tells the owner; a session waiting for the owner keeps the baton.
+`pull` stops writing to the living docs and tells the owner; a session waiting for the owner keeps the baton. **A baton
+is judged by its silence, not by its age**: a session can live several days waiting for the owner; it is the absence
+of any commit from that session for more than 24 hours that signals a forgotten session (the arbiter's check, if there
+is one).
 
 **The session title**: `<PL name> · <current workstream>`, changed at each workstream; `-2` for a second PL on the same
 domain, with its own checkpoint. The session renames itself if it can, otherwise it gives the title to the owner at the
@@ -375,11 +379,14 @@ handover prompt** (the handover, below). **Images** go through the conversation,
   They no longer launch a new batch; they finish the one in progress.
 - **At 700,000 tokens at the latest**, or at a natural end of a queue before that, **they hand over**, without waiting
   to be asked, in one go, in a single answer:
-  1. §0 of the domain's checkpoint rewritten on the real state (where things stand, what blocks, what awaits the owner);
+  1. §0 of the domain's checkpoint rewritten on the real state (where things stand, what blocks, what awaits the owner),
+     and the fixed line at the top checked: it names **all the domain's repositories** (§7);
   2. the baton set back to “none — free since <time>”;
   3. push, then the mirror in the project;
   4. **the domain's fixed line**, under “**Opus · new conversation in the project**”: “You are <PL>. Resume: attach
-     `<owner>/<Project>` (push access), git pull, read `<domain checkpoint>` in full (§0 first) and follow it.”
+     with push access the repositories <owner> <domain repositories> (one clone at a time), git pull in <living-docs
+     repository>, read `<domain checkpoint>` in full (§0 first) and follow it.” — each domain's exact line is in the
+     living-docs README and at the top of its checkpoint.
 - **Nothing travels outside the repository**: no handover prompt, no “next number”, no upcoming version in a text handed
   to the owner — a text that copies the state ages while the other PLs move on.
 - **The resume can be started by the session itself**: a one-off scheduled task whose prompt is the fixed line; the
@@ -405,7 +412,10 @@ handover prompt** (the handover, below). **Images** go through the conversation,
   `resultats/` with a bounded wait, never an endless loop.⟩
 
 **Git and GitHub**: see `3_GITHUB.md` §5 of the package — tags, releases and branch deletions by the owner; clone of
-a single branch; attribution lines; no secrets.
+a single branch; attribution lines; no secrets. **A domain's fixed line names all its repositories**, with push
+access: a session's safeguard refuses an attachment the owner has not asked for in so many words, and the line they
+paste stands for that request. One more repository along the way: the session asks the owner for it in a ready line
+(“tell me “attach X””).
 
 ⟨**Specific to the project**: to be completed batch after batch — each trap paid for once is written here.⟩
 

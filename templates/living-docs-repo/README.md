@@ -14,10 +14,19 @@ repository, `<owner>/<Project>-App`.
 | `<Folder>/expected/<version>/` | the acceptance expected results, computed at the brief — never read by the dev |
 | `<Folder>/pl_tools/` | the PL's throwaway scripts (probes, measurements) |
 | `<Folder>/Archives/` | the frozen archives of living docs that grew long |
+| `Method/ARBITER.md`, `Method/ARBITER_LOG.md` | ⟨optional, several PLs⟩ the procedure of the living-docs arbiter (daily scheduled task, read and report only) and its log, one line per run |
 
 **Rules**: stable names (the version is in the header, the history in git); `git pull` before writing; a commit
 “Batch v<X.Y> closed” at each close-out; the claude.ai project holds a mirror of it, copied over by the PL from their clone.
 
 **Never here**: secrets, production data, images.
 
-**Resuming a domain**: ⟨the table of PLs, their checkpoint and their fixed resume line (method §1a)⟩.
+**Resuming a domain**: the owner pastes, in a new conversation of the project with Opus, the domain's fixed line —
+nothing to upload. **It names all the domain's repositories**: a session's safeguard refuses an attachment the owner
+has not asked for in so many words; the pasted line stands for that request. One more repository along the way: the
+session asks the owner for it in a ready line (“tell me “attach X””).
+
+| PL | checkpoint | fixed line |
+|---|---|---|
+| ⟨Opus-PL-<Domain>⟩ | `<Folder>/CHECKPOINT_<DOMAIN>.md` | `You are Opus-PL-<Domain>. Resume: attach with push access the repositories <owner> <Project>, <Project>-App⟨, <Project>-Batches…⟩ (one clone at a time), git pull in <Project>, read <Folder>/CHECKPOINT_<DOMAIN>.md in full (§0 first) and follow it.` |
+| ⟨one line per PL, and the coordinator (method §1a)⟩ | | |

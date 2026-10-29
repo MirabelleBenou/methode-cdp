@@ -3,8 +3,11 @@
 **Session en activité : aucune — libre depuis <date, heure>.** *(ou : `<identifiant court>`, depuis <heure>)*
 
 > **Reprise** — le porteur colle dans une conversation neuve du projet, avec Opus : « Tu es Opus-CdP-<Domaine>.
-> Reprends : rattache `<owner>/<Projet>` (accès push), fais git pull, lis `<Dossier>/CHECKPOINT_<DOMAINE>.md` en entier
+> Reprends : rattache en accès push les dépôts <owner> <Projet>, <Projet>-App⟨, <Projet>-Lots, les autres dépôts du
+> domaine⟩ (un clone à la fois), fais git pull dans <Projet>, lis `<Dossier>/CHECKPOINT_<DOMAINE>.md` en entier
 > (§0 d'abord) et suis-le. » Premier geste : poser le témoin ci-dessus par un push.
+> *La ligne nomme **tous les dépôts du domaine** : le garde-fou d'une session refuse un rattachement que le porteur n'a pas
+> demandé en toutes lettres, et la ligne collée vaut cette demande.*
 ### <date, heure> · <session de CdP> · point d'entrée de la session suivante · remplace le checkpoint du <date>
 
 > *Source : dépôt privé `<owner>/<Projet>`, `<Dossier>/CHECKPOINT_<P>.md`. Le projet claude.ai en porte un miroir sous

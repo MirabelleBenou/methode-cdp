@@ -1,5 +1,5 @@
-# PL METHOD PACKAGE · v10
-### 28 October 2026 · to start a new project under the PL method
+# PL METHOD PACKAGE · v11
+### 29 October 2026 · to start a new project under the PL method
 
 *This package reproduces a way of working proven batch after batch: a **project lead** (PL, Opus) who decides
 with you, writes the briefs, launches the dev and accepts; a **dev** (Sonnet by default) who builds one batch at a time;
@@ -30,6 +30,7 @@ with you, writes the briefs, launches the dev and accepts; a **dev** (Sonnet by 
 | `templates/context.py` | measures the context of the PL session: warn at 600,000 tokens, hand over at 700,000 | `pl_tools/` in the living-docs repository |
 | `templates/make_board.py` | builds `workstreams.html`, the readable page of the workstreams, at every write of the yaml | living-docs repository, mirror in the project |
 | `templates/check_living_docs.py` | checks the shared living docs (decision numbers, workstreams, reserved versions, workstreams in flight, board, log) when several PLs write to them; read-only | living-docs repository, run by the coordinator and the arbiter |
+| `templates/ARBITER.md` | **optional, mode C** — the living-docs arbiter: a fresh session started every morning by a scheduled task, which checks the shared living docs and reports without correcting; its procedure, its log, the task's configuration (time, prompt, notifications), the trial | `Method/ARBITER.md` in the living-docs repository, read by the scheduled task |
 | `templates/LOCAL_RUNNER.md` | the local Claude Code runner on the PC, driven by files (`sync\`) | used by the PL and the runner |
 | `templates/SERVER_RUNNER.md` | **optional** — the server runner: a deterministic program on the production server, driven by an orders repository; the PL deploys on your “go” (step-by-step guide). **No production server: skip it** | used by the PL, and by you at installation |
 | `templates/server-runner/` | **optional** — its reference implementation (Python, systemd, installer, tests), in French, with example values | the project's code repository, then the server |
@@ -108,6 +109,15 @@ domains, gives the fixed lines, keeps the method, the dev prompt, the package, t
 as two PLs share a deliverable, a resource or files, or a cross-cutting change appears. Nothing is migrated: you add a
 checkpoint, a line to the domain table, and the coordinator.
 
+**The arbiter: when it matters.** A fresh session, started every morning by a scheduled task, that checks the shared
+living docs (`check_living_docs.py`, the batons), files one `for:` workstream per new gap, keeps a dated log and
+summarizes — **it reports, it corrects nothing**. **Useless in A**: a single PL writes, and sees what they write.
+**Optional in B**: useful if the shared living docs grow. **Recommended in C**, as soon as several PLs write the same
+living docs on the same day: duplicate decision numbers, workstreams in flight without `pl:`, a board out of step,
+forgotten sessions that keep a baton — what nobody sees otherwise, since each PL only reads their own domain. The
+coordinator sets it up and judges it with you after a one-week trial; procedure, task prompt and notifications:
+`templates/ARBITER.md`.
+
 **How the PLs talk to each other**:
 
 | channel | what it carries | who writes | who reads |
@@ -116,6 +126,7 @@ checkpoint, a line to the domain table, and the coordinator.
 | `in-flight` entry (`pl:`, `deliverable:`, `resource:`, `waits:`) | who holds which deliverable or which resource | the PL who takes it, by a push | everyone, before briefing |
 | decision log | the decisions, number reserved by a push | the PL who closes | everyone |
 | checkpoint baton | who is active on a domain | the session that resumes, by a push | the coordinator, you, the arbiter |
+| arbiter's log (`Method/ARBITER_LOG.md`) | one dated line per run, even without a gap: the proof it ran | the arbiter, append-only | the coordinator, you |
 | message ready to paste | a method change that affects an active PL | the coordinator | you, who paste it to the PL; it then checks its `for:` workstream |
 | **never** | a message you relay from memory, nor a resume text travelling outside the repository | — | — |
 
@@ -236,3 +247,5 @@ release carries no deliverable; the end-of-discussion summary; check 8 of `check
 v10, 28 October 2026 — the server runner: a deterministic program on the production server pulls its orders from a
 private repository, the PL deploys on the owner's go, the hand-over becomes the fallback; optional guide and reference
 implementation; the server question at bootstrap; three ways to organize (§2a).
+v11, 29 October 2026 — the living-docs arbiter: role, when it matters, configuration of the scheduled task, log,
+notifications; the fixed line names all the domain's repositories; a baton is judged by its silence.

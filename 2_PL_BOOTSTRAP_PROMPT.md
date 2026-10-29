@@ -45,5 +45,7 @@ Tell me at the end what you wrote: repository, commit, path.
 ## C · Resuming a project already under the method (next PL session)
 
 *No need for this file: paste the domain's fixed line, which the PL gives at every handover and the living-docs README
-holds — “You are Opus-PL-<Domain>. Resume: attach `<owner>/<Project>` (push access), git pull, read
-`<domain checkpoint>` in full (§0 first) and follow it.” Nothing to upload.*
+holds — “You are Opus-PL-<Domain>. Resume: attach with push access the repositories <owner> <domain repositories> (one
+clone at a time), git pull in <living-docs repository>, read `<domain checkpoint>` in full (§0 first) and follow it.”
+Nothing to upload. The line names all the domain's repositories: a session's safeguard refuses an attachment you have
+not asked for in so many words.*
