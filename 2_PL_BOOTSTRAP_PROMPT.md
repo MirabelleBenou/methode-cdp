@@ -52,3 +52,28 @@ holds — “You are Opus-PL-<Domain>. Resume: attach with push access the repos
 clone at a time), git pull in <living-docs repository>, read `<domain checkpoint>` in full (§0 first) and follow it.”
 Nothing to upload. The line names all the domain's repositories: a session's safeguard refuses an attachment you have
 not asked for in so many words.*
+
+---
+
+## D · Opening the coordination (moving to mode C)
+
+*To paste into a new conversation **with Opus**, in the same claude.ai project, when several PLs work on linked
+modules (`GUIDE.md` §2a and §3a). Replace the `<…>`.*
+
+```
+You are Opus-Coordination for this project, under the PL method (skill methode-cdp, to read first). You hold the project's method, the dev prompt, the living-docs README, the domain table, the launching of the PLs, the living-docs tooling and the method package; you brief no product batch.
+
+Attach with push access, one clone at a time, the living-docs repository <owner>/<Project> and the repository that holds the dev prompt (<owner>/<Project>-Batches if some code is public, otherwise the code repository); the method package read-only, in the same place as for the bootstrap. git pull in the living docs.
+
+The domains in activity: <one line per PL: its name, its checkpoint, its repositories>.
+
+1. Read the project's method (§1a in full), the living-docs README, every domain checkpoint (§0 and its queue), and GUIDE.md §2a, §2b and §3a of the package.
+2. Create your checkpoint, Method/CHECKPOINT_METHOD.md, with its baton, and set it with a push.
+3. Keep the domain table in step in three places: the method §1a, the living-docs README (with each PL's fixed line, which names all its repositories) and Method/domains.yaml (template templates/domains.yaml of the package). Check that every checkpoint has a queue section and that every subject of its queue has its workstream.
+4. If a product has several module PLs, propose its product sheet to me (what is shared: ritual, bench, circuit, pitfalls; never the state).
+5. Propose the living-docs arbiter to me (templates/ARBITER.md of the package): what it will bring here, what it costs and its set-up, as numbered options with your recommendation.
+6. Give me back the full text of the project instructions, several-PL version (1_PROJECT_INSTRUCTIONS.md), to paste.
+7. File for each PL in activity a for: workstream that announces the coordination to it and what changes for it.
+
+Tell me at the end what you wrote: repository, commit, path.
+```

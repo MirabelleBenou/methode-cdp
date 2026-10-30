@@ -1,4 +1,4 @@
-# PL METHOD PACKAGE · v13
+# PL METHOD PACKAGE · v14
 ### 30 October 2026 · to start a new project under the PL method
 
 *This package reproduces a way of working proven batch after batch: a **project lead** (PL, Opus) who decides
@@ -15,8 +15,8 @@ with you, writes the briefs, launches the dev and accepts; a **dev** (Sonnet by 
 | file | used for | where it ends up |
 |---|---|---|
 | `GUIDE.md` | these instructions for use | nowhere, it is for you |
-| `1_PROJECT_INSTRUCTIONS.md` | the text to paste into **the claude.ai project instructions** | project instructions |
-| `2_PL_BOOTSTRAP_PROMPT.md` | the **first message** of the first PL session | pasted into a conversation |
+| `1_PROJECT_INSTRUCTIONS.md` | the text to paste into **the claude.ai project instructions** (one PL, or several PLs with a coordination) | project instructions |
+| `2_PL_BOOTSTRAP_PROMPT.md` | the **first message** of the first PL session; §D, the one that opens the coordination | pasted into a conversation |
 | `3_GITHUB.md` | the repositories, their structure, the circuit of a batch, the pitfalls | read by the PL at bootstrap |
 | `templates/METHOD.md` | the generic method, to adapt | `Method/METHOD_<P>.md` in the living-docs repository, mirror in the project |
 | `templates/DEV_PROMPT.md` | the dev's standing command | root of the code repository, mirror in the project |
@@ -109,7 +109,7 @@ domains, gives the fixed lines, keeps the method, the dev prompt, the package, t
 
 **Moving from one mode to another**: you start in A; you move to B when a second independent module starts; to C as soon
 as two PLs share a deliverable, a resource or files, or a cross-cutting change appears. Nothing is migrated: you add a
-checkpoint, a line to the domain table, and the coordinator.
+checkpoint, a line to the domain table, and the coordinator. **Your actions: §3a.**
 
 **The living-docs arbiter**: a fresh session, started every morning by a scheduled task, that checks the shared living
 docs and the checkpoints and reports without correcting. Useless in A, optional in B, recommended in C: what it is, why,
@@ -215,6 +215,45 @@ releases**, **delete the merged branches** on GitHub (a session cannot), and dro
 deployed — unless the project has a server runner (`templates/SERVER_RUNNER.md`): you then say “go” naming the action,
 the PL deploys, you validate on screen; handing over the deliverable only serves as a fallback.
 
+## 3a · Several PLs — starting in B or C, or moving there
+
+*§3 starts a project with a single PL (mode A, §2a). A project with several modules starts the same way, then the
+domains are added one by one: nothing is migrated, things are added.*
+
+**Your actions, in order:**
+
+1. **Start in A (§3) with the first module**, even if you already know there will be several. Tell the first PL at
+   bootstrap (“other modules will come: <which>”): it names its domain and its checkpoint accordingly
+   (`Opus-PL-<Product>[-<Module>]`, `<Folder>/CHECKPOINT_<…>.md`) and opens the domain table (method §1a, living-docs
+   README). The shared living docs — method, decision log, plan, `workstreams.yaml` — then serve everyone.
+2. **For each additional module (mode B)**:
+   - on GitHub, create its empty code repository (`<Project>-<Module>`, private or public) — **no second batches
+     repository**: a suite keeps a single `-Batches`, each batch carrying a module prefix there (`3_GITHUB.md`);
+   - ask the PL in place — or the coordination, if it exists — “open the <module> domain”: it bootstraps the domain's
+     checkpoint, adds its line to the domain table and gives you **the fixed line** of the new PL (it names all its
+     repositories);
+   - open a new conversation with Opus, **in the same claude.ai project**, paste that fixed line, and title the
+     conversation `<PL name> · <workstream>`;
+   - replace the project instructions with the text the PL gives you back (the new checkpoint is named in it).
+3. **When the modules touch each other (mode C)** — two PLs share a deliverable, your machine, files or a server, or a
+   change touches every domain — **open the coordination**: a new conversation with Opus, the prompt
+   `2_PL_BOOTSTRAP_PROMPT.md` §D. The coordination session takes over the method, the dev prompt, the living-docs README
+   and the package; it creates its checkpoint, keeps the domain table (including `Method/domains.yaml`) and gives you
+   back the project instructions in their several-PL version (`1_PROJECT_INSTRUCTIONS.md`).
+4. **In C, install the arbiter** (recommended, §2b): the coordination prepares it and proposes it to you; you create
+   or approve the scheduled task and allow notifications in the Claude app on your phone.
+
+**Then, day to day:**
+- **one conversation per domain**, titled `<PL name> · <current workstream>`; you talk to each PL in its own, about its
+  domain only;
+- **resuming a PL**: a new conversation and its domain's fixed line (living-docs README), if its baton is free; if it
+  is taken, the previous session is still alive: go back to it instead;
+- **to the coordination**: opening or closing a domain, putting two PLs on the same product, a cross-cutting subject, a
+  doubt, a method question;
+- **you never relay a message from one PL to another**: they write to each other through `for:` workstreams (§2a);
+- **you read only the workstreams board**: every subject of a domain has its entry there (method §6), and the arbiter
+  checks it every morning.
+
 ---
 
 ## 4 · What goes where
@@ -315,3 +354,5 @@ v13, 30 October 2026 — the living-docs arbiter explained in full (`templates/A
 cases —, when, what it costs, how to read it, the set-up and who does what, the verdict; §2b); check 9 “checkpoints” of
 `check_living_docs.py` (`--domains`, `--root`) and the domain table `templates/domains.yaml`; the arbiter's Monday
 reading; a checkpoint's queue carries only registered workstreams (method §6); skill v15.
+v14, 30 October 2026 — starting with or moving to several PLs, your actions (§3a); the prompt that opens the
+coordination (`2_PL_BOOTSTRAP_PROMPT.md` §D); the project instructions for several PLs.

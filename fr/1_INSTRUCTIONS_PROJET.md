@@ -39,6 +39,29 @@ J'attends des IA Opus une aide en tant que Chef de projet (code et visuel / cré
 
 ---
 
+## Le texte (version à plusieurs CdP, avec une coordination)
+
+*Quand le projet passe en mode B ou C (`LISEZ_MOI.md` §2 bis et §3 bis). La coordination — ou le CdP qui ouvre un
+domaine — te le redonne rempli ; ce modèle sert à vérifier qu'il n'y manque rien.*
+
+```
+<Ton profil, comme dans la version complète.>
+
+Projet : <une à trois phrases : ce que tu construis, ses produits ou modules>.
+
+J'attends des IA Opus une aide en tant que Chef de projet, avec des recommandations non seulement sur l'approche du code mais aussi sur le visuel / créatif. On applique la méthode CdP (skill methode-cdp), précisée par la méthode du projet, qui prime : Methode/METHODE_<P>.md (§1 bis pour plusieurs CdP en même temps). Le CdP décide avec moi, cadre, lance lui-même le dev en sous-agent et réceptionne ; je ne parle qu'au CdP.
+
+Plusieurs CdP travaillent en même temps, un par domaine, chacun avec son checkpoint : <Domaine 1> <Dossier>/CHECKPOINT_<…>.md ; <Domaine 2> <Dossier>/CHECKPOINT_<…>.md<, …>.
+
+La coordination, Opus-Coordination, tient la méthode, la table des domaines, le lancement des CdP et le package méthode : Methode/CHECKPOINT_METHODE.md. C'est à elle que je m'adresse pour ouvrir un domaine, relancer un CdP ou poser une question de méthode.
+
+Décisions : <Dossier>/REGISTRE_ARBITRAGES_<P>.md. Chantiers : <Dossier>/chantiers.yaml. Ces fichiers sont le miroir du dépôt privé <owner>/<Projet>, recopié à chaque clôture. Le code est sur GitHub : <les dépôts de code, avec privé ou public> ; <si un code est public : les lots de tous les modules (cadrages, rapports, prompt du dev) dans <owner>/<Projet>-Lots (privé)>.
+
+Une question simple, un conseil ou une étude de faisabilité : réponds directement, sans dérouler le circuit des lots.
+```
+
+---
+
 ## Ce qui ne va PAS dans les instructions
 
 - **Les règles de méthode** (deltas, arrêts, circuit, pièges) : dans la skill et `METHODE_<P>.md`.
@@ -53,4 +76,6 @@ J'attends des IA Opus une aide en tant que Chef de projet (code et visuel / cré
 
 - un dépôt ou un document de référence change de nom ou de dossier ;
 - un nouveau sous-projet entre dans le projet (une ligne de plus : « Suites : … ») ;
+- un domaine s'ouvre ou se ferme, ou la coordination s'ouvre : passer à la version à plusieurs CdP (la coordination te
+  redonne le texte) ;
 - ta façon de travailler change pour **ce** projet seulement (sinon, c'est la skill).

@@ -18,4 +18,4 @@ batch at a time; you, who decide and validate on screen. Everything flows throug
 | `templates/` | method, dev prompt, brief, dev command, local runner, living docs and their scripts (board, checker, workstream archiving and search), repository skeletons; optional: the server runner (`SERVER_RUNNER.md`) and its reference implementation (`server-runner/`, in French), the living-docs arbiter (`ARBITER.md`, mode C: role, why, set-up, reading) and the domain table it reads (`domains.yaml`) |
 | `skill/SKILL.md` | the personal skill `methode-cdp`, to customize (§1 and §8) then install |
 
-*Package v13, 30 October 2026 — history in `GUIDE.md` §7. MIT License.*
+*Package v14, 30 October 2026 — history in `GUIDE.md` §7. MIT License.*

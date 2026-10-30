@@ -1,4 +1,4 @@
-# PACKAGE MÉTHODE CdP · v13
+# PACKAGE MÉTHODE CdP · v14
 ### 30 octobre 2026 · pour démarrer un nouveau projet sous la méthode CdP
 
 *Ce package reproduit une façon de travailler éprouvée lot après lot : un **chef de projet** (CdP, Opus) qui décide
@@ -15,8 +15,8 @@ qui décides et valides à l'écran. Tout circule par GitHub ; tu ne téléverse
 | fichier | sert à | où il finit |
 |---|---|---|
 | `LISEZ_MOI.md` | ce mode d'emploi | nulle part, c'est pour toi |
-| `1_INSTRUCTIONS_PROJET.md` | le texte à coller dans **les instructions du projet claude.ai** | instructions du projet |
-| `2_PROMPT_AMORCAGE_CDP.md` | le **premier message** de la première session de CdP | collé dans une conversation |
+| `1_INSTRUCTIONS_PROJET.md` | le texte à coller dans **les instructions du projet claude.ai** (un CdP, ou plusieurs CdP avec une coordination) | instructions du projet |
+| `2_PROMPT_AMORCAGE_CDP.md` | le **premier message** de la première session de CdP ; §D, celui qui ouvre la coordination | collé dans une conversation |
 | `3_GITHUB.md` | les dépôts, leur structure, le circuit d'un lot, les pièges | lu par le CdP à l'amorçage |
 | `modeles/METHODE.md` | la méthode générique, à adapter | `Methode/METHODE_<P>.md` du dépôt des vivants, miroir au projet |
 | `modeles/PROMPT_DEV.md` | la commande permanente du dev | racine du dépôt de code, miroir au projet |
@@ -108,7 +108,7 @@ domaines, donne les lignes fixes, tient la méthode, le prompt du dev, le packag
 
 **Passer d'un mode à l'autre** : on commence en A ; on passe en B quand un second module indépendant démarre ; en C dès
 que deux CdP partagent un livrable, une ressource ou des fichiers, ou qu'un changement transverse apparaît. Rien ne se
-migre : on ajoute un checkpoint, une ligne à la table des domaines, et le coordinateur.
+migre : on ajoute un checkpoint, une ligne à la table des domaines, et le coordinateur. **Tes gestes : §3 bis.**
 
 **L'arbitre des vivants** : une session neuve, lancée chaque matin par une tâche planifiée, qui contrôle les vivants
 partagés et les checkpoints et signale sans corriger. Inutile en A, facultatif en B, recommandé en C : ce qu'il est,
@@ -213,6 +213,45 @@ releases**, **supprimer les branches fusionnées** sur GitHub (une session ne pe
 se déploie — sauf si le projet a un exécutant serveur (`modeles/EXECUTANT_SERVEUR.md`) : tu dis alors « go » en nommant
 l'action, le CdP déploie, tu valides à l'écran ; la remise du livrable ne sert plus qu'en repli.
 
+## 3 bis · Plusieurs CdP — démarrer en B ou en C, ou y passer
+
+*Le §3 démarre un projet à un seul CdP (mode A, §2 bis). Un projet à plusieurs modules démarre de la même façon, puis
+on ajoute les domaines un par un : rien ne se migre, on ajoute.*
+
+**Tes gestes, dans l'ordre :**
+
+1. **Démarre en A (§3) avec le premier module**, même si tu sais déjà qu'il y en aura plusieurs. Dis-le au premier CdP
+   dès l'amorçage (« d'autres modules viendront : <lesquels> ») : il nomme son domaine et son checkpoint en conséquence
+   (`Opus-CdP-<Produit>[-<Module>]`, `<Dossier>/CHECKPOINT_<…>.md`) et ouvre la table des domaines (méthode §1 bis,
+   README des vivants). Les vivants communs — méthode, registre, plan, `chantiers.yaml` — servent ensuite à tous.
+2. **Pour chaque module de plus (mode B)** :
+   - sur GitHub, crée son dépôt de code vide (`<Projet>-<Module>`, privé ou public) — **pas de second dépôt de lots** :
+     une suite garde un seul `-Lots`, chaque lot y porte un préfixe de module (`3_GITHUB.md`) ;
+   - demande au CdP en place — ou à la coordination, si elle existe — « ouvre le domaine <module> » : il amorce le
+     checkpoint du domaine, ajoute sa ligne à la table des domaines et te remet **la ligne fixe** du nouveau CdP (elle
+     nomme tous ses dépôts) ;
+   - ouvre une conversation neuve avec Opus, **dans le même projet claude.ai**, colle cette ligne fixe, et titre la
+     conversation `<nom du CdP> · <chantier>` ;
+   - remplace les instructions du projet par le texte que le CdP te redonne (le nouveau checkpoint y est nommé).
+3. **Quand les modules se touchent (mode C)** — deux CdP partagent un livrable, ta machine, des fichiers ou un serveur,
+   ou un changement touche tous les domaines — **ouvre la coordination** : une conversation neuve avec Opus, le prompt
+   `2_PROMPT_AMORCAGE_CDP.md` §D. La session de coordination reprend la méthode, le prompt du dev, le README des vivants
+   et le package ; elle crée son checkpoint, tient la table des domaines (y compris `Methode/domaines.yaml`) et te
+   redonne les instructions du projet dans leur version à plusieurs CdP (`1_INSTRUCTIONS_PROJET.md`).
+4. **En C, installe l'arbitre** (recommandé, §2 ter) : la coordination le prépare et te le propose ; toi, tu crées ou
+   approuves la tâche planifiée et tu autorises les notifications de l'application Claude sur ton téléphone.
+
+**Ensuite, au quotidien :**
+- **une conversation par domaine**, titrée `<nom du CdP> · <chantier en cours>` ; tu parles à chaque CdP dans la
+  sienne, de son domaine seulement ;
+- **relancer un CdP** : une conversation neuve et la ligne fixe de son domaine (README des vivants), si son témoin est
+  libre ; s'il est pris, la session précédente vit encore : reprends-la plutôt ;
+- **à la coordination** : ouvrir ou fermer un domaine, mettre deux CdP sur un même produit, un sujet transverse, un
+  doute, une question de méthode ;
+- **tu ne relaies jamais un message d'un CdP à un autre** : ils s'écrivent par des chantiers `pour:` (§2 bis) ;
+- **tu ne lis que le tableau des chantiers** : tout sujet d'un domaine y a son entrée (méthode §6), et l'arbitre le
+  vérifie chaque matin.
+
 ---
 
 ## 4 · Ce qui va où
@@ -313,3 +352,5 @@ les cas vécus —, quand, ce qu'il coûte, comment le lire, la mise en place et
 contrôle 9 « checkpoints » de `verifier_vivants.py` (`--domaines`, `--racine`) et la table des domaines
 `modeles/domaines.yaml` ; la lecture du lundi par l'arbitre ; la file d'un checkpoint ne porte que des chantiers
 inscrits (méthode §6) ; skill v15.
+v14, le 30 octobre 2026 — démarrer ou passer à plusieurs CdP, tes gestes (§3 bis) ; le prompt qui ouvre la
+coordination (`2_PROMPT_AMORCAGE_CDP.md` §D) ; les instructions du projet à plusieurs CdP.
