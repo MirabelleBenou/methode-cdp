@@ -58,7 +58,7 @@ not asked for in so many words.*
 ## D · Opening the coordination (moving to mode C)
 
 *To paste into a new conversation **with Opus**, in the same claude.ai project, when several PLs work on linked
-modules (`GUIDE.md` §2a and §3a). Replace the `<…>`.*
+modules (`GUIDE.md` §2a, §3a and §3b). Replace the `<…>`.*
 
 ```
 You are Opus-Coordination for this project, under the PL method (skill methode-cdp, to read first). You hold the project's method, the dev prompt, the living-docs README, the domain table, the launching of the PLs, the living-docs tooling and the method package; you brief no product batch.

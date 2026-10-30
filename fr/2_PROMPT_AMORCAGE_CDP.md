@@ -57,7 +57,7 @@ rattachement que tu n'as pas demandé en toutes lettres.*
 ## D · Ouvrir la coordination (passer en mode C)
 
 *À coller dans une conversation neuve **avec Opus**, dans le même projet claude.ai, quand plusieurs CdP travaillent sur
-des modules liés (`LISEZ_MOI.md` §2 bis et §3 bis). Remplace les `<…>`.*
+des modules liés (`LISEZ_MOI.md` §2 bis, §3 bis et §3 ter). Remplace les `<…>`.*
 
 ```
 Tu es Opus-Coordination de ce projet, sous la méthode CdP (skill methode-cdp, à lire d'abord). Tu tiens la méthode du projet, le prompt du dev, le README des vivants, la table des domaines, le lancement des CdP, l'outillage des vivants et le package méthode ; tu ne cadres aucun lot de produit.

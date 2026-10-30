@@ -1,4 +1,4 @@
-# PL METHOD PACKAGE · v14
+# PL METHOD PACKAGE · v15
 ### 30 October 2026 · to start a new project under the PL method
 
 *This package reproduces a way of working proven batch after batch: a **project lead** (PL, Opus) who decides
@@ -109,7 +109,8 @@ domains, gives the fixed lines, keeps the method, the dev prompt, the package, t
 
 **Moving from one mode to another**: you start in A; you move to B when a second independent module starts; to C as soon
 as two PLs share a deliverable, a resource or files, or a cross-cutting change appears. Nothing is migrated: you add a
-checkpoint, a line to the domain table, and the coordinator. **Your actions: §3a.**
+checkpoint, a line to the domain table, and the coordinator. **Starting with several PLs: §3a; moving from one mode to
+another along the way (A → B, B → C, A → C, and back): §3b.**
 
 **The living-docs arbiter**: a fresh session, started every morning by a scheduled task, that checks the shared living
 docs and the checkpoints and reports without correcting. Useless in A, optional in B, recommended in C: what it is, why,
@@ -254,6 +255,60 @@ domains are added one by one: nothing is migrated, things are added.*
 - **you read only the workstreams board**: every subject of a domain has its entry there (method §6), and the arbiter
   checks it every morning.
 
+## 3b · Moving from one mode to another, as the project grows (or shrinks)
+
+*A project almost always starts in A and grows more complex over time. **Nothing is migrated: things are added** — a
+checkpoint, a line in the domain table, a coordinator. The living docs, the decision numbers, the history and the
+workstreams stay where they are. A move happens **between two batches**, never with a batch in flight, and is recorded
+in the decision log as a decision.*
+
+**The signs that it is time:**
+
+| move | when |
+|---|---|
+| **A → B** | a second **independent** module starts (its own code repository, its own release, nothing in common with the first); or you want two subjects to move forward in two conversations at the same time |
+| **B → C** | two PLs share something: **a deliverable** (the same application), **a resource** (your machine, a game, a server), **files**; or a change touches every domain (the method, the deployment); or you catch yourself **relaying a message** from one PL to another; or decision numbers come out duplicated |
+| **A → C** directly | from the start of the second module, it shares a deliverable, a resource or a server with the first (for example a second module **inside the same application**) |
+| **C → B → A** (back) | a domain is finished or has been dormant for a long time; only one or two active PLs remain, with nothing in common |
+
+**A → B — your actions:**
+1. In the conversation of the PL in place: “the project moves to B: a second module, <which>”. It reserves a decision
+   number and records the move.
+2. On GitHub, create the module's code repository; if it is public and no `-Batches` exists yet, also create
+   `<Project>-Batches` (private) — a single one for the whole suite.
+3. The PL opens the domain (§3a, point 2) and gives you the new PL's fixed line; you paste it into a new conversation
+   of the same project.
+4. You replace the project instructions with the text it gives you back (several-PL version).
+
+**A → B — what the session does:** its domain takes a name (`Opus-PL-<Product>`) and a checkpoint of its own, with its
+baton; the domain table is born (method §1a, living-docs README with each PL's fixed line); the sharing rules apply from
+now on (method §1a: append only, numbers reserved by a push, messages through `for:` workstreams, module prefix in the
+batch names); the project's method changes version; the first PL **remains the owner of the method** as long as there
+is no coordination.
+
+**B → C (or A → C) — your actions:**
+1. Open the coordination: a new conversation, the prompt `2_PL_BOOTSTRAP_PROMPT.md` §D, listing the domains in
+   activity in it (in A → C: the single existing domain).
+2. Tell the PL that held the method, in its conversation: “the coordination is open, it takes over the method”.
+3. In A → C: then ask the coordination to open the second domain (you tell it which; it gives you its fixed line).
+4. Answer its proposals (product sheet, arbiter) and paste the instructions it gives you back.
+
+**B → C — what the coordination session does:** it takes over the method, the dev prompt, the living-docs README and
+the package (the PL that held them leaves them to it); it creates its checkpoint; it keeps the domain table in three
+places (method §1a, README, `Method/domains.yaml`); the mode C rules enter the method (one deliverable, a single batch
+in flight; a resource taken like a deliverable; `waits:`, `touches:`; the product sheet of a product with several
+PLs); it proposes the arbiter; it notifies each PL with a `for:` workstream.
+
+**Going back, when a domain closes:** ask the coordination (or, in B, the PL that holds the method) “close the <name>
+domain”. It marks the checkpoint “closed” (it stays as a reference), removes the domain from the table in the three
+places, **attaches its open workstreams to a living domain** (through a `for:` workstream to its PL) and records the
+decision. When only one active PL remains and nothing is shared, the coordination can close in turn: the method goes
+back to the last PL, the arbiter stops (or continues, if it still helps), you go back to the single-PL instructions.
+
+**What never moves, whatever the move**: the living-docs repository and its files; the decision numbers (the sequence
+continues); the workstreams (at most they change domain); the code repositories; the skill — it already covers the
+three modes.
+
 ---
 
 ## 4 · What goes where
@@ -356,3 +411,5 @@ cases —, when, what it costs, how to read it, the set-up and who does what, th
 reading; a checkpoint's queue carries only registered workstreams (method §6); skill v15.
 v14, 30 October 2026 — starting with or moving to several PLs, your actions (§3a); the prompt that opens the
 coordination (`2_PL_BOOTSTRAP_PROMPT.md` §D); the project instructions for several PLs.
+v15, 30 October 2026 — moving from one mode to another along the way: the signs, your actions, what the session
+does, going back when a domain closes (§3b).

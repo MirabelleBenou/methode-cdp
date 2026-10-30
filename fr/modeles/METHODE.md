@@ -88,6 +88,11 @@ coordinateur. Le coordinateur ne cadre aucun lot de produit ; **il cadre et lanc
 des vivants** (`verifier_vivants.py`, `generer_tableau.py`, l'arbitre — `Methode/ARBITRE.md`, tiré de
 `modeles/ARBITRE.md` du package : rôle, pourquoi, procédure, tâche planifiée).
 
+**Fermer un domaine** : un domaine fini ou en sommeil se ferme sur décision du porteur, entre deux lots. Le coordinateur
+(en B, le CdP qui tient la méthode) marque son checkpoint « clos » (il reste comme référence), retire le domaine de la
+table aux trois endroits, rattache ses chantiers ouverts à un domaine qui vit (un chantier `pour:` à son CdP) et note la
+décision. Passer d'un mode à l'autre, dans un sens ou dans l'autre : `LISEZ_MOI.md` §3 ter du package.
+
 **Les numéros de décision** : avant d'écrire une entrée, pousser seule, sur `main`, la ligne
 `| **R<n>** | *réservé — <CdP>, <date>* | | |` après la dernière entrée. Push refusé → `git pull`, numéro suivant ;
 accepté → l'entrée se rédige à sa place. Une entrée ne porte pas de total : elle marque `[exécution +1]` ou

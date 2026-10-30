@@ -18,4 +18,4 @@ coordinateur : `LISEZ_MOI.md` §2 bis.
 | `modeles/` | méthode, prompt du dev, cadrage, commande du dev, exécutant local, vivants et leurs scripts (tableau, vérificateur, archivage et recherche des chantiers), squelettes de dépôts ; facultatif : l'exécutant serveur (`EXECUTANT_SERVEUR.md`), dont l'implémentation de référence est publiée une seule fois, à la racine, en `templates/server-runner/` ; l'arbitre des vivants (`ARBITRE.md`, mode C : rôle, pourquoi, mise en place, lecture) et la table des domaines qu'il lit (`domaines.yaml`) |
 | `skill/SKILL.md` | la skill personnelle `methode-cdp`, à personnaliser (§1 et §8) puis installer |
 
-*Package v14 — historique dans `LISEZ_MOI.md` §7. Licence MIT.*
+*Package v15 — historique dans `LISEZ_MOI.md` §7. Licence MIT.*

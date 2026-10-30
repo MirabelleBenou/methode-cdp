@@ -1,4 +1,4 @@
-# PACKAGE MÉTHODE CdP · v14
+# PACKAGE MÉTHODE CdP · v15
 ### 30 octobre 2026 · pour démarrer un nouveau projet sous la méthode CdP
 
 *Ce package reproduit une façon de travailler éprouvée lot après lot : un **chef de projet** (CdP, Opus) qui décide
@@ -108,7 +108,8 @@ domaines, donne les lignes fixes, tient la méthode, le prompt du dev, le packag
 
 **Passer d'un mode à l'autre** : on commence en A ; on passe en B quand un second module indépendant démarre ; en C dès
 que deux CdP partagent un livrable, une ressource ou des fichiers, ou qu'un changement transverse apparaît. Rien ne se
-migre : on ajoute un checkpoint, une ligne à la table des domaines, et le coordinateur. **Tes gestes : §3 bis.**
+migre : on ajoute un checkpoint, une ligne à la table des domaines, et le coordinateur. **Démarrer à plusieurs CdP :
+§3 bis ; passer d'un mode à l'autre en cours de route (A → B, B → C, A → C, et le retour) : §3 ter.**
 
 **L'arbitre des vivants** : une session neuve, lancée chaque matin par une tâche planifiée, qui contrôle les vivants
 partagés et les checkpoints et signale sans corriger. Inutile en A, facultatif en B, recommandé en C : ce qu'il est,
@@ -252,6 +253,61 @@ on ajoute les domaines un par un : rien ne se migre, on ajoute.*
 - **tu ne lis que le tableau des chantiers** : tout sujet d'un domaine y a son entrée (méthode §6), et l'arbitre le
   vérifie chaque matin.
 
+## 3 ter · Passer d'un mode à l'autre, quand le projet grandit (ou rétrécit)
+
+*Un projet commence presque toujours en A et se complexifie avec le temps. **Rien ne se migre : on ajoute** — un
+checkpoint, une ligne à la table des domaines, un coordinateur. Les vivants, les numéros de décision, l'historique et
+les chantiers restent où ils sont. Un passage se fait **entre deux lots**, jamais avec un lot en vol, et se note au
+registre comme une décision.*
+
+**Les signes qu'il est temps :**
+
+| passage | quand |
+|---|---|
+| **A → B** | un second module **indépendant** démarre (son propre dépôt de code, sa propre release, rien en commun avec le premier) ; ou tu veux faire avancer deux sujets dans deux conversations en même temps |
+| **B → C** | deux CdP partagent quelque chose : **un livrable** (la même application), **une ressource** (ta machine, un jeu, un serveur), **des fichiers** ; ou un changement touche tous les domaines (la méthode, le déploiement) ; ou tu te surprends à **relayer un message** d'un CdP à l'autre ; ou des numéros de décision sortent en double |
+| **A → C** directement | dès le départ du second module, celui-ci partage un livrable, une ressource ou un serveur avec le premier (par exemple un second module **dans la même application**) |
+| **C → B → A** (retour) | un domaine est fini ou en sommeil depuis longtemps ; il ne reste qu'un ou deux CdP actifs, sans rien en commun |
+
+**A → B — tes gestes :**
+1. Dans la conversation du CdP en place : « le projet passe en B : un second module, <lequel> ». Il réserve un numéro de
+   décision et note le passage.
+2. Sur GitHub, crée le dépôt de code du module ; s'il est public et qu'aucun `-Lots` n'existe encore, crée aussi
+   `<Projet>-Lots` (privé) — un seul pour toute la suite.
+3. Le CdP ouvre le domaine (§3 bis, point 2) et te remet la ligne fixe du nouveau CdP ; tu la colles dans une
+   conversation neuve du même projet.
+4. Tu remplaces les instructions du projet par le texte qu'il te redonne (version à plusieurs CdP).
+
+**A → B — ce que la session fait :** son domaine prend un nom (`Opus-CdP-<Produit>`) et un checkpoint à lui, avec son
+témoin ; la table des domaines naît (méthode §1 bis, README des vivants avec la ligne fixe de chaque CdP) ; les règles
+de partage s'appliquent désormais (méthode §1 bis : ajout seul, numéros réservés par un push, messages par chantier
+`pour:`, préfixe de module dans le nom des lots) ; la méthode du projet change de version ; le premier CdP **reste
+propriétaire de la méthode** tant qu'il n'y a pas de coordination.
+
+**B → C (ou A → C) — tes gestes :**
+1. Ouvre la coordination : une conversation neuve, le prompt `2_PROMPT_AMORCAGE_CDP.md` §D, en y listant les domaines
+   en activité (en A → C : le seul domaine existant).
+2. Dis au CdP qui tenait la méthode, dans sa conversation : « la coordination est ouverte, elle reprend la méthode ».
+3. En A → C : demande ensuite à la coordination d'ouvrir le second domaine (tu lui dis lequel ; elle te remet sa ligne
+   fixe).
+4. Réponds à ses propositions (fiche produit, arbitre) et colle les instructions qu'elle te redonne.
+
+**B → C — ce que la session de coordination fait :** elle reprend la méthode, le prompt du dev, le README des vivants et
+le package (le CdP qui les tenait les lui laisse) ; elle crée son checkpoint ; elle tient la table des domaines en trois
+endroits (méthode §1 bis, README, `Methode/domaines.yaml`) ; les règles du mode C entrent dans la méthode (un livrable,
+un seul lot en vol ; une ressource prise comme un livrable ; `attend:`, `touche:` ; la fiche produit d'un produit à
+plusieurs CdP) ; elle propose l'arbitre ; elle prévient chaque CdP par un chantier `pour:`.
+
+**Le retour, quand un domaine se ferme :** demande à la coordination (ou, en B, au CdP qui tient la méthode) « ferme le
+domaine <nom> ». Elle marque le checkpoint « clos » (il reste comme référence), retire le domaine de la table aux trois
+endroits, **rattache ses chantiers ouverts à un domaine qui vit** (par un chantier `pour:` à son CdP) et note la décision.
+Quand il ne reste qu'un CdP actif et rien de partagé, la coordination peut se fermer à son tour : la méthode revient au
+dernier CdP, l'arbitre s'arrête (ou continue, s'il rend encore service), tu repasses aux instructions à un seul CdP.
+
+**Ce qui ne bouge jamais, quel que soit le passage** : le dépôt des vivants et ses fichiers ; les numéros de décision
+(la suite continue) ; les chantiers (ils changent au plus de domaine) ; les dépôts de code ; la skill — elle couvre
+déjà les trois modes.
+
 ---
 
 ## 4 · Ce qui va où
@@ -354,3 +410,5 @@ contrôle 9 « checkpoints » de `verifier_vivants.py` (`--domaines`, `--racine`
 inscrits (méthode §6) ; skill v15.
 v14, le 30 octobre 2026 — démarrer ou passer à plusieurs CdP, tes gestes (§3 bis) ; le prompt qui ouvre la
 coordination (`2_PROMPT_AMORCAGE_CDP.md` §D) ; les instructions du projet à plusieurs CdP.
+v15, le 30 octobre 2026 — passer d'un mode à l'autre en cours de route : les signes, tes gestes, ce que la
+session fait, le retour quand un domaine se ferme (§3 ter).

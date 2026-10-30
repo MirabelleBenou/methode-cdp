@@ -88,6 +88,11 @@ coordinator. The coordinator briefs no product batch; **it briefs and launches t
 the living docs** (`check_living_docs.py`, `make_board.py`, the arbiter — `Method/ARBITER.md`, drawn from
 `templates/ARBITER.md` of the package: role, why, procedure, scheduled task).
 
+**Closing a domain**: a finished or dormant domain closes on the owner's decision, between two batches. The coordinator
+(in B, the PL that holds the method) marks its checkpoint “closed” (it stays as a reference), removes the domain from
+the table in the three places, attaches its open workstreams to a living domain (a `for:` workstream to its PL) and
+records the decision. Moving from one mode to another, in either direction: `GUIDE.md` §3b of the package.
+
 **Decision numbers**: before writing an entry, push alone, on `main`, the line
 `| **D<n>** | *reserved — <PL>, <date>* | | |` after the last entry. Push refused → `git pull`, next number;
 accepted → the entry is written in its place. An entry carries no total: it marks `[execution +1]` or
