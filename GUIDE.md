@@ -1,4 +1,4 @@
-# PL METHOD PACKAGE · v15
+# PL METHOD PACKAGE · v16
 ### 30 October 2026 · to start a new project under the PL method
 
 *This package reproduces a way of working proven batch after batch: a **project lead** (PL, Opus) who decides
@@ -34,7 +34,7 @@ with you, writes the briefs, launches the dev and accepts; a **dev** (Sonnet by 
 | `templates/archive_workstreams.py` | archives the accepted workstreams: dates `accepted-on:` on every entry that becomes accepted, moves out to `Archives/WORKSTREAMS_<YYYY-MM>.yaml` those accepted for 15 days (lossless, idempotent, `--dry-run`); `search` finds a workstream, living or archived | living-docs repository, run by the arbiter at every run, otherwise by the PL or the coordinator at their close-out |
 | `templates/ARBITER.md` | **optional, mode C** — the living-docs arbiter, explained in full: what it is, why (the real cases), when, what it costs, how to read what it produces; its procedure (check of the living docs **and of the checkpoints**, reporting without correcting, archiving of the accepted workstreams, the Monday reading), its log, the set-up step by step with the “who does what” (time, prompt, notifications), the trial | `Method/ARBITER.md` in the living-docs repository, read by the scheduled task |
 | `templates/LOCAL_RUNNER.md` | the local Claude Code runner on the PC, driven by files (`sync\`) | used by the PL and the runner |
-| `templates/SERVER_RUNNER.md` | **optional** — the server runner: a deterministic program on the production server, driven by an orders repository; the PL deploys on your “go” (step-by-step guide). **No production server: skip it** | used by the PL, and by you at installation |
+| `templates/SERVER_RUNNER.md` | **optional** — the server runner: a deterministic program on the production server, driven by an orders repository; the PL deploys on your “go” (step-by-step guide); the same orders repository serves as the **file-exchange bridge**: data produced in a session reaches the server through `transfers/` (§2c). **No production server: skip it** | used by the PL, and by you at installation |
 | `templates/server-runner/` | **optional** — its reference implementation (Python, systemd, installer, tests), in French, with example values | the project's code repository, then the server |
 | `templates/living-docs-repo/` | `README.md` of the living-docs repository | living-docs repository |
 | `templates/code-repo/` | `.gitattributes`, `.gitignore`, `CHANGELOG.md` of the code repository | code repository |
@@ -190,6 +190,73 @@ procedure, not case by case.
 
 ---
 
+## 2c · The orders repository, the file-exchange bridge
+
+*One page to understand how data gets onto the server. **No server runner** (`templates/SERVER_RUNNER.md`): **skip this
+section**, you have no use for it. The technical detail — the circuit, the shape of the orders, the limits — is in the
+server runner guide, §3, §5, §7, §12 and §13.*
+
+**The problem.** A cloud session produces data — for example a package of about 60 MB of rendered pages, tomorrow tiles or
+maps — that the server must serve. The session cannot see the server, the PL never connects to it, and you do not want to
+drop a file by hand at every edition. How does the data get there?
+
+**The rule.** The orders repository — which the runner already reads every minute with its key, and where the PL already
+pushes its orders — also serves as the **file-exchange bridge** between the sessions and the server: a `transfers/` folder
+next to `ordres/` and `resultats/`. No extra repository, no extra key. *The name `transfers/` is a convention of the method:
+the program only knows the path carried by the order.*
+
+**The three routes, depending on where the data comes from:**
+
+| the data is… | it arrives through | then |
+|---|---|---|
+| **produced in a session** (the package rendered by the PL) | the PL who produces it pushes it to the orders repository, under `transfers/<domain>/<edition>/` | a `fichiers` order: `telecharger` **from the orders repository, at the 40-hex commit, sha256 mandatory**; `decompresser` into a new folder; `basculer` |
+| **produced on your PC** (captures, large backgrounds) | `rsync` into the server's `entree/` (`templates/SERVER_RUNNER.md` §4) | a `fichiers` order: `deplacer`, `decompresser`, `basculer` |
+| **published elsewhere** (a release, a known public repository, an authorized host) | nothing to push | a `fichiers` order: `telecharger`, as before |
+| **never** | the history of a public code repository | — |
+
+**Why the orders repository — what was ruled out, each for a reason:**
+- **the history of a public code repository** (a separate branch, files under `dist/`): every edition stays there forever
+  and weighs down every clone; the project had already had to take zips out of git for that reason. And it would be public;
+- **a public release**: you want neither to publish these files, nor to make a move at every edition;
+- **a separate private data repository**: this is what had been decided first — then dropped the same evening, at your
+  question (“why yet another private repository?”). It cost one more deploy key, one more configuration line, one more
+  repository to name in the handovers, for nothing the orders repository does not already bring;
+- **the orders repository, kept**: the runner already reads it with its key, the PL already pushes to it, everything there
+  is dated, at a commit, checkable by sha256, and nothing is public. *The lesson: before creating a repository, look
+  whether an existing one already plays the role.*
+
+**The PL's step by step — data produced in a session:**
+1. **It produces the file** — **a file of 95 MiB at most** — and computes its sha256.
+2. **It pushes** to the orders repository, after a `git pull`, under `transfers/<domain>/<edition>/` (an edition has a
+   new name, never reused), append-only; then it reads the **full hash of the commit** (40 hex) that carries the file.
+   **The dev never writes there.**
+3. **It tells you what is going to be replaced** on the server, and waits for your agreement before the order that
+   contains `basculer`; it can split it into two orders (prepare, then switch) if you want to see the package arrived first.
+4. **It pushes the `fichiers` order** (`ordres/<id>.json`, with the safeguards of §3 of `SERVER_RUNNER.md`: an order is
+   never written onto a file that exists): `telecharger` from the orders repository, at the commit and the sha256,
+   `decompresser` into a new folder, `basculer`.
+5. **It reads the report** (bounded wait), tells you what is served, and you validate on screen.
+6. **It removes the folder from the tree** by a commit, once the report has succeeded: the history keeps the file, the
+   tree becomes light again.
+
+**The limits, and what to settle at set-up:**
+- **95 MiB per file.** The host refuses any file beyond 100 MB. Larger: split into several files, or go another way (the
+  PC, an authorized host).
+- **The history does not shrink.** Removing the folder from the tree does not remove the file from the history: the orders
+  repository grows with every edition pushed.
+- **The runner's clone.** The runner keeps a clone of the orders repository, updated every minute. If that clone is
+  complete, the files pushed then removed stay in its history, on the server's disk. The defence — a partial copy, or
+  `transfers/` outside the orders clone — is decided **at set-up**, from the machine's inventory (disk space); nothing is
+  quantified before the space has been measured.
+- **Reading a file at a commit** is done by a partial copy of a single commit, with the key the runner already holds for
+  that repository: it is a **private source of `telecharger`**. **The reference implementation does not have it yet**: it
+  arrives in its next version. Until then, the PC route (`entree/`) or a source published elsewhere.
+- **What is pushed there is served**: no secret and no personal data in `transfers/`.
+
+The complete circuit, the orders and their limits: `templates/SERVER_RUNNER.md` (§3 point 9, §5, §7, §12 lesson 6, §13).
+
+---
+
 ## 3 · Starting a new project — your actions, in order
 
 1. **On GitHub, create two empty private repositories** (without README):
@@ -329,6 +396,7 @@ three modes.
 | Brief, addenda, stops, report, mock-up | code repository `batches/<version>/` — **`<Project>-Batches` repository if the code is public** | **no** | PL (brief, addenda), dev (stops, report) | during the batch |
 | Specs, style guide, studies | project, written once | — | PL | once, never rewritten |
 | Production data, logs | **no repository** | no | you | uploaded into the session that needs them |
+| Data produced in a session, to be served (a package, tiles) — with a server runner | orders repository, `transfers/<domain>/<edition>/` (§2c) | no | the PL who produces it, **never the dev** | at the edition; removed from the tree once the report has succeeded |
 | Images (tiles, visuals) | **in the conversation** | never | you | importing them into the project corrupts them silently |
 
 **The claude.ai project holds only** the mirrors of the living docs (copied over by the PL at every close-out, from their
@@ -413,3 +481,7 @@ v14, 30 October 2026 — starting with or moving to several PLs, your actions (�
 coordination (`2_PL_BOOTSTRAP_PROMPT.md` §D); the project instructions for several PLs.
 v15, 30 October 2026 — moving from one mode to another along the way: the signs, your actions, what the session
 does, going back when a domain closes (§3b).
+v16, 30 October 2026 — the orders repository, file-exchange bridge: how data gets onto the server — produced in a session
+(`transfers/<domain>/<edition>/` of the orders repository, then a `fichiers` order), produced on the PC (`entree/`),
+published elsewhere (`telecharger`), never the history of a public code repository; why, the PL's step by step, limits
+(95 MiB per file, the runner's clone) (§2c; `templates/SERVER_RUNNER.md` v2).

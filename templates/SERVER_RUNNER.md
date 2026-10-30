@@ -1,5 +1,5 @@
-# The server runner — a deterministic program on the production server, driven by an orders repository · v1
-### 28 October 2026 · proven on a real project (a web application under Docker Compose and two self-contained HTML pages)
+# The server runner — a deterministic program on the production server, driven by an orders repository · v2
+### 28 October 2026 · v2 on 30 October: the orders repository, file-exchange bridge · proven on a real project (a web application under Docker Compose and two self-contained HTML pages)
 
 *For a project whose deliverable runs **on a server the owner administers**. The PL deploys there themselves, on the
 owner's “go”, without anyone dropping a file or running a command. The rest of the method does not change: the PL
@@ -88,6 +88,22 @@ merge into main
    **zones declared on the server side**, without go — except emptying the trash, the only real deletion, on go.
 8. **Before a brief that touches production**, the PL runs `etat`: version served, containers, disk space, backups,
    counts. That is the probe, with no action from the owner.
+9. **Data produced in a session** (a package of rendered pages, tomorrow tiles or maps) **to be served**: it goes through
+   **the orders repository, which also serves as the file-exchange bridge** — never through the history of a public code
+   repository (§5). The PL who produces it (never the dev):
+   1. pushes it to the orders repository under `transfers/<domain>/<edition>/` — **a file of 95 MiB at most** —, after a
+      `git pull`, and reads the full hash of the commit that carries it;
+   2. **tells the owner what is going to be replaced** on the server, before the order that contains `basculer`;
+   3. pushes a `fichiers` order (§7): `telecharger` **from the orders repository, at the 40-hex commit, sha256
+      mandatory**, `decompresser` into a new folder, `basculer`;
+   4. reads the report (bounded wait, point 3), tells the owner, who validates on screen;
+   5. **removes the folder from the tree** by a commit once the report has succeeded: the history keeps the file, a partial
+      copy at the commit reads only what is needed.
+
+   Data produced **on the owner's PC** (captures, large backgrounds): `rsync` into `entree/` (§4), then a `fichiers` order.
+   Data **published elsewhere** (a release, a known public repository, an authorized host): `telecharger` as for any file,
+   without going through the bridge. *On the why — the options ruled out — and the step by step explained to the owner:
+   `GUIDE.md` §2c.*
 
 **Each PL who deploys attaches the orders repository with write access** at the start of the session. **The dev neither
 reads nor writes it**: it is not in their command, and the dev prompt forbids it.
@@ -107,7 +123,8 @@ starts by backing up the present state.
   (`{"version": "1.2.3"}`), and a `VERSION` file at the root of the archive.
 - **No inbound port.** The server fetches its orders; nobody gets in. The application's exposure (a tunnel, a proxy, a
   VPN) is none of the server runner's business.
-- **Optional — dropping large files from the PC**: `rsync` over SSH into an `entree/` folder, with a restricted key
+- **Optional — dropping large files from the PC** (the PC route of the file-exchange bridge, §3 point 9): `rsync` over SSH
+  into an `entree/` folder, with a restricted key
   (write-only, locked into that folder, no shell). You then need **a private path to the server's SSH port**: a VPN (for
   example Tailscale), a local network, or SSH exposed with key only. The network is named in the local runner's
   configuration (host, port, user), never in the method or in the code; changing it means changing the host and the
@@ -119,14 +136,33 @@ starts by backing up the present state.
 **The orders repository**: a **private** repository, empty at creation, that the owner creates (`<owner>/<Project>-Orders`).
 
 ```
-ordres/<id>.json        written by the PL, never rewritten
-resultats/<id>.md       written by the server runner, one per order
-LISEZ_MOI.md            the order format (copy of docs/ORDRES.md from the implementation)
+ordres/<id>.json                      written by the PL, never rewritten
+resultats/<id>.md                     written by the server runner, one per order
+transfers/<domain>/<edition>/…        the file-exchange bridge: written by the PL who produces the data, removed after use
+LISEZ_MOI.md                          the order format (copy of docs/ORDRES.md from the implementation)
 ```
 
-The folder names stay in French: the reference implementation reads them. Written by the PL (the orders) and by the
+The folder names `ordres/` and `resultats/` stay in French: the reference implementation reads them. `transfers/` is a
+convention of the method, not read by the program (see below). Written by the PL (the orders, the transfers) and by the
 server (the reports), **never by the dev**. No secret, no production data in an order or in a report (the server filters
 its logs before pushing them, §7).
+
+**The file-exchange bridge — `transfers/`.** Data **produced in a cloud session** and to be served arrives through the
+orders repository, under `transfers/<domain>/<edition>/` (`transfers/` and not `data/`: the server's zones often already
+carry that name; the name is a convention of the method, the program only reads the path given by the order).
+- **Who pushes there**: the PL who produces the data, never the dev. An edition has a new name, never rewritten.
+- **Which key**: the same one, `cle_ordres`, that already reads the orders and pushes the reports; no extra key. Reading a
+  file at a commit is done by a **partial copy of a single commit** (§13).
+- **Which size**: **a file of 95 MiB at most** — the host refuses anything beyond 100 MB per file. Larger: split, or
+  another route (the PC, an authorized host).
+- **What becomes of the file**: once the report has succeeded, the PL removes the folder from the tree by a commit; the
+  history keeps it. What is pushed is meant to be served: no secret, no personal data.
+- **Point of attention — the runner's clone.** The runner keeps a clone of the orders repository, updated every minute.
+  **If that clone is complete, the files pushed then removed stay in its history**, on the server's disk. The defence — a
+  partial copy (without the files of `transfers/`), or `transfers/` outside the orders clone — **is decided at set-up**,
+  from the inventory (§6); it is only quantified once the space has been measured.
+- **Why not a separate repository**: one more deploy key, one more configuration line, one more repository to name in the
+  handovers, for nothing the orders repository does not already bring (`GUIDE.md` §2c).
 
 **The deploy keys**, generated on the server by the installer, **one per repository**:
 
@@ -270,6 +306,27 @@ target: refusal, unless `"si_existe": "remplacer"`, which moves the old one to t
    {"operation": "decompresser", "zone": "donnees", "archive": "archives/fond.tar.gz", "vers": "cartes/fond-v2"},
    {"operation": "basculer", "zone": "donnees", "prepare": "cartes/fond-v2", "servi": "cartes/fond"}]}
 ```
+
+**A package produced in a session, pushed to the orders repository** (§3 point 9) — `telecharger` from the orders
+repository, **at the 40-hex commit, with the sha256** (mandatory for this source), then `decompresser` into a new folder and
+`basculer`:
+
+```json
+{"id": "2026-10-27-11", "action": "fichiers", "demande_par": "chef de projet",
+ "operations": [
+   {"operation": "telecharger", "zone": "donnees", "chemin": "archives/pages-v2.tar.gz",
+    "source": "github-prive:exemple/ordres@0123456789abcdef0123456789abcdef01234567:transfers/pages/v2/pages-v2.tar.gz",
+    "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"},
+   {"operation": "decompresser", "zone": "donnees", "archive": "archives/pages-v2.tar.gz", "vers": "pages/pages-v2"},
+   {"operation": "basculer", "zone": "donnees", "prepare": "pages/pages-v2", "servi": "pages/pages"}]}
+```
+
+> **Coming in the reference implementation.** This form of source — the orders repository itself, private, read at the
+> commit with the runner's key — **does not exist yet**: today the reference implementation only reads public repositories,
+> releases and authorized hosts (`docs/ORDRES.md`). It arrives in its next version, in the form a first project built:
+> the source `github-prive:<owner>/<repo>@<commit>:<path>`, sha256 mandatory, 95 MiB at most, for a repository declared
+> in a `depots_prives` list of the configuration with its key — the orders repository is listed there with the key the
+> runner already has for it. Until then, the PC route (`entree/`) or a source published elsewhere.
 
 ```json
 {"id": "2026-10-27-09", "action": "fichiers", "demande_par": "chef de projet",
@@ -431,6 +488,9 @@ the fallback.
    action, and quote it in the order.
 5. **A read-only probe before any script that modifies the system** (inventory, disk probe), and the script is tried on
    a simulated machine, rollback included.
+6. **Data produced in a session arrives through the orders repository, not through one more repository.** A private data
+   repository had been decided, then dropped the same evening: the orders repository, already read and already written,
+   makes the bridge (`transfers/`); never the history of a public code repository, where every edition would stay forever.
 
 ## 13. The reference implementation
 
@@ -447,5 +507,9 @@ HTTPS transport, local Git repositories; those of the installer need root and `s
 - **The target stack**: Docker Compose, PostgreSQL, a JSON health route, static files pulled from public repositories.
   Another stack is adapted in `deployeur/application.py`, `deployeur/base.py` and `deployeur/commandes.py`, through a
   tooling batch, briefed by the PL, built by the dev, accepted by reading the whole program.
+- **It does not yet have the private source of `telecharger`** — the one that reads a file of the orders repository at a
+  commit, by a partial copy of a single commit, with the key the runner already holds for that repository (§5, §7): it
+  arrives in its next version. The file-exchange bridge (§3 point 9) is described here; its “session” route only works with
+  that version. The PC route (`entree/`) and the route of a source published elsewhere already work.
 - **It is taken into one of the project's code repositories** (private), like any deliverable: versioned, with its
   `CHANGELOG`, its tests in the test bench, and its updates deployed by the installer.

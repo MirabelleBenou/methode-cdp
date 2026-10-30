@@ -17,7 +17,7 @@
 | `<owner>/<Project>` (private) | the living docs: this method, the plan, the decision log, `workstreams.yaml`, the checkpoint, the expected results and the PL's scripts | the PL sessions only |
 | `<owner>/<Project>-App` (⟨private / public⟩) | the code at the root (the deployment archive is `git archive` of the delivery commit), the test bench in `bench/`; ⟨private:⟩ the dev prompt and `batches/<version>/` | the PL on `main` and for the brief; the dev on the branch of their batch |
 | ⟨public code only:⟩ `<owner>/<Project>-Batches` (private) | the dev prompt, `batches/<batch>/` — **never in the public repository** | the PL (brief, addenda); the dev (stops, report) |
-| ⟨production server with a server runner:⟩ `<owner>/<Project>-Orders` (private) — the orders repository | `ordres/<id>.json` (orders), `resultats/<id>.md` (reports), the order format in `LISEZ_MOI.md` (§4a) | the PL (the orders); the server runner (the reports); **never the dev** |
+| ⟨production server with a server runner:⟩ `<owner>/<Project>-Orders` (private) — the orders repository, **and the file-exchange bridge** (`transfers/`) | `ordres/<id>.json` (orders), `resultats/<id>.md` (reports), the order format in `LISEZ_MOI.md` (§4a); `transfers/<domain>/<edition>/`: the data produced in a session, for as long as it takes to serve it | the PL (the orders, and the transfers: whoever produces the data); the server runner (the reports); **never the dev** |
 
 ⟨Several code repositories:⟩ they share **a single `<Project>-Batches`**, and each batch there carries a module prefix
 (`batch/<prefix>-<batch>`); the code starts from the module's repository, on `batch/<batch>` (`3_GITHUB.md` §6 C).
@@ -304,6 +304,24 @@ path**; an agent on a production server, if there is one, is bounded (no secrets
 **The fallback**: the server runner down, the deliverable is handed to the owner as is (§4, step 7) and the manual
 procedure applies. **Each PL who deploys attaches the orders repository with write access; the dev never reads or
 writes it.**
+
+**How data gets onto the server** (a package of rendered pages, tiles, maps — the orders repository is also the
+**file-exchange bridge**):
+- **Produced in a session**: the PL who produces it pushes it to the orders repository under
+  `transfers/<domain>/<edition>/` (**never the dev**; **a file of 95 MiB at most**, the host refuses anything beyond
+  100 MB; larger: split, or another route); then a `fichiers` order: `telecharger` **from the orders repository, at the
+  40-hex commit, sha256 mandatory**, `decompresser` into a new folder, `basculer` — **the PL tells the owner before
+  replacing what is served**. Once the report has succeeded, it **removes the folder from the tree** by a commit (the
+  history keeps it; a partial copy at the commit reads only what is needed).
+- **Produced on the owner's PC** (captures, large backgrounds): `rsync` into `entree/` (`SERVER_RUNNER.md` §4), then a
+  `fichiers` order.
+- **Published elsewhere** (a release, a known public repository, an authorized host): `telecharger`, as for any file.
+- **Never the history of a public code repository**: every edition would stay there forever and weigh down every clone.
+- *Points of attention*: the runner keeps a clone of the orders repository up to date every minute — if it is complete,
+  the files pushed then removed stay in its history: the defence (partial copy, or `transfers/` outside the orders clone)
+  is decided **at set-up** ⟨and noted here⟩; reading a file at a commit is a private source of `telecharger` that the
+  reference implementation does not have yet (`SERVER_RUNNER.md` §13). The why, and the step by step: `SERVER_RUNNER.md`
+  §3 point 9 and §5.
 
 ⟨What is specific to the project: the actions in service, the static files and the zones, the counted tables, the
 manual procedure, the date it went into service.⟩

@@ -1,5 +1,5 @@
-# L'exécutant serveur — un programme déterministe sur le serveur de production, piloté par un dépôt d'ordres · v1
-### 28 octobre 2026 · éprouvé sur un projet réel (une application web sous Docker Compose et deux pages HTML autoportantes)
+# L'exécutant serveur — un programme déterministe sur le serveur de production, piloté par un dépôt d'ordres · v2
+### 28 octobre 2026 · v2 le 30 octobre : le dépôt d'ordres, pont d'échange de fichiers · éprouvé sur un projet réel (une application web sous Docker Compose et deux pages HTML autoportantes)
 
 *Pour un projet dont le livrable tourne **sur un serveur que le porteur administre**. Le CdP y déploie lui-même, sur le
 « go » du porteur, sans que personne ne dépose de fichier ni ne lance de commande. Le reste de la méthode ne change pas :
@@ -90,6 +90,22 @@ fusion dans main
    des **zones déclarées côté serveur**, sans go — sauf vider la corbeille, la seule suppression réelle, sur go.
 8. **Avant un cadrage qui touche la production**, le CdP lance `etat` : version servie, conteneurs, place disque,
    sauvegardes, comptes. C'est la sonde, sans geste du porteur.
+9. **Une donnée produite en session** (un paquet de pages rendues, demain des tuiles ou des cartes) **à servir** : elle
+   passe par **le dépôt d'ordres, qui sert aussi de pont d'échange de fichiers** — jamais par l'historique d'un dépôt de
+   code public (§5). Le CdP qui la produit (jamais le dev) :
+   1. la pousse au dépôt d'ordres sous `transferts/<domaine>/<édition>/` — **un fichier de 95 Mio au plus** —, après un
+      `git pull`, et relève le hash complet du commit qui la porte ;
+   2. **dit au porteur ce qui va être remplacé** sur le serveur, avant l'ordre qui contient `basculer` ;
+   3. pousse un ordre `fichiers` (§7) : `telecharger` **depuis le dépôt d'ordres, au commit de 40 hex, sha256
+      obligatoire**, `decompresser` dans un dossier neuf, `basculer` ;
+   4. lit le compte rendu (attente bornée, point 3), le dit au porteur, qui valide à l'écran ;
+   5. **retire le dossier de l'arbre** par un commit une fois le compte rendu réussi : l'historique garde le fichier, une
+      copie partielle au commit ne lit que ce qu'il faut.
+
+   Une donnée produite **sur le PC du porteur** (captures, gros fonds) : `rsync` vers `entree/` (§4), puis un ordre
+   `fichiers`. Une donnée **publiée ailleurs** (une release, un dépôt public connu, un hôte autorisé) : `telecharger`
+   comme pour tout fichier, sans passer par le pont. *Sur le pourquoi — les options écartées — et le pas à pas expliqué
+   au porteur : `LISEZ_MOI.md` §2 quater.*
 
 **Chaque CdP qui déploie rattache le dépôt d'ordres en écriture** en début de session. **Le dev ne le lit ni ne
 l'écrit** : il n'est pas dans sa commande, et le prompt du dev le lui interdit.
@@ -109,7 +125,8 @@ commence par sauvegarder l'état présent.
   (`{"version": "1.2.3"}`), et un fichier `VERSION` à la racine de l'archive.
 - **Aucun port entrant.** Le serveur va chercher ses ordres ; personne n'entre chez lui. L'exposition de l'application
   (un tunnel, un proxy, un VPN) ne regarde pas l'exécutant serveur.
-- **Facultatif — déposer de gros fichiers depuis le PC** : `rsync` sur SSH vers un dossier `entree/`, avec une clé
+- **Facultatif — déposer de gros fichiers depuis le PC** (la voie du PC du pont d'échange de fichiers, §3 point 9) :
+  `rsync` sur SSH vers un dossier `entree/`, avec une clé
   restreinte (écriture seule, enfermée dans ce dossier, sans shell). Il faut alors **un chemin privé vers le port SSH du
   serveur** : un VPN (par exemple Tailscale), un réseau local, ou SSH exposé par clé seule. Le réseau se nomme dans la
   configuration de l'exécutant local (hôte, port, utilisateur), jamais dans la méthode ni dans le code ; en changer, c'est
@@ -121,13 +138,31 @@ commence par sauvegarder l'état présent.
 **Le dépôt d'ordres** : un dépôt **privé**, vide à la création, que le porteur crée (`<owner>/<Projet>-Ordres`).
 
 ```
-ordres/<id>.json        écrits par le CdP, jamais réécrits
-resultats/<id>.md       écrits par l'exécutant serveur, un par ordre
-LISEZ_MOI.md            le format des ordres (copie de docs/ORDRES.md de l'implémentation)
+ordres/<id>.json                      écrits par le CdP, jamais réécrits
+resultats/<id>.md                     écrits par l'exécutant serveur, un par ordre
+transferts/<domaine>/<édition>/…      le pont d'échange de fichiers : écrits par le CdP qui produit la donnée, retirés après usage
+LISEZ_MOI.md                          le format des ordres (copie de docs/ORDRES.md de l'implémentation)
 ```
 
-Écrit par le CdP (les ordres) et par le serveur (les comptes rendus), **jamais par le dev**. Aucun secret, aucune donnée
-de production dans un ordre ni dans un compte rendu (le serveur filtre ses journaux avant de les pousser, §7).
+Écrit par le CdP (les ordres, les transferts) et par le serveur (les comptes rendus), **jamais par le dev**. Aucun secret,
+aucune donnée de production dans un ordre ni dans un compte rendu (le serveur filtre ses journaux avant de les pousser, §7).
+
+**Le pont d'échange de fichiers — `transferts/`.** Une donnée **produite dans une session cloud** et à servir arrive par le
+dépôt d'ordres, sous `transferts/<domaine>/<édition>/` (`transferts/` et non `donnees/` : les zones du serveur portent
+souvent déjà ce nom ; le nom est une convention de la méthode, le programme ne lit que le chemin donné par l'ordre).
+- **Qui y pousse** : le CdP qui produit la donnée, jamais le dev. Une édition porte un nom neuf, jamais réécrit.
+- **Quelle clé** : la même, `cle_ordres`, qui lit déjà les ordres et pousse les comptes rendus ; aucune clé de plus. La
+  lecture d'un fichier au commit se fait par une **copie partielle d'un seul commit** (§13).
+- **Quelle taille** : **un fichier de 95 Mio au plus** — l'hébergeur refuse au-delà de 100 Mo par fichier. Plus gros :
+  découper, ou une autre voie (le PC, un hôte autorisé).
+- **Ce que devient le fichier** : le compte rendu réussi, le CdP retire le dossier de l'arbre par un commit ; l'historique
+  le garde. Ce qu'on pousse est destiné à être servi : ni secret ni donnée personnelle.
+- **Point d'attention — le clone de l'exécutant.** L'exécutant tient un clone du dépôt d'ordres, mis à jour chaque minute.
+  **Si ce clone est complet, les fichiers poussés puis retirés restent dans son historique**, sur le disque du serveur. La
+  parade — une copie partielle (sans les fichiers de `transferts/`), ou `transferts/` hors du clone des ordres — **se décide
+  à la mise en place**, sur l'inventaire (§6) ; elle ne se chiffre qu'une fois la place mesurée.
+- **Pourquoi pas un dépôt à part** : une clé de déploiement de plus, une ligne de configuration de plus, un dépôt de plus à
+  nommer dans les passations, pour rien que le dépôt d'ordres n'apporte déjà (`LISEZ_MOI.md` §2 quater).
 
 **Les clés de déploiement**, générées sur le serveur par l'installateur, **une par dépôt** :
 
@@ -268,6 +303,27 @@ d'écrasement silencieux** (cible existante : refus, sauf `"si_existe": "remplac
    {"operation": "decompresser", "zone": "donnees", "archive": "archives/fond.tar.gz", "vers": "cartes/fond-v2"},
    {"operation": "basculer", "zone": "donnees", "prepare": "cartes/fond-v2", "servi": "cartes/fond"}]}
 ```
+
+**Un paquet produit en session, poussé au dépôt d'ordres** (§3 point 9) — `telecharger` depuis le dépôt d'ordres, **au
+commit de 40 hex, avec le sha256** (obligatoire pour cette source), puis `decompresser` dans un dossier neuf et `basculer` :
+
+```json
+{"id": "2026-10-27-11", "action": "fichiers", "demande_par": "chef de projet",
+ "operations": [
+   {"operation": "telecharger", "zone": "donnees", "chemin": "archives/pages-v2.tar.gz",
+    "source": "github-prive:exemple/ordres@0123456789abcdef0123456789abcdef01234567:transferts/pages/v2/pages-v2.tar.gz",
+    "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"},
+   {"operation": "decompresser", "zone": "donnees", "archive": "archives/pages-v2.tar.gz", "vers": "pages/pages-v2"},
+   {"operation": "basculer", "zone": "donnees", "prepare": "pages/pages-v2", "servi": "pages/pages"}]}
+```
+
+> **À venir dans l'implémentation de référence.** Cette forme de source — le dépôt d'ordres lui-même, privé, lu au commit
+> avec la clé de l'exécutant — **n'existe pas encore** : l'implémentation de référence ne lit aujourd'hui que des dépôts
+> publics, des releases et des hôtes autorisés (`docs/ORDRES.md`). Elle arrive dans sa prochaine version, sous la forme
+> qu'un premier projet a construite : la source `github-prive:<propriétaire>/<dépôt>@<commit>:<chemin>`, sha256
+> obligatoire, 95 Mio au plus, pour un dépôt déclaré dans une liste `depots_prives` de la configuration avec sa clé — le
+> dépôt d'ordres y figure avec la clé que l'exécutant a déjà pour lui. D'ici là, la voie du PC (`entree/`) ou une
+> source publiée ailleurs.
 
 ```json
 {"id": "2026-10-27-09", "action": "fichiers", "demande_par": "chef de projet",
@@ -429,6 +485,9 @@ le repli.
    nomme l'action, et le citer dans l'ordre.
 5. **Une sonde en lecture seule avant tout script qui modifie le système** (inventaire, sonde du disque), et le script
    s'essaie sur une machine simulée, retour arrière compris.
+6. **Une donnée produite en session arrive par le dépôt d'ordres, pas par un dépôt de plus.** Un dépôt de données privé
+   avait été décidé, puis abandonné le soir même : le dépôt d'ordres, déjà lu et déjà écrit, fait le pont (`transferts/`) ;
+   jamais l'historique d'un dépôt de code public, où chaque édition resterait pour toujours.
 
 ## 13. L'implémentation de référence
 
@@ -445,5 +504,9 @@ un faux `docker`, un faux transport HTTPS, des dépôts Git locaux ; ceux de l'i
 - **La pile visée** : Docker Compose, PostgreSQL, une route de santé JSON, des fichiers statiques tirés de dépôts publics.
   Une autre pile s'adapte dans `deployeur/application.py`, `deployeur/base.py` et `deployeur/commandes.py`, par un lot
   d'outillage, cadré par le CdP, construit par le dev, reçu en lisant tout le programme.
+- **Elle n'a pas encore la source privée de `telecharger`** — celle qui lit un fichier du dépôt d'ordres au commit, par une
+  copie partielle d'un seul commit, avec la clé que l'exécutant a déjà pour ce dépôt (§5, §7) : elle arrive dans sa
+  prochaine version. Le pont d'échange de fichiers (§3 point 9) est décrit ici ; sa voie « session » ne se joue qu'avec
+  cette version. Les voies du PC (`entree/`) et d'une source publiée ailleurs fonctionnent déjà.
 - **Elle se reprend dans un dépôt de code du projet** (privé), comme tout livrable : versionnée, avec son `CHANGELOG`,
   ses tests au banc, et ses mises à jour déployées par l'installateur.

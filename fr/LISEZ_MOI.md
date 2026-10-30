@@ -1,4 +1,4 @@
-# PACKAGE MÉTHODE CdP · v15
+# PACKAGE MÉTHODE CdP · v16
 ### 30 octobre 2026 · pour démarrer un nouveau projet sous la méthode CdP
 
 *Ce package reproduit une façon de travailler éprouvée lot après lot : un **chef de projet** (CdP, Opus) qui décide
@@ -34,7 +34,7 @@ qui décides et valides à l'écran. Tout circule par GitHub ; tu ne téléverse
 | `modeles/archiver_chantiers.py` | archive les chantiers en recette : date `recette-le:` toute entrée qui entre en recette, sort vers `Archives/CHANTIERS_<AAAA-MM>.yaml` celles qui y sont depuis 15 jours (sans perte, idempotent, `--a-blanc`) ; `chercher` retrouve un chantier, vivant ou archivé | dépôt des vivants, lancé par l'arbitre à chaque passage, sinon par le CdP ou le coordinateur à sa clôture |
 | `modeles/ARBITRE.md` | **facultatif, mode C** — l'arbitre des vivants, expliqué en entier : ce qu'il est, pourquoi (les cas vécus), quand, ce qu'il coûte, comment lire ce qu'il produit ; sa procédure (contrôle des vivants **et des checkpoints**, signalement sans correction, archivage des chantiers en recette, lecture du lundi), son journal, la mise en place pas à pas avec le « qui fait quoi » (heure, prompt, notifications), l'essai | `Methode/ARBITRE.md` du dépôt des vivants, lu par la tâche planifiée |
 | `modeles/EXECUTANT_LOCAL.md` | l'exécutant Claude Code local sur le PC, piloté par fichiers (`sync\`) | sert au CdP et à l'exécutant |
-| `modeles/EXECUTANT_SERVEUR.md` | **facultatif** — l'exécutant serveur : un programme déterministe sur le serveur de production, piloté par un dépôt d'ordres ; le CdP déploie sur ton « go » (guide pas à pas). **Pas de serveur de production : sautez-le** | sert au CdP et à toi, à l'installation |
+| `modeles/EXECUTANT_SERVEUR.md` | **facultatif** — l'exécutant serveur : un programme déterministe sur le serveur de production, piloté par un dépôt d'ordres ; le CdP déploie sur ton « go » (guide pas à pas) ; le même dépôt d'ordres sert de **pont d'échange de fichiers** : une donnée produite en session arrive sur le serveur par `transferts/` (§2 quater). **Pas de serveur de production : sautez-le** | sert au CdP et à toi, à l'installation |
 | `../templates/server-runner/` (à la racine du dépôt public, non traduit) | **facultatif** — son implémentation de référence (Python, systemd, installateur, tests), en français, valeurs d'exemple | dépôt de code du projet, puis le serveur |
 | `modeles/depot-vivants/` | `README.md` du dépôt des vivants | dépôt des vivants |
 | `modeles/depot-app/` | `.gitattributes`, `.gitignore`, `CHANGELOG.md` du dépôt de code | dépôt de code |
@@ -189,6 +189,73 @@ dans la procédure, pas au cas par cas.
 
 ---
 
+## 2 quater · Le dépôt d'ordres, pont d'échange de fichiers
+
+*Une page pour comprendre par où une donnée arrive sur le serveur. **Pas d'exécutant serveur**
+(`modeles/EXECUTANT_SERVEUR.md`) : **saute cette section**, tu n'en as pas l'usage. Le détail technique — le circuit, la
+forme des ordres, les limites — est au guide de l'exécutant serveur, §3, §5, §7, §12 et §13.*
+
+**Le problème.** Une session cloud produit une donnée — par exemple un paquet d'environ 60 Mo de pages rendues, demain des
+tuiles ou des cartes — que le serveur doit servir. La session ne voit pas le serveur, le CdP ne s'y connecte jamais, et toi,
+tu ne veux pas déposer un fichier à la main à chaque édition. Par où la donnée arrive-t-elle ?
+
+**La règle.** Le dépôt d'ordres — que l'exécutant lit déjà chaque minute avec sa clé, et où le CdP pousse déjà ses ordres —
+sert aussi de **pont d'échange de fichiers** entre les sessions et le serveur : un dossier `transferts/` à côté de `ordres/`
+et de `resultats/`. Aucun dépôt de plus, aucune clé de plus. *Le nom `transferts/` est une convention de la méthode : le
+programme ne connaît que le chemin que porte l'ordre.*
+
+**Les trois voies, selon d'où vient la donnée :**
+
+| la donnée est… | elle arrive par | puis |
+|---|---|---|
+| **produite dans une session** (le paquet rendu par le CdP) | le CdP qui la produit la pousse au dépôt d'ordres, sous `transferts/<domaine>/<édition>/` | un ordre `fichiers` : `telecharger` depuis le dépôt d'ordres, **au commit de 40 hex, sha256 obligatoire** ; `decompresser` dans un dossier neuf ; `basculer` |
+| **produite sur ton PC** (captures, gros fonds) | `rsync` vers `entree/` du serveur (`modeles/EXECUTANT_SERVEUR.md` §4) | un ordre `fichiers` : `deplacer`, `decompresser`, `basculer` |
+| **publiée ailleurs** (une release, un dépôt public connu, un hôte autorisé) | rien à pousser | un ordre `fichiers` : `telecharger`, comme avant |
+| **jamais** | l'historique d'un dépôt de code public | — |
+
+**Pourquoi le dépôt d'ordres — ce qui a été écarté, chacun pour une raison :**
+- **l'historique d'un dépôt de code public** (une branche à part, des fichiers sous `dist/`) : chaque édition y reste pour
+  toujours et alourdit chaque clone ; le projet avait déjà dû sortir des zips de git pour cette raison. Et ce serait public ;
+- **une release publique** : tu ne veux ni publier ces fichiers, ni faire un geste à chaque édition ;
+- **un dépôt de données privé à part** : c'est ce qui avait été décidé d'abord — puis abandonné le soir même, à ta question
+  (« pourquoi un énième dépôt privé ? »). Il coûtait une clé de déploiement de plus, une ligne de configuration, un dépôt à
+  nommer dans les passations, sans rien apporter que le dépôt d'ordres n'ait déjà ;
+- **le dépôt d'ordres, retenu** : l'exécutant le lit déjà avec sa clé, le CdP y pousse déjà, tout y est daté, au commit,
+  vérifiable par sha256, et rien n'est public. *La leçon : avant de créer un dépôt, regarder si un dépôt existant joue déjà
+  le rôle.*
+
+**Le pas à pas du CdP — une donnée produite en session :**
+1. **Il produit le fichier** — **un fichier de 95 Mio au plus** — et calcule son sha256.
+2. **Il pousse** au dépôt d'ordres, après un `git pull`, sous `transferts/<domaine>/<édition>/` (une édition porte un nom
+   neuf, jamais réutilisé), en ajout seul ; puis il relève le **hash complet du commit** (40 hex) qui porte le fichier.
+   **Le dev n'y écrit jamais.**
+3. **Il te dit ce qui va être remplacé** sur le serveur, et attend ton accord avant l'ordre qui contient `basculer` ; il peut
+   scinder en deux ordres (préparer, puis basculer) si tu veux voir le paquet arrivé d'abord.
+4. **Il pousse l'ordre `fichiers`** (`ordres/<id>.json`, avec les garde-fous du §3 de `EXECUTANT_SERVEUR.md` : un ordre ne
+   s'écrit jamais sur un fichier qui existe) : `telecharger` du dépôt d'ordres, au commit et au sha256, `decompresser` dans un
+   dossier neuf, `basculer`.
+5. **Il lit le compte rendu** (attente bornée), te dit ce qui est servi, et tu valides à l'écran.
+6. **Il retire le dossier de l'arbre** par un commit, quand le compte rendu est réussi : l'historique garde le fichier,
+   l'arbre redevient léger.
+
+**Les limites, et ce qu'il faut régler à la mise en place :**
+- **95 Mio par fichier.** L'hébergeur refuse tout fichier au-delà de 100 Mo. Plus gros : découper en plusieurs fichiers, ou
+  passer par une autre voie (le PC, un hôte autorisé).
+- **L'historique ne s'allège pas.** Retirer le dossier de l'arbre n'enlève pas le fichier de l'historique : le dépôt
+  d'ordres grossit à chaque édition poussée.
+- **Le clone de l'exécutant.** L'exécutant tient un clone du dépôt d'ordres, mis à jour chaque minute. Si ce clone est
+  complet, les fichiers poussés puis retirés restent dans son historique, sur le disque du serveur. La parade — une copie
+  partielle, ou `transferts/` hors du clone des ordres — se décide **à la mise en place**, sur l'inventaire de la machine
+  (place disque) ; ne rien chiffrer avant de l'avoir mesuré.
+- **La lecture d'un fichier au commit** se fait par une copie partielle d'un seul commit, avec la clé que l'exécutant a déjà
+  pour ce dépôt : c'est une **source privée de `telecharger`**. **L'implémentation de référence ne l'a pas encore** : elle
+  arrive dans sa prochaine version. D'ici là, la voie du PC (`entree/`) ou une source publiée ailleurs.
+- **Ce qu'on y pousse se sert** : ni secret ni donnée personnelle dans `transferts/`.
+
+Le circuit complet, les ordres et leurs limites : `modeles/EXECUTANT_SERVEUR.md` (§3 point 9, §5, §7, §12 leçon 6, §13).
+
+---
+
 ## 3 · Démarrer un nouveau projet — tes gestes, dans l'ordre
 
 1. **Sur GitHub, crée deux dépôts privés vides** (sans README) :
@@ -328,6 +395,7 @@ déjà les trois modes.
 | Cadrage, addenda, arrêts, rapport, maquette | dépôt de code `lots/<version>/` — **dépôt `<Projet>-Lots` si le code est public** | **non** | CdP (cadrage, addenda), dev (arrêts, rapport) | pendant le lot |
 | Specs, guide de style, études | projet, écrits une fois | — | CdP | une fois, jamais réécrits |
 | Données de production, journaux | **aucun dépôt** | non | toi | téléversés dans la session qui en a besoin |
+| Donnée produite en session, à servir (un paquet, des tuiles) — avec un exécutant serveur | dépôt d'ordres, `transferts/<domaine>/<édition>/` (§2 quater) | non | le CdP qui la produit, **jamais le dev** | à l'édition ; retirée de l'arbre au compte rendu réussi |
 | Images (tuiles, visuels) | **dans la discussion** | jamais | toi | l'import au projet les corrompt sans prévenir |
 
 **Le projet claude.ai ne porte que** les miroirs des vivants (recopiés par le CdP à chaque clôture, depuis son clone)
@@ -412,3 +480,7 @@ v14, le 30 octobre 2026 — démarrer ou passer à plusieurs CdP, tes gestes (§
 coordination (`2_PROMPT_AMORCAGE_CDP.md` §D) ; les instructions du projet à plusieurs CdP.
 v15, le 30 octobre 2026 — passer d'un mode à l'autre en cours de route : les signes, tes gestes, ce que la
 session fait, le retour quand un domaine se ferme (§3 ter).
+v16, le 30 octobre 2026 — le dépôt d'ordres, pont d'échange de fichiers : par où une donnée arrive sur le serveur —
+produite en session (`transferts/<domaine>/<édition>/` du dépôt d'ordres, puis un ordre `fichiers`), produite sur le PC
+(`entree/`), publiée ailleurs (`telecharger`), jamais l'historique d'un dépôt de code public ; pourquoi, pas à pas du
+CdP, limites (95 Mio par fichier, le clone de l'exécutant) (§2 quater ; `modeles/EXECUTANT_SERVEUR.md` v2).

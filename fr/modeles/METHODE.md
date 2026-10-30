@@ -17,7 +17,7 @@
 | `<owner>/<Projet>` (privé) | les vivants : cette méthode, le plan, le registre, `chantiers.yaml`, le checkpoint, les attendus et les scripts du CdP | les sessions de CdP seules |
 | `<owner>/<Projet>-App` (⟨privé / public⟩) | le code à la racine (l'archive de déploiement est `git archive` du commit de livraison), le banc dans `banc/` ; ⟨privé :⟩ le prompt du dev et `lots/<version>/` | le CdP sur `main` et pour le cadrage ; le dev sur la branche de son lot |
 | ⟨code public seulement :⟩ `<owner>/<Projet>-Lots` (privé) | le prompt du dev, `lots/<lot>/` — **jamais au dépôt public** | le CdP (cadrage, addenda) ; le dev (arrêts, rapport) |
-| ⟨serveur de production avec un exécutant serveur :⟩ `<owner>/<Projet>-Ordres` (privé) — le dépôt d'ordres | `ordres/<id>.json`, `resultats/<id>.md`, le format des ordres en `LISEZ_MOI.md` (§4 bis) | le CdP (les ordres) ; l'exécutant serveur (les comptes rendus) ; **jamais le dev** |
+| ⟨serveur de production avec un exécutant serveur :⟩ `<owner>/<Projet>-Ordres` (privé) — le dépôt d'ordres, **et le pont d'échange de fichiers** (`transferts/`) | `ordres/<id>.json`, `resultats/<id>.md`, le format des ordres en `LISEZ_MOI.md` (§4 bis) ; `transferts/<domaine>/<édition>/` : les données produites en session, le temps d'être servies | le CdP (les ordres, et les transferts : celui qui produit la donnée) ; l'exécutant serveur (les comptes rendus) ; **jamais le dev** |
 
 ⟨Plusieurs dépôts de code :⟩ ils partagent **un seul `<Projet>-Lots`**, et chaque lot y porte un préfixe de module
 (`lot/<préfixe>-<lot>`) ; le code part du dépôt du module, sur `lot/<lot>` (`3_GITHUB.md` §6 C).
@@ -299,6 +299,24 @@ déploiement** ; un agent sur un serveur de production, s'il existe, est borné 
 
 **Le repli** : l'exécutant serveur en panne, le livrable se remet au porteur tel quel (§4, étape 7) et la procédure manuelle
 s'applique. **Chaque CdP qui déploie rattache le dépôt d'ordres en écriture ; le dev ne le lit ni ne l'écrit jamais.**
+
+**Par où une donnée arrive sur le serveur** (un paquet de pages rendues, des tuiles, des cartes — le dépôt d'ordres est aussi
+le **pont d'échange de fichiers**) :
+- **Produite dans une session** : le CdP qui la produit la pousse au dépôt d'ordres sous `transferts/<domaine>/<édition>/`
+  (**jamais le dev** ; **un fichier de 95 Mio au plus**, l'hébergeur refuse au-delà de 100 Mo ; plus gros : découper, ou une
+  autre voie) ; puis un ordre `fichiers` : `telecharger` **depuis le dépôt d'ordres, au commit de 40 hex, sha256
+  obligatoire**, `decompresser` dans un dossier neuf, `basculer` — **le CdP le dit au porteur avant de remplacer ce qui est
+  servi**. Le compte rendu réussi, il **retire le dossier de l'arbre** par un commit (l'historique le garde ; une copie
+  partielle au commit ne lit que ce qu'il faut).
+- **Produite sur le PC du porteur** (captures, gros fonds) : `rsync` vers `entree/` (`EXECUTANT_SERVEUR.md` §4), puis un ordre
+  `fichiers`.
+- **Publiée ailleurs** (une release, un dépôt public connu, un hôte autorisé) : `telecharger`, comme pour tout fichier.
+- **Jamais l'historique d'un dépôt de code public** : chaque édition y resterait pour toujours et alourdirait chaque clone.
+- *Points d'attention* : l'exécutant tient un clone du dépôt d'ordres à jour chaque minute — s'il est complet, les fichiers
+  poussés puis retirés restent dans son historique : la parade (copie partielle, ou `transferts/` hors du clone des ordres)
+  se décide **à la mise en place** ⟨et se note ici⟩ ; la lecture d'un fichier au commit est une source privée de
+  `telecharger` que l'implémentation de référence n'a pas encore (`EXECUTANT_SERVEUR.md` §13). Le pourquoi, et pas à pas :
+  `EXECUTANT_SERVEUR.md` §3 point 9 et §5.
 
 ⟨Ce qui est propre au projet : les actions en service, les fichiers statiques et les zones, les tables comptées, la
 procédure manuelle, la date de mise en service.⟩
