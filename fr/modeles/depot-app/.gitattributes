@@ -1,0 +1,16 @@
+# Hors de l'archive de déploiement (git archive) : l'outillage, la commande
+# du dev et les dossiers de lots. L'archive d'un commit = le livrable, à l'octet.
+banc/               export-ignore
+lots/               export-ignore
+PROMPT_DEV_*.md     export-ignore
+.gitattributes      export-ignore
+
+# Fins de ligne : NE PAS normaliser à l'import d'un code existant — la preuve
+# « git archive = zip d'origine, à l'octet » tomberait sur les fichiers CRLF.
+# Pour un projet neuf seulement, on peut décommenter :
+# * text=auto eol=lf
+*.png  binary
+*.jpg  binary
+*.webp binary
+*.pdf  binary
+*.zip  binary
