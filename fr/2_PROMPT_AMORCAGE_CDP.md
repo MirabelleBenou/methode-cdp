@@ -1,7 +1,8 @@
 # PROMPT D'AMORÇAGE — le premier message de la première session de CdP
 
-*À coller dans une conversation neuve **avec Opus**, dans le projet claude.ai, une fois les deux dépôts créés vides sur
-GitHub et les instructions du projet posées. Remplace les `<…>`. Le CdP fait tout le reste : tu réponds à ses
+*À coller dans une conversation neuve **avec Opus**, dans le projet claude.ai, une fois les dépôts créés vides sur
+GitHub (deux, ou trois si le code sera public : `LISEZ_MOI.md` §3) et les instructions du projet posées. Remplace les
+`<…>`, et garde dans le bloc la seule ligne de dépôts qui correspond à ton projet. Le CdP fait tout le reste : tu réponds à ses
 questions.*
 
 ---
@@ -13,7 +14,9 @@ Tu es le chef de projet (CdP) de ce projet, sous la méthode CdP (skill methode-
 
 Le package méthode est au dépôt public MirabelleBenou/methode-cdp, dossier fr/ : rattache-le en lecture (add_repo) et clone-le <ou : il est joint à ce message, en zip>. Lis LISEZ_MOI.md, 3_GITHUB.md, puis les modèles.
 
-Les deux dépôts sont créés et vides : <owner>/<Projet> (vivants, privé) et <owner>/<Projet>-App (code, privé). <Code public : et <owner>/<Projet>-Lots (privé, prompt du dev et lots).> Rattache-les (add_repo, accès push), un clone à la fois.
+<Garde une seule des deux lignes suivantes et efface l'autre.>
+<Code privé :> Les deux dépôts sont créés et vides : <owner>/<Projet> (les vivants, privé) et <owner>/<Projet>-App (le code, privé). Rattache-les (add_repo, accès push), un clone à la fois.
+<Code public :> Les trois dépôts sont créés et vides : <owner>/<Projet> (les vivants, privé), <owner>/<Projet>-App (le code, public) et <owner>/<Projet>-Lots (privé : le prompt du dev et les dossiers de lots — cadrages, rapports —, qui ne vont jamais dans un dépôt public). Rattache-les (add_repo, accès push), un clone à la fois.
 
 Ce que je veux construire : <description : le produit, les utilisateurs, la stack si tu as une préférence, les contraintes (hors ligne, hébergement, public ou privé), ce que tu as déjà>.
 

@@ -1,7 +1,8 @@
 # BOOTSTRAP PROMPT — the first message of the first PL session
 
-*To paste into a new conversation **with Opus**, in the claude.ai project, once the two repositories are created empty
-on GitHub and the project instructions are set. Replace the `<…>`. The PL does all the rest: you answer its
+*To paste into a new conversation **with Opus**, in the claude.ai project, once the repositories are created empty
+on GitHub (two, or three if the code will be public: `GUIDE.md` §3) and the project instructions are set. Replace the
+`<…>`, and keep in the block the single repositories line that fits your project. The PL does all the rest: you answer its
 questions. The prompt blocks below are in English; you may write them in your own language — the PL answers in the
 language it is addressed in.*
 
@@ -14,7 +15,9 @@ You are the project lead (PL) of this project, under the PL method (skill method
 
 The method package is in the public repository MirabelleBenou/methode-cdp, at the root: attach it read-only (add_repo) and clone it <or: it is attached to this message, as a zip>. Read GUIDE.md, 3_GITHUB.md, then the templates.
 
-The two repositories are created and empty: <owner>/<Project> (living docs, private) and <owner>/<Project>-App (code, private). <Public code: and <owner>/<Project>-Batches (private, dev prompt and batches).> Attach them (add_repo, push access), one clone at a time.
+<Keep only one of the next two lines and delete the other.>
+<Private code:> The two repositories are created and empty: <owner>/<Project> (the living docs, private) and <owner>/<Project>-App (the code, private). Attach them (add_repo, push access), one clone at a time.
+<Public code:> The three repositories are created and empty: <owner>/<Project> (the living docs, private), <owner>/<Project>-App (the code, public) and <owner>/<Project>-Batches (private: the dev prompt and the batch folders — briefs, reports —, which never go into a public repository). Attach them (add_repo, push access), one clone at a time.
 
 What I want to build: <description: the product, the users, the stack if you have a preference, the constraints (offline, hosting, public or private), what you already have>.
 
