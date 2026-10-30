@@ -75,15 +75,18 @@ au `LISEZ_MOI.md` §2 bis du package méthode.*
 
 **Les domaines** : ⟨une ligne par CdP — son nom (`Opus-CdP-<Produit>[-<Module>]`, un module seulement quand un produit
 a plusieurs CdP), ce qu'il porte, son checkpoint (`<Dossier>/CHECKPOINT_<PRODUIT>_<MODULE>.md`) ; plus le coordinateur et
-son checkpoint⟩. Le README des vivants porte la même table, avec la ligne de reprise de chacun.
+son checkpoint⟩. Le README des vivants porte la même table, avec la ligne de reprise de chacun ;
+**`Methode/domaines.yaml`** (modèle `modeles/domaines.yaml` du package) la porte sous la forme que lit le vérificateur
+(contrôle 9) : un domaine, son CdP, son checkpoint, le titre de la section de sa file (§6), ses modules. **Le
+coordinateur tient les trois au même pas** : un domaine ouvert ou fermé, une section de file renommée changent les trois.
 
 **Ouvrir un domaine** : le porteur dit au coordinateur ce qu'il veut faire ; le coordinateur donne la ligne fixe d'un domaine
-existant au témoin libre, ou ouvre le domaine (ligne ici et au README, checkpoint amorcé, chantiers rattachés), puis
+existant au témoin libre, ou ouvre le domaine (ligne ici, au README et dans `Methode/domaines.yaml`, checkpoint amorcé, chantiers rattachés), puis
 donne le titre et la ligne de chaque CdP — ou lance la session par une tâche planifiée. Un produit à plusieurs CdP de
 modules garde une **fiche produit** (le commun : rituel, banc, circuit, pièges ; jamais l'état), tenue par le
 coordinateur. Le coordinateur ne cadre aucun lot de produit ; **il cadre et lance les lots d'outillage de la méthode et
 des vivants** (`verifier_vivants.py`, `generer_tableau.py`, l'arbitre — `Methode/ARBITRE.md`, tiré de
-`modeles/ARBITRE.md` du package : rôle, procédure, tâche planifiée).
+`modeles/ARBITRE.md` du package : rôle, pourquoi, procédure, tâche planifiée).
 
 **Les numéros de décision** : avant d'écrire une entrée, pousser seule, sur `main`, la ligne
 `| **R<n>** | *réservé — <CdP>, <date>* | | |` après la dernière entrée. Push refusé → `git pull`, numéro suivant ;
@@ -322,7 +325,7 @@ procédure manuelle, la date de mise en service.⟩
 - le registre (la décision, et « ce que le lot apprend » quand il y a une leçon) ;
 - `chantiers.yaml`, **puis `chantiers.html` régénéré** (ci-dessous) ;
 - **un commit « Lot v<X.Y> clos »** au dépôt des vivants, puis **le miroir au projet** ;
-- le checkpoint **du domaine**, à la passation.
+- le checkpoint **du domaine**, à la passation, **sa file relue face à `chantiers.yaml`** (ci-dessous).
 
 Deux lots reçus le même jour peuvent se clore ensemble.
 
@@ -348,6 +351,21 @@ Deux lots reçus le même jour peuvent se clore ensemble.
 - **un id archivé ne se réutilise pas** ;
 - le vérificateur se lance avec `--archives <Dossier>/Archives` : un id à la fois vivant et archivé est un écart, et la
   dernière version du journal se cherche aussi dans les archives.
+
+**La file d'un checkpoint — des chantiers inscrits seulement** :
+- **Tout sujet à venir ou à cadrer, toute dette ou idée retenue a d'abord son entrée dans `chantiers.yaml`**
+  (`statut: a-venir`, `a-cadrer` ou `dette`), et **le checkpoint la cite par son id, entre accents graves**. Le porteur
+  ne lit que le tableau (`chantiers.html`) : un sujet qui ne vit que dans un checkpoint n'existe ni pour lui, ni pour les
+  autres CdP, ni pour l'arbitre — il se perd, ou il s'annonce encore quand il est fini.
+- **À chaque reprise et à chaque passation**, le CdP relit sa file face à `chantiers.yaml` : il **inscrit ce qui manque**
+  (puis le cite) et **retire de la file ce qui est clos** (en recette ou archivé) — un chantier clos ne s'annonce plus.
+- **La section de file a un titre stable** : le début exact de ce titre est ce que porte `file:` dans la table des
+  domaines (`Methode/domaines.yaml`, tenue par le coordinateur au pas de la table du §1 bis) ; renommer la section se
+  dit au coordinateur.
+- **Qui contrôle** : le contrôle 9 de `verifier_vivants.py --domaines Methode/domaines.yaml` signale la file qui cite un
+  chantier clos et chaque chantier ouvert du domaine que son checkpoint ne cite pas ; l'arbitre, s'il existe, le lance à
+  chaque passage et, **le lundi, relit les checkpoints face aux décisions de la semaine** (`Methode/ARBITRE.md` §1.4 ter) ;
+  **sans arbitre**, le coordinateur lance le vérificateur avec `--domaines` à sa clôture.
 
 **Le tableau des chantiers** — la page lisible de `chantiers.yaml` :
 - **Chaque fois que le CdP écrit `chantiers.yaml`** — à la clôture, mais aussi en cours d'échange (un chantier ajouté,
@@ -392,8 +410,9 @@ dépôt. **Plus de prompt de reprise** (la passation, ci-dessous). **Les images*
   Il ne lance plus de lot neuf ; il finit celui en cours.
 - **À 700 000 jetons au plus tard**, ou à une fin de file naturelle avant, **il passe la main**, sans attendre qu'on le
   lui demande, d'un bloc, en une réponse :
-  1. le §0 du checkpoint du domaine réécrit sur l'état réel (où on en est, ce qui bloque, ce qui attend le porteur), et la
-     ligne fixe en tête vérifiée : elle nomme **tous les dépôts du domaine** (§7) ;
+  1. le §0 du checkpoint du domaine réécrit sur l'état réel (où on en est, ce qui bloque, ce qui attend le porteur), **sa
+     file relue face à `chantiers.yaml`** (ce qui manque s'inscrit, ce qui est clos sort), et la ligne fixe en tête
+     vérifiée : elle nomme **tous les dépôts du domaine** (§7) ;
   2. le témoin remis à « aucune — libre depuis <heure> » ;
   3. push, puis le miroir au projet ;
   4. **la ligne fixe du domaine**, sous « **Opus · conversation neuve dans le projet** » : « Tu es <CdP>. Reprends :

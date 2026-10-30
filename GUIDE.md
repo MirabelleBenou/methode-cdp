@@ -1,5 +1,5 @@
-# PL METHOD PACKAGE · v12
-### 29 October 2026 · to start a new project under the PL method
+# PL METHOD PACKAGE · v13
+### 30 October 2026 · to start a new project under the PL method
 
 *This package reproduces a way of working proven batch after batch: a **project lead** (PL, Opus) who decides
 with you, writes the briefs, launches the dev and accepts; a **dev** (Sonnet by default) who builds one batch at a time;
@@ -29,9 +29,10 @@ with you, writes the briefs, launches the dev and accepts; a **dev** (Sonnet by 
 | `templates/workstreams.yaml` | the single source of the workstreams (upcoming, debts, delivered) | living-docs repository, mirror in the project |
 | `templates/context.py` | measures the context of the PL session: warn at 600,000 tokens, hand over at 700,000 | `pl_tools/` in the living-docs repository |
 | `templates/make_board.py` | builds `workstreams.html`, the readable page of the workstreams, at every write of the yaml | living-docs repository, mirror in the project |
-| `templates/check_living_docs.py` | checks the shared living docs (decision numbers, workstreams, reserved versions, workstreams in flight, board, log) when several PLs write to them; read-only; with `--archives <folder>`, checks 3 (identifiers) and 7 (log) also read the workstream archives | living-docs repository, run by the coordinator and the arbiter |
+| `templates/check_living_docs.py` | checks the shared living docs (decision numbers, workstreams, reserved versions, workstreams in flight, board, log) when several PLs write to them; read-only; with `--archives <folder>`, checks 3 (identifiers) and 7 (log) also read the workstream archives; with `--domains <file>` (and `--root <folder>`), check 9 cross-checks each checkpoint's queue with `workstreams.yaml` | living-docs repository, run by the coordinator and the arbiter |
+| `templates/domains.yaml` | **modes B and C** — the domain table that check 9 of `check_living_docs.py` reads: per domain, its PL, its checkpoint, the title of its queue section, its modules; kept by the coordinator | `Method/domains.yaml` in the living-docs repository, mirror in the project |
 | `templates/archive_workstreams.py` | archives the accepted workstreams: dates `accepted-on:` on every entry that becomes accepted, moves out to `Archives/WORKSTREAMS_<YYYY-MM>.yaml` those accepted for 15 days (lossless, idempotent, `--dry-run`); `search` finds a workstream, living or archived | living-docs repository, run by the arbiter at every run, otherwise by the PL or the coordinator at their close-out |
-| `templates/ARBITER.md` | **optional, mode C** — the living-docs arbiter: a fresh session started every morning by a scheduled task, which checks the shared living docs, reports without correcting **and archives** the accepted workstreams; its procedure, its log, the task's configuration (time, prompt, notifications), the trial | `Method/ARBITER.md` in the living-docs repository, read by the scheduled task |
+| `templates/ARBITER.md` | **optional, mode C** — the living-docs arbiter, explained in full: what it is, why (the real cases), when, what it costs, how to read what it produces; its procedure (check of the living docs **and of the checkpoints**, reporting without correcting, archiving of the accepted workstreams, the Monday reading), its log, the set-up step by step with the “who does what” (time, prompt, notifications), the trial | `Method/ARBITER.md` in the living-docs repository, read by the scheduled task |
 | `templates/LOCAL_RUNNER.md` | the local Claude Code runner on the PC, driven by files (`sync\`) | used by the PL and the runner |
 | `templates/SERVER_RUNNER.md` | **optional** — the server runner: a deterministic program on the production server, driven by an orders repository; the PL deploys on your “go” (step-by-step guide). **No production server: skip it** | used by the PL, and by you at installation |
 | `templates/server-runner/` | **optional** — its reference implementation (Python, systemd, installer, tests), in French, with example values | the project's code repository, then the server |
@@ -110,16 +111,10 @@ domains, gives the fixed lines, keeps the method, the dev prompt, the package, t
 as two PLs share a deliverable, a resource or files, or a cross-cutting change appears. Nothing is migrated: you add a
 checkpoint, a line to the domain table, and the coordinator.
 
-**The arbiter: when it matters.** A fresh session, started every morning by a scheduled task, that checks the shared
-living docs (`check_living_docs.py`, the batons), files one `for:` workstream per new gap, keeps a dated log and
-summarizes — **it reports, it corrects nothing**; its only write, mechanical: **it archives** the workstreams accepted
-for 15 days (`archive_workstreams.py`, after its findings). **Useless in A**: a single PL writes, and sees what they write.
-**Optional in B**: useful if the shared living docs grow. **Recommended in C**, as soon as several PLs write the same
-living docs on the same day: duplicate decision numbers, workstreams in flight without `pl:`, a board out of step,
-forgotten sessions that keep a baton — what nobody sees otherwise, since each PL only reads their own domain. The
-coordinator sets it up and judges it with you after a one-week trial; procedure, task prompt and notifications:
-`templates/ARBITER.md`. **Who archives** the accepted workstreams: the arbiter, if there is one; without it (modes A and
-B), the PL or the coordinator runs `archive_workstreams.py` at their close-out.
+**The living-docs arbiter**: a fresh session, started every morning by a scheduled task, that checks the shared living
+docs and the checkpoints and reports without correcting. Useless in A, optional in B, recommended in C: what it is, why,
+what it costs, how to set it up and read it are in §2b. **Who archives** the accepted workstreams: the arbiter, if there
+is one; without it (modes A and B), the PL or the coordinator runs `archive_workstreams.py` at their close-out.
 
 **How the PLs talk to each other**:
 
@@ -134,6 +129,63 @@ B), the PL or the coordinator runs `archive_workstreams.py` at their close-out.
 | **never** | a message you relay from memory, nor a resume text travelling outside the repository | — | — |
 
 In A, none of these channels is needed; in B, the `for:` workstreams and the decision log are enough; in C, all of them.
+
+---
+
+## 2b · The living-docs arbiter
+
+*One page to decide whether you need one and to understand what it does. The detail — the procedure, the set-up step by
+step, the task's prompt, the trial — is in `templates/ARBITER.md`, which answers all these questions on its own.*
+
+**What it is.** A fresh session, started every morning by a scheduled task, that reads the shared living docs and the
+checkpoints and **reports without correcting**: one `for:` workstream per new gap, a dated log, a summary. Its only
+write, mechanical: the archiving of the accepted workstreams. It reserves no number, takes no deliverable, launches no
+dev.
+
+**Why.** With several PLs, each one only reads their own domain: nobody sees the whole. Real cases, on the first project
+run this way:
+- two sessions took the same decision number, three times in two days — git sees no conflict between two distinct
+  lines;
+- counters kept by hand drifted from one entry to the next;
+- a workstream stayed in flight with no declared PL, and two batches were ready on the same deliverable;
+- the published board no longer matched the file;
+- forgotten sessions kept a baton — and the first rule, which judged the baton's age, accused two very much alive ones:
+  it became the silence rule;
+- the workstreams file grew without end (nearly 200 KB, three quarters of it finished workstreams);
+- the checkpoints fell behind the workstreams: ten subjects existed only in them, which the owner does not read.
+
+A fresh, scheduled session rather than a PL: it has no stake in any domain, it runs when nobody is writing, it leaves a
+dated trace even when all is well, and it corrects nothing — it cannot make an error worse.
+
+**When.** Useless in A; optional in B; recommended in C, as soon as several PLs write the same living docs on the same
+day.
+
+**Every morning, and on Mondays.** The check of the living docs (`check_living_docs.py --archives --domains`: nine
+checks, including check 9 “checkpoints”), the batons judged by their silence, one `for:` workstream per new gap (for
+check 9, a single one per domain), the archiving, a line in the log, a summary. **On Mondays**, in addition: the reading
+of the checkpoints against the decisions of the last seven days — it flags only what a decision or a workstream
+contradicts, quoting the sentence and the evidence, with no opinion.
+
+**What it never does.** Correct anything (except the archiving), decide, judge a style, write anywhere but in the
+repository.
+
+**What it costs.** A run lasts one to two minutes and pushes one commit a day; the Monday reading costs a few tens of
+thousands of tokens more. For you: nothing day to day.
+
+**How to read it.** The log (`Method/ARBITER_LOG.md`, one line per run, even without a gap: **the proof it ran**), the
+workstreams it files (`arbiter-…` ids, on the board, `for:` the PL concerned), the session's summary. The notification
+only arrives for a “notable” run: a run without a gap does not notify, that is intended; to receive it, you need the
+mobile app and its notifications allowed.
+
+**The set-up, in five moves.** (1) The coordinator copies the three scripts, `Archives/` and `ARBITER.md` into the living
+docs. (2) They write the domain table `Method/domains.yaml` (template `templates/domains.yaml`); each PL gives their
+checkpoint a queue section that cites only registered workstreams (method §6). (3) They seed the log. (4) The coordinator
+or you create the scheduled task (off-the-hour time, prompt, push notifications). (5) First run by hand: the coordinator
+checks the log line and the commit.
+
+**The verdict after a week** (which includes a Monday): keep, adjust or stop, from the log (one line a day?), the
+findings (true?), what the PLs did with them, the archiving and check 9. A false positive is corrected in the
+procedure, not case by case.
 
 ---
 
@@ -175,6 +227,7 @@ the PL deploys, you validate on screen; handing over the deliverable only serves
 | Decision log | living-docs repository | yes | PL | at every closed batch |
 | Plan + version log | living-docs repository | yes | PL | at every batch that takes a version |
 | `workstreams.yaml` and `workstreams.html` | living-docs repository | yes, and the page as an artifact | PL | at every write of the yaml |
+| Domain table `Method/domains.yaml` | living-docs repository | yes | coordinator | a domain opened or closed, a queue section renamed |
 | `Archives/WORKSTREAMS_<YYYY-MM>.yaml` | living-docs repository | yes | the archiving (`archive_workstreams.py`) | at every arbiter run, otherwise at the PL's close-out |
 | Acceptance expected results | living-docs repository `expected/<version>/` | no | PL | at the brief |
 | The PL's throwaway scripts | living-docs repository `pl_tools/` | no | PL | as needed |
@@ -258,3 +311,7 @@ accepted and moves out to `Archives/WORKSTREAMS_<YYYY-MM>.yaml` those accepted f
 `check_living_docs.py --archives` checks the identifiers and the log against the archives; the arbiter archives too
 (otherwise the PL or the coordinator, at their close-out); an order is never written onto a file that exists (server
 runner).
+v13, 30 October 2026 — the living-docs arbiter explained in full (`templates/ARBITER.md` v3: what it is, why — the real
+cases —, when, what it costs, how to read it, the set-up and who does what, the verdict; §2b); check 9 “checkpoints” of
+`check_living_docs.py` (`--domains`, `--root`) and the domain table `templates/domains.yaml`; the arbiter's Monday
+reading; a checkpoint's queue carries only registered workstreams (method §6); skill v15.

@@ -1,0 +1,41 @@
+# Domaines — <Projet> · la table des domaines, lue par verifier_vivants.py (contrôle 9, option --domaines)
+#
+# Elle dit, pour chaque domaine (un CdP, un périmètre), où est son checkpoint, quel titre porte la section de sa file,
+# et quels chantiers de chantiers.yaml sont à lui. Le contrôle 9 recoupe ensuite la file de chaque checkpoint avec
+# chantiers.yaml : la file ne doit citer aucun chantier clos, et le checkpoint doit citer chaque chantier ouvert de son
+# domaine (méthode §6).
+#
+# QUI LA TIENT : le coordinateur, au pas de la table des domaines de la méthode (§1 bis) et du README des vivants.
+# QUAND LA CHANGER : un domaine ouvert (une entrée de plus), un domaine fermé (une entrée de moins), ou une section de
+# file renommée dans un checkpoint (`file:` suit le titre). Une table en retard fait un écart au contrôle 9.
+#
+# Même forme pauvre que chantiers.yaml (pas du YAML standard) : une entrée commence par « - domaine: », chaque clé tient
+# sur UNE ligne « clé: valeur », les lignes vides et celles qui commencent par « # » sont ignorées. Pas de commentaire en
+# fin de ligne : il serait lu comme une partie de la valeur. Chemins relatifs à la racine du dépôt des vivants
+# (ou au dossier de --racine).
+#
+#   domaine   : le nom court du domaine (obligatoire)
+#   cdp       : le nom du CdP du domaine ; une entrée de chantiers.yaml qui porte ce `cdp:` est à lui
+#   checkpoint: le chemin du checkpoint du domaine (obligatoire)
+#   file      : le début exact du titre de la section du checkpoint qui porte sa file — la ligne « ## … » ; vide si le
+#               checkpoint n'a pas de section de file. Le titre se copie du checkpoint, caractère pour caractère
+#   modules   : les modules de chantiers.yaml qui sont à lui, séparés par des espaces (peut être vide)
+#   prefixes  : facultatif — les débuts d'id de chantier qui sont à lui, séparés par des espaces ; ils l'emportent sur
+#               les modules
+#
+# Une entrée de chantiers.yaml est au premier domaine qui convient, selon cet ordre de règles, chacune essayée contre
+# tous les domaines : son `cdp:` égale celui du domaine ; sinon son id commence par l'un des préfixes ; sinon son
+# `module:` est l'un des modules ; sinon elle n'est à aucun domaine.
+
+- domaine: <domaine-1>
+  cdp: Opus-CdP-<Domaine-1>
+  checkpoint: <Dossier>/CHECKPOINT_<DOMAINE-1>.md
+  file: ## §3 · La file
+  modules: <module-1>
+
+- domaine: <domaine-2>
+  cdp: Opus-CdP-<Domaine-2>
+  checkpoint: <Dossier>/CHECKPOINT_<DOMAINE-2>.md
+  file: ## §3 · La file
+  modules: <module-2> <module-3>
+  prefixes: <préfixe->

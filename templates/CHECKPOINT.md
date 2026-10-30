@@ -24,12 +24,12 @@
 - **Since the previous checkpoint**: <the batches delivered, one line each, with their version and their D>.
 - **The method** is at v<n> (<what changed>).
 - **The decision log**: numbers are reserved by a push at the moment of writing (method §1a) — never from this file.
-- **Open debts**: <id — half a line each>.
+- **Open debts**: `<id>` — half a line each (every debt has its workstream, cited by its id).
 - **To do by the owner**:
   - <tag and release to set, on which commit, with which text>;
   - <deliverable to upload, exact name and sha256>;
   - <merged branches to delete on GitHub: …>.
-- **In flight**: <what is waiting for a test or an outside answer>.
+- **In flight**: `<id>` — <what is waiting for a test or an outside answer>.
 
 ---
 
@@ -60,9 +60,15 @@ changed since last time in bold.>
 
 ## §3 · The queue — to decide with the owner
 
-- **Decided, to brief first** (D<n>): <…>.
-- **Next**: <…>.
-- **Upcoming**: <…>.
+*The queue carries only **registered workstreams** (method §6): each subject is cited by its `workstreams.yaml` id,
+between backticks. A subject that has no workstream yet is registered **first** (upcoming, to brief or debt), then
+cited; a closed workstream (accepted or archived) leaves the queue. At every resume and every handover, re-read this
+queue against `workstreams.yaml`. The start of this title is the one `queue:` carries in the domain table
+(`Method/domains.yaml`): the coordinator keeps it up to date if it is renamed.*
+
+- **Decided, to brief first** (D<n>): `<id>` — <…>.
+- **Next**: `<id>` — <…>.
+- **Upcoming**: `<id>` — <…>.
 
 ---
 

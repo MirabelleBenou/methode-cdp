@@ -8,15 +8,18 @@ qui s'en régénère (chantiers.html) et le journal des lots du plan.
 
     python3 -B verifier_vivants.py --chantiers <chantiers.yaml> --registre <registre.md> \\
         [--tableau <chantiers.html> --generateur <generer_tableau.py>] [--journal <plan.md>] \\
-        [--archives <dossier>]
+        [--archives <dossier>] [--domaines <fichier> [--racine <dossier>]]
 
 « --tableau » et « --generateur » vont ensemble ; « --journal » est facultatif.
 « --archives » donne le dossier des archives de chantiers (les fichiers CHANTIERS_*.yaml,
 même forme que chantiers.yaml, que fait archiver_chantiers.py) ; il doit exister. Sans cette
 option, rien ne change. Avec elle, deux contrôles s'étendent aux archives : le 3 et le 7.
-Un contrôle dont les fichiers ne sont pas donnés s'affiche « non demandé ».
+« --domaines » donne la table des domaines (voir le contrôle 9) et déclenche ce contrôle ;
+« --racine » est le dossier d'où se lisent les chemins de cette table (le dossier courant
+par défaut) ; il ne s'emploie qu'avec « --domaines ». Un contrôle dont les fichiers ne sont
+pas donnés s'affiche « non demandé ».
 
-Les huit contrôles, dans cet ordre :
+Les neuf contrôles, dans cet ordre :
   1. numéros du registre : les lignes « | **R<n>** | » n'ont aucun numéro en
      double et aucun trou entre le plus petit et le plus grand ;
   2. réservations : une ligne « | **R<n>** | *réservé … » encore présente est un
@@ -48,12 +51,34 @@ Les huit contrôles, dans cet ordre :
      vol, <k> en attente » : valeurs distinctes de chaque champ, entrées en vol
      qui portent un livrable ou une ressource (une entrée qui porte les deux
      compte une fois), entrées qui portent « attend: ». Ce contrôle ne dépend que
-     de « --chantiers » : il tourne toujours.
+     de « --chantiers » : il tourne toujours ;
+  9. checkpoints : chaque domaine (un chef de projet, un périmètre) a un checkpoint, un
+     document libre dont une section porte sa file (ce qui vient ensuite). Le contrôle
+     recoupe cette file et le document avec chantiers.yaml. Il demande « --domaines » ; il
+     lit la table des domaines dans la même forme pauvre que chantiers.yaml : une entrée
+     commence par « - domaine: », une clé par ligne, les lignes vides et « # » ignorées.
+     Les clés : « domaine » (nom court), « cdp » (le chef de projet du domaine),
+     « checkpoint » (chemin du checkpoint, relatif à « --racine »), « file » (le début exact
+     du titre de la section de file, une ligne qui commence par cette valeur ; vide : pas de
+     section de file), « modules » (les modules de chantiers.yaml du domaine, séparés par
+     des espaces, peut être vide) et « prefixes » (facultatif : des débuts d'id du domaine).
+     Une entrée de chantiers.yaml est au premier domaine qui convient, selon cet ordre de
+     règles : son « cdp: » égale celui du domaine, sinon son id commence par l'un des
+     préfixes, sinon son « module: » est l'un des modules ; sinon elle n'est à aucun
+     domaine. Un id est cité par un checkpoint s'il y apparaît entre accents graves
+     (`id`). La section de file va de sa ligne de titre à la ligne suivante qui commence
+     par « ## », ou à la fin du fichier. Deux règles : (b) la file ne cite aucun chantier
+     clos, c'est-à-dire en « statut: recette » ou seulement archivé (les archives viennent
+     de « --archives ») ; (c) chaque entrée du domaine en « statut » a-venir, a-cadrer,
+     dette ou en-vol, sans clé « pour: » (un message, pas un sujet), est citée par le
+     checkpoint. Une table en défaut (checkpoint introuvable, section de file introuvable,
+     entrée sans « domaine » ou sans « checkpoint ») est un écart, et le domaine n'est pas
+     contrôlé plus avant. Le compte est « <n> domaines, <b> cités clos, <c> non cités ».
 
 Sortie : une ligne par contrôle (OK, ÉCART ou avertissement, avec un compte),
 le détail des écarts indenté dessous, puis une dernière ligne « VIVANTS · … ».
 Code de retour : 0 sans écart, 1 avec au moins un écart, 2 pour un appel
-invalide (argument manquant, fichier introuvable).
+invalide (argument manquant, fichier ou dossier introuvable, « --racine » sans « --domaines »).
 
 Python 3, bibliothèque standard seulement. Le lecteur YAML est volontairement
 pauvre, comme celui du générateur : « - id: » puis des « clé: valeur » sur une
@@ -72,6 +97,7 @@ RE_JOURNAL = re.compile(r"^\|\s*`(v[^`]*)`\s*\|")
 RE_DATE = re.compile(rb"\d{2}/\d{2}/\d{4}")
 
 NON_DEMANDE = "—  non demandé"
+STATUTS_OUVERTS = ("a-venir", "a-cadrer", "dette", "en-vol")
 
 
 def lire_texte(chemin: Path) -> str:
@@ -100,7 +126,7 @@ def nom(c: dict) -> str:
 
 
 def plages(numeros: list[int]) -> list[str]:
-    """['R320', 'R325 à R327 (3 numéros)'] à partir d'une liste triée."""
+    """['R20', 'R25 à R27 (3 numéros)'] à partir d'une liste triée."""
     sortie, i = [], 0
     while i < len(numeros):
         j = i
@@ -249,6 +275,87 @@ def controle_livrables(chantiers: list[dict]):
     return ("ÉCART" if details else "OK"), compte, details
 
 
+def valeurs(entree: dict, cle: str) -> list[str]:
+    return entree.get(cle, "").split()
+
+
+def domaine_de(c: dict, domaines: list[dict]) -> str | None:
+    """Le premier domaine qui convient, règle après règle : cdp, puis préfixe, puis module."""
+    regles = (
+        lambda d: bool(c.get("cdp")) and c["cdp"] == d.get("cdp"),
+        lambda d: any(c["id"].startswith(p) for p in valeurs(d, "prefixes")),
+        lambda d: bool(c.get("module")) and c["module"] in valeurs(d, "modules"),
+    )
+    for regle in regles:
+        for d in domaines:
+            if regle(d):
+                return d["domaine"]
+    return None
+
+
+def section_de_file(texte: str, titre: str) -> str | None:
+    """De la ligne qui commence par le titre à la ligne « ## » suivante (exclue) ; None sans titre."""
+    lignes = texte.split("\n")
+    debut = next((i for i, ligne in enumerate(lignes) if ligne.startswith(titre)), None)
+    if debut is None:
+        return None
+    fin = next((i for i in range(debut + 1, len(lignes)) if lignes[i].startswith("## ")), len(lignes))
+    return "\n".join(lignes[debut:fin])
+
+
+def ids_clos(chantiers: list[dict], archives: list[dict] | None) -> dict[str, str]:
+    """Les id clos : en recette dans chantiers.yaml, ou seulement archivés."""
+    vivants = {c["id"] for c in chantiers if c.get("id")}
+    clos = {c["id"]: "recette" for c in chantiers if c.get("id") and c.get("statut") == "recette"}
+    for c in archives or []:
+        if c.get("id") and c["id"] not in vivants:
+            clos.setdefault(c["id"], "archivé")
+    return clos
+
+
+def citation(i: str) -> str:
+    return f"`{i}`"
+
+
+def controle_domaine(d: dict, chantiers: list[dict], clos: dict[str, str],
+                     domaines: list[dict], racine: Path):
+    """Les défauts de la table, ou la file qui cite du clos (9b) puis les ouverts non cités (9c)."""
+    nom_d, chemin = d["domaine"], racine / d["checkpoint"]
+    if not chemin.is_file():
+        return [f"{nom_d} : checkpoint introuvable {d['checkpoint']}"], [], []
+    try:
+        texte = lire_texte(chemin)
+    except (OSError, UnicodeDecodeError):
+        return [f"{nom_d} : checkpoint illisible {d['checkpoint']}"], [], []
+    titre = d.get("file", "")
+    section = section_de_file(texte, titre) if titre else None
+    if titre and section is None:
+        return [f"{nom_d} : section de file introuvable « {titre} »"], [], []
+    positions = sorted((section.find(citation(i)), i) for i in clos if citation(i) in section) if section else []
+    cites = [f"{nom_d} : la file cite {i}, clos ({clos[i]})" for _, i in positions]
+    non_cites = [f"{nom_d} : {c['id']} ({c['statut']}) n'est pas cité au checkpoint"
+                 for c in chantiers
+                 if c.get("id") and c.get("statut") in STATUTS_OUVERTS and "pour" not in c
+                 and domaine_de(c, domaines) == nom_d and citation(c["id"]) not in texte]
+    return [], cites, non_cites
+
+
+def controle_checkpoints(chantiers: list[dict], archives: list[dict] | None, table: list[dict], racine: Path):
+    clos = ids_clos(chantiers, archives)
+    valides = [d for d in table if d.get("domaine") and d.get("checkpoint")]
+    details, total_cites, total_non_cites = [], 0, 0
+    for d in table:
+        if d not in valides:
+            details.append(f"entrée de la ligne {d['_ligne']} : domaine ou checkpoint manquant")
+            continue
+        defauts, cites, non_cites = controle_domaine(d, chantiers, clos, valides, racine)
+        details += defauts + cites + non_cites
+        total_cites += len(cites)
+        total_non_cites += len(non_cites)
+    compte = f"{len(table)} domaines, {total_cites} cités clos, {total_non_cites} non cités"
+    return ("ÉCART" if details else "OK"), compte, details
+
+
 class Analyseur(argparse.ArgumentParser):
     def error(self, message):
         raise ValueError(message.replace("expected one argument", "valeur manquante"))
@@ -264,7 +371,7 @@ def lire_archives(dossier: Path) -> list[dict]:
 
 def lire_arguments(argv: list[str]):
     p = Analyseur(prog="verifier_vivants.py", allow_abbrev=False, add_help=False)
-    for option in ("chantiers", "registre", "tableau", "generateur", "journal", "archives"):
+    for option in ("chantiers", "registre", "tableau", "generateur", "journal", "archives", "domaines", "racine"):
         p.add_argument(f"--{option}")
     a, inconnus = p.parse_known_args(argv)
     if inconnus:
@@ -274,10 +381,13 @@ def lire_arguments(argv: list[str]):
             raise ValueError(f"argument manquant : --{option}")
     if bool(a.tableau) != bool(a.generateur):
         raise ValueError("--tableau et --generateur vont ensemble")
+    if a.racine and not a.domaines:
+        raise ValueError("--racine ne va qu'avec --domaines")
     chemins = {option: Path(getattr(a, option)) for option in
-               ("chantiers", "registre", "tableau", "generateur", "journal", "archives") if getattr(a, option)}
+               ("chantiers", "registre", "tableau", "generateur", "journal", "archives", "domaines", "racine")
+               if getattr(a, option)}
     for option, chemin in chemins.items():
-        if not (chemin.is_dir() if option == "archives" else chemin.is_file()):
+        if not (chemin.is_dir() if option in ("archives", "racine") else chemin.is_file()):
             raise ValueError(f"fichier introuvable : --{option} {chemin}")
     return chemins
 
@@ -287,6 +397,7 @@ def main(argv: list[str]) -> int:
         f = lire_arguments(argv)
         chantiers = lire_chantiers(f["chantiers"])
         archives = lire_archives(f["archives"]) if "archives" in f else None
+        table = lire_chantiers(f["domaines"]) if "domaines" in f else None
         for option in ("registre", "journal"):  # lecture d'essai : un fichier illisible est un appel invalide
             if option in f:
                 lire_texte(f[option])
@@ -304,6 +415,8 @@ def main(argv: list[str]) -> int:
          if "tableau" in f else None),
         ("journal", (lambda: controle_journal(chantiers + (archives or []), f["journal"])) if "journal" in f else None),
         ("livrables et ressources", lambda: controle_livrables(chantiers)),
+        ("checkpoints", (lambda: controle_checkpoints(chantiers, archives, table, f.get("racine", Path("."))))
+         if table is not None else None),
     ]
     ecarts = 0
     for rang, (libelle, controle) in enumerate(controles, start=1):

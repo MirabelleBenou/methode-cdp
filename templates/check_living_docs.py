@@ -8,15 +8,18 @@ log, the workstreams source (workstreams.yaml), the page regenerated from it
 
     python3 -B check_living_docs.py --workstreams <workstreams.yaml> --log <decision_log.md> \\
         [--board <workstreams.html> --generator <make_board.py>] [--plan <plan.md>] \\
-        [--archives <folder>]
+        [--archives <folder>] [--domains <file> [--root <folder>]]
 
 "--board" and "--generator" go together; "--plan" is optional.
 "--archives" gives the folder of the workstream archives (the WORKSTREAMS_*.yaml files, same
 form as workstreams.yaml, which archive_workstreams.py makes); it must exist. Without this
 option, nothing changes. With it, two checks extend to the archives: 3 and 7.
-A check whose files are not given shows "not requested".
+"--domains" gives the domain table (see check 9) and triggers that check;
+"--root" is the folder the paths of that table are read from (the current folder
+by default); it is only used with "--domains". A check whose files are not given
+shows "not requested".
 
-The eight checks, in this order:
+The nine checks, in this order:
   1. decision numbers: the lines "| **D<n>** |" have no duplicated number and
      no gap between the smallest and the largest;
   2. reservations: a line "| **D<n>** | *reserved …" still present is a
@@ -47,12 +50,34 @@ The eight checks, in this order:
      is "<n> deliverables, <r> resources, <m> in flight, <k> waiting": distinct
      values of each field, in-flight entries that carry a deliverable or a
      resource (an entry carrying both counts once), entries that carry "waits:".
-     This check depends on "--workstreams" only: it always runs.
+     This check depends on "--workstreams" only: it always runs;
+  9. checkpoints: every domain (a project lead, a scope) has a checkpoint, a free
+     document one section of which carries its queue (what comes next). The check
+     cross-checks that queue and the document with workstreams.yaml. It needs "--domains"; it
+     reads the domain table in the same poor form as workstreams.yaml: an entry
+     starts with "- domain:", one key per line, blank lines and "#" ignored.
+     The keys: "domain" (short name), "pl" (the domain's project lead),
+     "checkpoint" (path of the checkpoint, relative to "--root"), "queue" (the exact
+     start of the queue section's title, a line that starts with this value; empty: no
+     queue section), "modules" (the workstreams.yaml modules of the domain, separated
+     by spaces, may be empty) and "prefixes" (optional: starts of the domain's ids).
+     An entry of workstreams.yaml belongs to the first domain that fits, following this
+     order of rules: its "pl:" equals the domain's, otherwise its id starts with one of
+     the prefixes, otherwise its "module:" is one of the modules; otherwise it belongs to
+     no domain. An id is cited by a checkpoint if it appears there between backticks
+     (`id`). The queue section runs from its title line to the next line that starts
+     with "## ", or to the end of the file. Two rules: (b) the queue cites no closed
+     workstream, that is one in "status: accepted" or only archived (the archives come
+     from "--archives"); (c) every entry of the domain in "status" upcoming, to-brief,
+     debt or in-flight, with no "for:" key (a message, not a subject), is cited by the
+     checkpoint. A faulty table (checkpoint not found, queue section not found, entry
+     with no "domain" or no "checkpoint") is a gap, and the domain is not checked any
+     further. The count is "<n> domains, <b> cited closed, <c> not cited".
 
 Output: one line per check (OK, GAP or warning, with a count), the details of
 the gaps indented below, then a last line "LIVING DOCS · …".
 Exit code: 0 with no gap, 1 with at least one gap, 2 for an invalid call
-(missing argument, file not found).
+(missing argument, file or folder not found, "--root" without "--domains").
 
 Python 3, standard library only. The YAML reader is deliberately poor, like
 the generator's: "- id:" then "key: value" on a single line.
@@ -70,6 +95,7 @@ RE_LOG = re.compile(r"^\|\s*`(v[^`]*)`\s*\|")
 RE_DATE = re.compile(rb"\d{2}/\d{2}/\d{4}")
 
 NOT_REQUESTED = "—  not requested"
+OPEN_STATUSES = ("upcoming", "to-brief", "debt", "in-flight")
 
 
 def read_text(path: Path) -> str:
@@ -247,6 +273,87 @@ def check_deliverables(workstreams: list[dict]):
     return ("GAP" if details else "OK"), count, details
 
 
+def values(entry: dict, key: str) -> list[str]:
+    return entry.get(key, "").split()
+
+
+def domain_of(c: dict, domains: list[dict]) -> str | None:
+    """The first domain that fits, rule after rule: pl, then prefix, then module."""
+    rules = (
+        lambda d: bool(c.get("pl")) and c["pl"] == d.get("pl"),
+        lambda d: any(c["id"].startswith(p) for p in values(d, "prefixes")),
+        lambda d: bool(c.get("module")) and c["module"] in values(d, "modules"),
+    )
+    for rule in rules:
+        for d in domains:
+            if rule(d):
+                return d["domain"]
+    return None
+
+
+def queue_section(text: str, title: str) -> str | None:
+    """From the line that starts with the title to the next "##" line (excluded); None without a title."""
+    lines = text.split("\n")
+    start = next((i for i, line in enumerate(lines) if line.startswith(title)), None)
+    if start is None:
+        return None
+    end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("## ")), len(lines))
+    return "\n".join(lines[start:end])
+
+
+def closed_ids(workstreams: list[dict], archives: list[dict] | None) -> dict[str, str]:
+    """The closed ids: accepted in workstreams.yaml, or only archived."""
+    living = {c["id"] for c in workstreams if c.get("id")}
+    closed = {c["id"]: "accepted" for c in workstreams if c.get("id") and c.get("status") == "accepted"}
+    for c in archives or []:
+        if c.get("id") and c["id"] not in living:
+            closed.setdefault(c["id"], "archived")
+    return closed
+
+
+def citation(i: str) -> str:
+    return f"`{i}`"
+
+
+def check_domain(d: dict, workstreams: list[dict], closed: dict[str, str],
+                 domains: list[dict], root: Path):
+    """The table's faults, or the queue that cites closed ones (9b) then the open ones not cited (9c)."""
+    domain_name, path = d["domain"], root / d["checkpoint"]
+    if not path.is_file():
+        return [f"{domain_name}: checkpoint not found {d['checkpoint']}"], [], []
+    try:
+        text = read_text(path)
+    except (OSError, UnicodeDecodeError):
+        return [f"{domain_name}: checkpoint unreadable {d['checkpoint']}"], [], []
+    title = d.get("queue", "")
+    section = queue_section(text, title) if title else None
+    if title and section is None:
+        return [f"{domain_name}: queue section not found “{title}”"], [], []
+    positions = sorted((section.find(citation(i)), i) for i in closed if citation(i) in section) if section else []
+    cited = [f"{domain_name}: the queue cites {i}, closed ({closed[i]})" for _, i in positions]
+    not_cited = [f"{domain_name}: {c['id']} ({c['status']}) is not cited in the checkpoint"
+                 for c in workstreams
+                 if c.get("id") and c.get("status") in OPEN_STATUSES and "for" not in c
+                 and domain_of(c, domains) == domain_name and citation(c["id"]) not in text]
+    return [], cited, not_cited
+
+
+def check_checkpoints(workstreams: list[dict], archives: list[dict] | None, table: list[dict], root: Path):
+    closed = closed_ids(workstreams, archives)
+    valid = [d for d in table if d.get("domain") and d.get("checkpoint")]
+    details, total_cited, total_not_cited = [], 0, 0
+    for d in table:
+        if d not in valid:
+            details.append(f"entry on line {d['_line']}: domain or checkpoint missing")
+            continue
+        faults, cited, not_cited = check_domain(d, workstreams, closed, valid, root)
+        details += faults + cited + not_cited
+        total_cited += len(cited)
+        total_not_cited += len(not_cited)
+    count = f"{len(table)} domains, {total_cited} cited closed, {total_not_cited} not cited"
+    return ("GAP" if details else "OK"), count, details
+
+
 class Parser(argparse.ArgumentParser):
     def error(self, message):
         raise ValueError(message.replace("expected one argument", "missing value"))
@@ -262,7 +369,7 @@ def read_archives(folder: Path) -> list[dict]:
 
 def read_arguments(argv: list[str]):
     p = Parser(prog="check_living_docs.py", allow_abbrev=False, add_help=False)
-    for option in ("workstreams", "log", "board", "generator", "plan", "archives"):
+    for option in ("workstreams", "log", "board", "generator", "plan", "archives", "domains", "root"):
         p.add_argument(f"--{option}")
     a, unknown = p.parse_known_args(argv)
     if unknown:
@@ -272,10 +379,12 @@ def read_arguments(argv: list[str]):
             raise ValueError(f"missing argument: --{option}")
     if bool(a.board) != bool(a.generator):
         raise ValueError("--board and --generator go together")
+    if a.root and not a.domains:
+        raise ValueError("--root only goes with --domains")
     paths = {option: Path(getattr(a, option)) for option in
-             ("workstreams", "log", "board", "generator", "plan", "archives") if getattr(a, option)}
+             ("workstreams", "log", "board", "generator", "plan", "archives", "domains", "root") if getattr(a, option)}
     for option, path in paths.items():
-        if not (path.is_dir() if option == "archives" else path.is_file()):
+        if not (path.is_dir() if option in ("archives", "root") else path.is_file()):
             raise ValueError(f"file not found: --{option} {path}")
     return paths
 
@@ -285,6 +394,7 @@ def main(argv: list[str]) -> int:
         f = read_arguments(argv)
         workstreams = read_workstreams(f["workstreams"])
         archives = read_archives(f["archives"]) if "archives" in f else None
+        table = read_workstreams(f["domains"]) if "domains" in f else None
         for option in ("log", "plan"):  # trial read: an unreadable file is an invalid call
             if option in f:
                 read_text(f[option])
@@ -302,6 +412,8 @@ def main(argv: list[str]) -> int:
          if "board" in f else None),
         ("version log", (lambda: check_log(workstreams + (archives or []), f["plan"])) if "plan" in f else None),
         ("deliverables and resources", lambda: check_deliverables(workstreams)),
+        ("checkpoints", (lambda: check_checkpoints(workstreams, archives, table, f.get("root", Path("."))))
+         if table is not None else None),
     ]
     gaps = 0
     for rank, (label, check) in enumerate(checks, start=1):

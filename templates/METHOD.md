@@ -75,15 +75,18 @@ package's `GUIDE.md` §2a.*
 
 **The domains**: ⟨one line per PL — its name (`Opus-PL-<Product>[-<Module>]`, a module only when a product has several
 PLs), what it carries, its checkpoint (`<Folder>/CHECKPOINT_<PRODUCT>_<MODULE>.md`); plus the coordinator and its
-checkpoint⟩. The living-docs README holds the same table, with each one's resume line.
+checkpoint⟩. The living-docs README holds the same table, with each one's resume line;
+**`Method/domains.yaml`** (template `templates/domains.yaml` of the package) holds it in the form the checker reads
+(check 9): a domain, its PL, its checkpoint, the title of its queue section (§6), its modules. **The coordinator keeps
+the three in step**: a domain opened or closed, a queue section renamed change all three.
 
 **Opening a domain**: the owner tells the coordinator what they want to do; the coordinator gives the fixed line of an
-existing domain with a free baton, or opens the domain (line here and in the README, seeded checkpoint, workstreams
+existing domain with a free baton, or opens the domain (line here, in the README and in `Method/domains.yaml`, seeded checkpoint, workstreams
 attached), then gives each PL's title and line — or starts the session through a scheduled task. A product with several
 module PLs keeps a **product sheet** (what is common: ritual, bench, circuit, pitfalls; never the state), held by the
 coordinator. The coordinator briefs no product batch; **it briefs and launches the tooling batches of the method and of
 the living docs** (`check_living_docs.py`, `make_board.py`, the arbiter — `Method/ARBITER.md`, drawn from
-`templates/ARBITER.md` of the package: role, procedure, scheduled task).
+`templates/ARBITER.md` of the package: role, why, procedure, scheduled task).
 
 **Decision numbers**: before writing an entry, push alone, on `main`, the line
 `| **D<n>** | *reserved — <PL>, <date>* | | |` after the last entry. Push refused → `git pull`, next number;
@@ -328,7 +331,7 @@ manual procedure, the date it went into service.⟩
 - the decision log (the decision, and “what the batch teaches” when there is a lesson);
 - `workstreams.yaml`, **then `workstreams.html` regenerated** (below);
 - **a commit “Batch v<X.Y> closed”** in the living-docs repository, then **the mirror in the project**;
-- the checkpoint **of the domain**, at handover.
+- the checkpoint **of the domain**, at handover, **its queue re-read against `workstreams.yaml`** (below).
 
 Two batches accepted the same day can be closed together.
 
@@ -355,6 +358,22 @@ Two batches accepted the same day can be closed together.
 - **an archived id is not reused**;
 - the checker is run with `--archives <Folder>/Archives`: an id both living and archived is a gap, and the last version
   of the log is also looked for in the archives.
+
+**A checkpoint's queue — registered workstreams only**:
+- **Every upcoming or to-brief subject, every debt or idea kept, first has its entry in `workstreams.yaml`**
+  (`status: upcoming`, `to-brief` or `debt`), and **the checkpoint cites it by its id, between backticks**. The owner
+  only reads the board (`workstreams.html`): a subject that lives only in a checkpoint exists neither for them, nor for
+  the other PLs, nor for the arbiter — it gets lost, or it is still announced when it is finished.
+- **At every resume and every handover**, the PL re-reads their queue against `workstreams.yaml`: they **register what
+  is missing** (then cite it) and **remove from the queue what is closed** (accepted or archived) — a closed workstream
+  is no longer announced.
+- **The queue section has a stable title**: the exact start of that title is what `queue:` carries in the domain table
+  (`Method/domains.yaml`, kept by the coordinator in step with the table of §1a); renaming the section is told to the
+  coordinator.
+- **Who checks**: check 9 of `check_living_docs.py --domains Method/domains.yaml` reports the queue that cites a closed
+  workstream and every open workstream of the domain that its checkpoint does not cite; the arbiter, if there is one,
+  runs it at every run and, **on Mondays, re-reads the checkpoints against the week's decisions** (`Method/ARBITER.md`
+  §1.4b); **without an arbiter**, the coordinator runs the checker with `--domains` at their close-out.
 
 **The workstreams board** — the readable page of `workstreams.yaml`:
 - **Every time the PL writes `workstreams.yaml`** — at close-out, but also mid-exchange (a workstream added, a
@@ -402,7 +421,8 @@ handover prompt** (the handover, below). **Images** go through the conversation,
 - **At 700,000 tokens at the latest**, or at a natural end of a queue before that, **they hand over**, without waiting
   to be asked, in one go, in a single answer:
   1. §0 of the domain's checkpoint rewritten on the real state (where things stand, what blocks, what awaits the owner),
-     and the fixed line at the top checked: it names **all the domain's repositories** (§7);
+     **its queue re-read against `workstreams.yaml`** (what is missing gets registered, what is closed leaves), and the
+     fixed line at the top checked: it names **all the domain's repositories** (§7);
   2. the baton set back to “none — free since <time>”;
   3. push, then the mirror in the project;
   4. **the domain's fixed line**, under “**Opus · new conversation in the project**”: “You are <PL>. Resume: attach

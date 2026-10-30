@@ -1,0 +1,40 @@
+# Domains — <Project> · the domain table, read by check_living_docs.py (check 9, option --domains)
+#
+# It says, for each domain (a PL, a scope), where its checkpoint is, what title its queue section carries, and which
+# workstreams of workstreams.yaml are its own. Check 9 then cross-checks each checkpoint's queue with
+# workstreams.yaml: the queue must cite no closed workstream, and the checkpoint must cite every open workstream of
+# its domain (method §6).
+#
+# WHO KEEPS IT: the coordinator, in step with the domain table of the method (§1a) and the living-docs README.
+# WHEN TO CHANGE IT: a domain opened (one more entry), a domain closed (one entry less), or a queue section renamed in a
+# checkpoint (`queue:` follows the title). A table that lags makes a gap in check 9.
+#
+# The same poor form as workstreams.yaml (not standard YAML): an entry starts with “- domain:”, each key fits on ONE
+# line “key: value”, blank lines and those that start with “#” are ignored. No comment at the end of a line: it would be
+# read as part of the value. Paths relative to the root of the living-docs repository (or to the folder of --root).
+#
+#   domain    : the short name of the domain (required)
+#   pl        : the name of the domain's PL; an entry of workstreams.yaml that carries this `pl:` is its own
+#   checkpoint: the path of the domain's checkpoint (required)
+#   queue     : the exact start of the title of the checkpoint section that carries its queue — the “## …” line; empty if
+#               the checkpoint has no queue section. The title is copied from the checkpoint, character for character
+#   modules   : the workstreams.yaml modules that are its own, separated by spaces (may be empty)
+#   prefixes  : optional — the starts of workstream ids that are its own, separated by spaces; they take precedence over
+#               the modules
+#
+# An entry of workstreams.yaml belongs to the first domain that fits, following this order of rules, each tried against
+# all the domains: its `pl:` equals the domain's; otherwise its id starts with one of the prefixes; otherwise its
+# `module:` is one of the modules; otherwise it belongs to no domain.
+
+- domain: <domain-1>
+  pl: Opus-PL-<Domain-1>
+  checkpoint: <Folder>/CHECKPOINT_<DOMAIN-1>.md
+  queue: ## §3 · The queue
+  modules: <module-1>
+
+- domain: <domain-2>
+  pl: Opus-PL-<Domain-2>
+  checkpoint: <Folder>/CHECKPOINT_<DOMAIN-2>.md
+  queue: ## §3 · The queue
+  modules: <module-2> <module-3>
+  prefixes: <prefix->

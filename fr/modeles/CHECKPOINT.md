@@ -24,12 +24,12 @@
 - **Depuis le checkpoint précédent** : <les lots livrés, en une ligne chacun, avec leur version et leur R>.
 - **La méthode** est en v<n> (<ce qui a changé>).
 - **Le registre** : les numéros se réservent par un push au moment d'écrire (méthode §1 bis) — jamais d'après ce fichier.
-- **Dettes ouvertes** : <id — une demi-ligne chacune>.
+- **Dettes ouvertes** : `<id>` — une demi-ligne chacune (chaque dette a son chantier, cité par son id).
 - **À faire par le porteur** :
   - <tag et release à poser, sur quel commit, avec quel texte> ;
   - <livrable à déposer, nom exact et sha256> ;
   - <branches fusionnées à supprimer sur GitHub : …>.
-- **En vol** : <ce qui attend un essai ou une réponse extérieure>.
+- **En vol** : `<id>` — <ce qui attend un essai ou une réponse extérieure>.
 
 ---
 
@@ -60,9 +60,15 @@ changé depuis la dernière fois en gras.>
 
 ## §3 · La file — à arbitrer avec le porteur
 
-- **Décidé, à cadrer en premier** (R<n>) : <…>.
-- **Ensuite** : <…>.
-- **À venir** : <…>.
+*La file ne porte que des **chantiers inscrits** (méthode §6) : chaque sujet est cité par son id de `chantiers.yaml`,
+entre accents graves. Un sujet qui n'a pas encore de chantier s'inscrit **d'abord** (à venir, à cadrer ou dette), puis se
+cite ; un chantier clos (en recette ou archivé) sort de la file. À chaque reprise et à chaque passation, relire cette
+file face à `chantiers.yaml`. Le début de ce titre est celui que porte `file:` dans la table des domaines
+(`Methode/domaines.yaml`) : le coordinateur le tient à jour si on le renomme.*
+
+- **Décidé, à cadrer en premier** (R<n>) : `<id>` — <…>.
+- **Ensuite** : `<id>` — <…>.
+- **À venir** : `<id>` — <…>.
 
 ---
 
