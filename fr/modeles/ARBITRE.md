@@ -1,4 +1,4 @@
-# L'ARBITRE DES VIVANTS — <Projet> · v4
+# L'ARBITRE DES VIVANTS — <Projet> · v5
 ### <date> · <session de coordination> · lu par la tâche planifiée quotidienne · tiré du package méthode CdP
 
 *Une session neuve, lancée chaque matin par une tâche planifiée, qui contrôle les vivants partagés **et les checkpoints**
@@ -38,7 +38,8 @@ ne corrige rien**, le propriétaire corrige. Une seule écriture, mécanique : l
   ou archivés), un chantier en vol sans `cdp:`, deux lots en vol sur un même livrable ou une même ressource, un tableau
   qui ne correspond plus au yaml, un journal du plan en avance sur les chantiers (`verifier_vivants.py`, contrôles 1
   à 8) ; **un checkpoint en retard sur les chantiers** (contrôle 9, et la lecture du lundi) ; **un checkpoint trop gros**
-  (contrôle 10) ; **les sessions oubliées** qui gardent un témoin.
+  (contrôle 10) ; **les sessions oubliées** qui gardent un témoin (la coordination exceptée : elle ne se juge pas à son
+  silence).
 - **Ce qu'elle ne voit pas** : la qualité d'une décision, l'état du code, la production. Elle ne juge que la forme des
   vivants partagés.
 
@@ -53,10 +54,13 @@ des cas vécus, sur le premier projet mené ainsi :
 3. **Un chantier est resté en vol sans chef de projet déclaré**, et deux lots étaient prêts à partir sur **le même
    livrable**. → les contrôles 5 et 8.
 4. **Le tableau des chantiers publié ne correspondait plus au fichier** : le yaml avait changé, la page non, et c'est la
-   page que le porteur lit. → le contrôle 6.
+   page que le porteur lit ; depuis que la page est fixe et que ses données sont dans un fichier à côté, le contrôle
+   compare les deux à leur régénération. → le contrôle 6.
 5. **Des sessions oubliées gardaient un témoin** et bloquaient la reprise d'un domaine. La première règle jugeait l'âge
    du témoin : elle a signalé deux sessions bien vivantes, qui attendaient seulement un geste du porteur. Elle est
-   devenue la règle du *silence* : aucun commit de la session depuis 24 heures. → le §1.3.
+   devenue la règle du *silence* : aucun commit de la session depuis 24 heures. Cette règle a ensuite accusé la session
+   de coordination, que le porteur garde ouverte pour y prendre une ligne fixe ou rouvrir un chantier, et qui reste des
+   jours sans commit sans être oubliée : **le contrôle de silence exclut la coordination**. → le §1.3.
 6. **Le fichier des chantiers a grossi sans fin** (169 Ko, puis près de 200 Ko, aux trois quarts des chantiers finis).
    → l'archivage automatique, le §1.4 bis.
 7. **Les checkpoints ont pris du retard sur les chantiers.** Dix sujets n'existaient que dans des checkpoints — que le
@@ -91,7 +95,7 @@ Le signe qu'il est temps : le premier numéro de décision en double, ou la prem
 1. il clone les vivants ;
 2. il lance `verifier_vivants.py` avec `--archives` **et `--domaines`** : dix contrôles, dont le contrôle 9 des
    checkpoints et le contrôle 10, leur taille ;
-3. il juge les témoins à leur silence ;
+3. il juge les témoins à leur silence (celui de la coordination excepté) ;
 4. il dépose **un chantier `pour:` par écart nouveau** — sauf le contrôle 9, **groupé en un seul chantier par domaine**
    (le contrôle 10 n'a qu'une ligne par domaine, donc un chantier par domaine aussi) ;
 5. il archive les chantiers en recette depuis sept jours ;
@@ -200,7 +204,10 @@ au pas. **Un faux positif se corrige dans la procédure, pas au cas par cas.**
    messages⟩. **Aucun commit de cette session depuis plus de 24 heures** — ou aucun du tout, et un témoin posé il y
    a plus de 24 heures — est un **constat** (une session oubliée ou morte), adressé au coordinateur ; la mesure s'écrit
    dans le chantier, avec la date du dernier commit (« dernier commit le … »). Un témoin libre (« aucune — libre
-   depuis … ») ne se contrôle pas.
+   depuis … ») ne se contrôle pas. **La coordination est exclue de ce contrôle** (son checkpoint, `Methode/CHECKPOINT_METHODE.md`) :
+   c'est une session longue de consultation — le porteur y prend une ligne fixe ou rouvre un chantier —, qui peut rester
+   des jours sans commit sans être oubliée. Ses autres
+   contrôles restent (le 9 et le 10) ; elle passe la main à la mesure de son contexte (méthode §6), pas au silence.
 4. **Un chantier par écart nouveau** : pour chaque cas (une ligne indentée sous un contrôle en ÉCART — **sauf le
    contrôle 9, groupé plus bas, et le contrôle 10, qui a son propre id** — et chaque témoin silencieux), une entrée **en fin** de `<Dossier>/chantiers.yaml` :
    ```
@@ -242,8 +249,9 @@ au pas. **Un faux positif se corrige dans la procédure, pas au cas par cas.**
    10 Ko (méthode §6) ». **Si un chantier `arbitre-c10-checkpoint-court-<domaine>-*` existe déjà sans être en recette, ne
    rien ajouter** pour ce domaine : le CdP n'a pas encore repris.
 
-   Puis régénérer le tableau (`python3 -B <Dossier>/generer_tableau.py <Dossier>/chantiers.yaml <Dossier>/chantiers.html`)
-   et relancer le contrôle : le contrôle du tableau doit être OK. Le commit se fait au §1.5.
+   Puis régénérer le tableau (`python3 -B <Dossier>/generer_tableau.py <Dossier>/chantiers.yaml <Dossier>/chantiers.html`,
+   qui écrit la page et, à côté, `chantiers.json`) et relancer le contrôle : le contrôle du tableau (le 6) doit être OK
+   pour la page et pour ses données. Le commit se fait au §1.5, avec les deux fichiers.
 4 bis. **L'archivage, après les constats** — la seule écriture mécanique de l'arbitre, jamais une correction à la main :
    ```
    python3 -B <Dossier>/archiver_chantiers.py archiver --chantiers <Dossier>/chantiers.yaml \
@@ -312,7 +320,7 @@ au pas. **Un faux positif se corrige dans la procédure, pas au cas par cas.**
 - Corriger une entrée, un numéro, un checkpoint, un témoin ou la table des domaines : il signale, le propriétaire
   corrige. **Seule exception, mécanique : l'archivage** (§1.4 bis) — `archiver_chantiers.py` date, dédate et sort les
   entrées en recette ; l'arbitre ne touche jamais à la main une entrée en recette ni une ligne `recette-le:`.
-- Écrire ailleurs qu'en fin de `chantiers.yaml`, dans `chantiers.html` régénéré, en fin d'`ARBITRE_JOURNAL.md`, et ce
+- Écrire ailleurs qu'en fin de `chantiers.yaml`, dans `chantiers.html` et `chantiers.json` régénérés, en fin d'`ARBITRE_JOURNAL.md`, et ce
   que fait `archiver_chantiers.py` (les lignes `recette-le:`, les entrées sorties, `Archives/CHANTIERS_<AAAA-MM>.yaml`).
 - Juger un checkpoint sur le style ou l'opportunité : la lecture du lundi ne relève que ce qu'une décision ou un chantier
   contredit, avec la citation et la preuve.
@@ -356,7 +364,7 @@ au pas. **Un faux positif se corrige dans la procédure, pas au cas par cas.**
    `git clone --depth 1 https://github.com/<owner>/<Projet> vivants` (un seul clone, délai de commande de 10 minutes),
    puis lis `Methode/ARBITRE.md` en entier et suis-le à la lettre : contrôle par `verifier_vivants.py` (avec
    `--archives` et `--domaines`), un chantier `pour:` par écart nouveau (jamais en double) — celui du contrôle des
-   checkpoints groupé en un seul par domaine —, témoins des checkpoints jugés à leur silence, chantiers en recette
+   checkpoints groupé en un seul par domaine —, témoins des checkpoints jugés à leur silence (celui de la coordination excepté), chantiers en recette
    archivés par `archiver_chantiers.py`, tableau régénéré, le lundi seulement la lecture des checkpoints face aux
    décisions de la semaine, une ligne en fin de `Methode/ARBITRE_JOURNAL.md` à chaque passage, même sans écart, un seul
    commit poussé. Tu ne corriges rien d'autre ; tu ne réserves aucun numéro, ne prends aucun livrable, ne lances aucun
@@ -412,6 +420,7 @@ au pas. **Un faux positif se corrige dans la procédure, pas au cas par cas.**
   preuve ? y a-t-il eu un avis déguisé ou un faux relevé ?).
 - **Un faux positif se corrige dans la procédure, pas au cas par cas.** Exemple vécu : la première règle des témoins
   jugeait leur âge (« pris depuis plus de 24 heures ») ; elle a signalé deux sessions bien vivantes qui attendaient le
-  porteur. La règle est devenue celle du silence (§1.3).
+  porteur. La règle est devenue celle du silence (§1.3) ; puis, la coordination ayant été signalée comme oubliée alors que
+  le porteur la gardait ouverte, elle en a été exclue.
 - Une évolution de la procédure change ce fichier (version en tête), pas le prompt de la tâche — sauf si la procédure gagne
   ou perd une famille de gestes (§4.5).

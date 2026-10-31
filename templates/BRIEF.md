@@ -3,6 +3,10 @@
 
 > **Template for the PL — a brief never cites it.** The brief is self-contained: together with the dev prompt, it is
 > enough. It carries rules, criteria and the texts the user will read — **never ready-written code**.
+> **The version**: `v<X.Y>` exists only for a deliverable **deployed per batch** (it is computed when the batch takes the
+> deliverable, `main` plus one). For a deliverable **published by release**, the batch carries no version: remove `v<X.Y>`
+> from the title, name the branch and the folder after the batch (`batch/<name>`), and §6 completes the “Unreleased”
+> section of the `CHANGELOG` (method §1a, “The deliverable and its version”).
 > Delete this box.
 
 **Dev: Sonnet · Medium · new session** *(Opus for ⟨…⟩; High for a migration, several screens, an engine, cascading
@@ -71,7 +75,8 @@ what the user sees at the end.*
 
 ## §6 · The `CHANGELOG`
 
-Text of the entry, word for word:
+Text of the entry, word for word — *a `v<X.Y>` entry for a deliverable deployed per batch; for a deliverable published
+by release, it completes the “Unreleased” section, with no version*:
 
 ```
 ⟨…⟩
@@ -105,4 +110,6 @@ In addition to those of the dev prompt:
 - [ ] The APIs, files and functions the rule requires, all named.
 - [ ] A color rule measured on every theme; a label at the narrowest width.
 - [ ] No ready-written code.
+- [ ] The version computed when the batch takes the deliverable (`main` plus one) — or no version, for a deliverable
+  published by release.
 - [ ] Model, effort, session at the top.

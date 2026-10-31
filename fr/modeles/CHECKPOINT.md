@@ -89,7 +89,9 @@ touche.*
 
 - **Ouverte** le <date heure>, **close** le <date heure>.
 - **Travail réalisé** : <…>.
-- **Contexte** : environ <n> jetons au dernier tour (cible : sous 700 000).
+- **Contexte** : environ <n> jetons au dernier tour (cible : sous 450 000 ; passation à 550 000 au plus tard).
+- **Signes de saturation vus** : <pertes de fil, contradictions, une décision oubliée — ou « aucun »> (ils servent à
+  recalibrer le seuil sur des mesures).
 - **Premiers postes** : <…>.
 
 ---
@@ -97,7 +99,8 @@ touche.*
 ## §6 · Les documents
 
 **Au dépôt `<Projet>`** (source) : <liste, avec leur version>.
-**Le tableau des chantiers** : `chantiers.html`, publié en artefact à <lien> — à republier au même lien.
+**Le tableau des chantiers** : `chantiers.html` (la page fixe) et `chantiers.json` (ses données), publiés ensemble en
+artefact à <lien> — à republier au même lien, les deux ensemble (méthode §6).
 **Au dépôt `<Projet>-App`** : le code, `banc/` (v<n>), `PROMPT_DEV_<P>.md` (v<n>), `lots/…`.
 **Au projet, en miroir** : <liste>.
 **Au projet, écrits une fois** : <liste>.

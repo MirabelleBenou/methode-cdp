@@ -78,9 +78,12 @@ class TestDate(ArchiverCase):
     def test_the_default_date_is_the_clock_s(self):
         from datetime import date
         self.write_workstreams(block("alpha-1", status="accepted"))
+        before = date.today().isoformat()
         output = self.archive_run(date=None)
+        after = date.today().isoformat()  # the day may have changed during the call: either date will do
         self.assertEqual(output.code, 0)
-        self.assertIn(f"  accepted-on: {date.today().isoformat()}\n", self.read_workstreams())
+        self.assertTrue(any(f"  accepted-on: {day}\n" in self.read_workstreams() for day in {before, after}),
+                        self.read_workstreams())
 
     def test_windows_line_ending_kept(self):
         text = "# Workstreams — Test\r\n\r\n- id: alpha-1\r\n  status: accepted\r\n"

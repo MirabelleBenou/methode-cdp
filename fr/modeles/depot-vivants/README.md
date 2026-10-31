@@ -10,7 +10,8 @@ code, `<owner>/<Projet>-App`.
 | `<Dossier>/REGISTRE_ARBITRAGES_<P>.md` | les décisions, numérotées R1, R2… |
 | `<Dossier>/PLAN_<P>.md` | la feuille de route et le journal des versions |
 | `<Dossier>/chantiers.yaml` | la source unique des chantiers |
-| `<Dossier>/chantiers.html` | la page lisible, régénérée par `generer_tableau.py` à chaque écriture du yaml |
+| `<Dossier>/chantiers.html` | la page lisible, **fixe** (environ 11 Ko, aucune donnée de chantier), régénérée par `generer_tableau.py` à chaque écriture du yaml |
+| `<Dossier>/chantiers.json` | **le fichier de données** de la page, écrit par le même script à côté d'elle (même nom) ; la page le lit |
 | `<Dossier>/archiver_chantiers.py` | date les chantiers en recette et sort vers `Archives/` ceux qui y sont depuis sept jours ; `chercher` retrouve un chantier, vivant ou archivé |
 | `<Dossier>/verifier_vivants.py` | ⟨plusieurs CdP⟩ le contrôle en lecture seule des vivants partagés ; avec `--domaines`, le contrôle 9 recoupe la file de chaque checkpoint et `chantiers.yaml` |
 | `Methode/domaines.yaml` | ⟨plusieurs CdP⟩ la table des domaines que lit le contrôle 9 : par domaine, son CdP, son checkpoint, le titre de la section de sa file, ses modules ; tenue par le coordinateur au pas de la table de la méthode §1 bis |
@@ -33,6 +34,18 @@ python3 -B <Dossier>/verifier_vivants.py --chantiers <Dossier>/chantiers.yaml \
 python3 -B <Dossier>/archiver_chantiers.py chercher <id ou mot> --chantiers <Dossier>/chantiers.yaml \
   --archives <Dossier>/Archives
 ```
+
+**Republier le tableau** (la page fixe et son fichier de données, au même lien) :
+1. **régénérer après le dernier `git pull` / rebase, jamais avant** (cas vécu : un fichier de données tiré avant la base a
+   manqué trois chantiers d'une autre session ; le contrôle 6 l'a vu) ; le vérificateur passe, **contrôle 6 OK** — c'est
+   lui qui garantit les données, pas une lecture ;
+2. **le CdP lit la page en entier** (l'outil d'artefact l'exige ; une lecture « par fichier » ne compte pas), environ
+   4 000 jetons ;
+3. **il relit le diff de ses propres écritures** dans `chantiers.yaml` depuis sa dernière publication ;
+4. **il republie la page et le fichier de données ensemble**, au même lien, même si seule la donnée a changé.
+Le fichier de données entier ne se relit, par un sous-agent léger, que pour la première publication d'un tableau et pour
+une entrée tirée d'une source extérieure que nulle session n'a relue (méthode §6). Une page ouverte depuis le disque ne
+charge pas ses données : on la sert (`python3 -m http.server` dans le dossier) ou on la publie.
 
 **Jamais ici** : secrets, données de production, images.
 

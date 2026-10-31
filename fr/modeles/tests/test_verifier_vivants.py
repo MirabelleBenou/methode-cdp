@@ -372,6 +372,7 @@ class TestControle6Tableau(CasVerifier):
     def setUp(self):
         super().setUp()
         self.tableau = self.dossier / "chantiers.html"
+        self.donnees = self.dossier / "chantiers.json"
         self.regenerer()
 
     def regenerer(self):
@@ -384,29 +385,80 @@ class TestControle6Tableau(CasVerifier):
     def test_ok(self):
         sortie = self.verifier_tableau()
         self.assertEqual(sortie.verdict(6), "OK", sortie.stdout)
-        self.assertEqual(sortie.compte(6), f"2 chantiers, {self.tableau.stat().st_size} octets identiques hors date")
+        self.assertEqual(sortie.compte(6), f"2 chantiers, page {self.tableau.stat().st_size} octets et données "
+                                           f"{self.donnees.stat().st_size} octets identiques hors date")
+        self.assertEqual(sortie.code, 0)
 
     def test_ok_malgre_une_autre_date(self):
-        html = self.tableau.read_text(encoding="utf-8")
-        self.assertRegex(html, r"\d{2}/\d{2}/\d{4}")
-        self.tableau.write_text(re.sub(r"\d{2}/\d{2}/\d{4}", "01/01/2000", html), encoding="utf-8")
+        texte = self.donnees.read_text(encoding="utf-8")
+        self.assertRegex(texte, r"\d{2}/\d{2}/\d{4}")
+        self.donnees.write_text(re.sub(r"\d{2}/\d{2}/\d{4}", "01/01/2000", texte), encoding="utf-8")
         self.assertEqual(self.verifier_tableau().verdict(6), "OK")
 
-    def test_ecart_tableau_desynchronise(self):
+    def test_ok_avec_une_page_publiee_sous_un_autre_dossier_et_un_autre_nom(self):
+        autre = self.sous_dossier("publie")
+        tableau = autre / "tableau.html"
+        self.assertEqual(self.lancer(GENERER, self.chantiers, tableau).code, 0)
+        sortie = self.verifier("--tableau", tableau, "--generateur", GENERER)
+        self.assertEqual(sortie.verdict(6), "OK", sortie.stdout)
+
+    def test_ecart_page_desynchronisee_avec_un_autre_projet(self):
+        self.chantiers = self.ecrire("chantiers.yaml", yaml(
+            bloc("alpha-1", titre="Premier", statut="a-venir", module="module-a"),
+            bloc("alpha-2", titre="Deuxième", statut="recette", module="module-a", version="v1.0.0"),
+            entete="# Chantiers — Autre projet"))
+        sortie = self.verifier_tableau()
+        self.assertEqual(sortie.verdict(6), ECART)
+        self.assertEqual(sortie.compte(6), "2 chantiers")
+        details = sortie.details(6)
+        self.assertEqual(len(details), 2, details)
+        self.assertTrue(details[0].startswith("la page du tableau diffère de sa régénération (dates masquées) : "
+                                              "premier écart à l'octet "), details)
+        self.assertTrue(details[1].startswith("le fichier de données diffère de sa régénération (dates masquées) : "
+                                              "premier écart à l'octet "), details)
+        self.assertEqual(sortie.code, 1)
+
+    def test_ecart_donnees_desynchronisees_page_intacte(self):
         self.avec_chantiers(bloc("alpha-1", titre="Premier", statut="a-venir"),
                             bloc("alpha-2", titre="Deuxième", statut="recette"),
                             bloc("alpha-3", titre="Ajouté après", statut="dette"))
         sortie = self.verifier_tableau()
         self.assertEqual(sortie.verdict(6), ECART)
         self.assertEqual(sortie.compte(6), "3 chantiers")
-        self.assertEqual(len(sortie.details(6)), 1)
-        self.assertTrue(sortie.details(6)[0].startswith("le tableau diffère de sa régénération (dates masquées) : "
-                                                        "premier écart à l'octet "), sortie.details(6))
+        self.assertEqual(len(sortie.details(6)), 1, "la page est fixe : elle ne diffère pas, seules les données")
+        self.assertTrue(sortie.details(6)[0].startswith("le fichier de données diffère de sa régénération "
+                                                        "(dates masquées) : premier écart à l'octet "), sortie.details(6))
+        self.assertRegex(sortie.details(6)[0], r"\(ligne \d+\) ; \d+ octets contre \d+ régénérés$")
         self.assertEqual(sortie.code, 1)
 
-    def test_ecart_tableau_modifie_a_la_main(self):
+    def test_ecart_donnees_modifiees_a_la_main_page_intacte(self):
+        self.donnees.write_text(self.donnees.read_text(encoding="utf-8").replace("Premier", "Retouché"), encoding="utf-8")
+        sortie = self.verifier_tableau()
+        self.assertEqual(sortie.verdict(6), ECART)
+        self.assertEqual(len(sortie.details(6)), 1)
+        self.assertTrue(sortie.details(6)[0].startswith("le fichier de données diffère"), sortie.details(6))
+
+    def test_ecart_page_modifiee_a_la_main_donnees_intactes(self):
         self.tableau.write_text(self.tableau.read_text(encoding="utf-8") + "<!-- retouche -->\n", encoding="utf-8")
-        self.assertEqual(self.verifier_tableau().verdict(6), ECART)
+        sortie = self.verifier_tableau()
+        self.assertEqual(sortie.verdict(6), ECART)
+        self.assertEqual(len(sortie.details(6)), 1)
+        self.assertTrue(sortie.details(6)[0].startswith("la page du tableau diffère"), sortie.details(6))
+
+    def test_ecart_fichier_de_donnees_absent(self):
+        self.donnees.unlink()
+        sortie = self.verifier_tableau()
+        self.assertEqual(sortie.verdict(6), ECART)
+        self.assertEqual(sortie.details(6), [f"fichier de données absent : {self.donnees}"])
+        self.assertEqual(sortie.code, 1)
+
+    def test_ecart_donnees_absentes_et_page_retouchee_donnent_deux_lignes(self):
+        self.donnees.unlink()
+        self.tableau.write_text(self.tableau.read_text(encoding="utf-8") + "<!-- retouche -->\n", encoding="utf-8")
+        details = self.verifier_tableau().details(6)
+        self.assertEqual(len(details), 2, details)
+        self.assertTrue(details[0].startswith("fichier de données absent : "), details)
+        self.assertTrue(details[1].startswith("la page du tableau diffère"), details)
 
     def test_ecart_generateur_qui_echoue(self):
         faux = self.ecrire("faux_generateur.py", "import sys\nsys.exit(3)\n")
@@ -426,6 +478,12 @@ class TestControle6Tableau(CasVerifier):
         sortie = self.verifier("--tableau", self.tableau, "--generateur", vide)
         self.assertEqual(sortie.verdict(6), ECART)
         self.assertTrue(sortie.details(6)[0].startswith("le générateur a échoué (code 0)"), sortie.details(6))
+
+    def test_generateur_qui_n_ecrit_que_la_page(self):
+        seul = self.ecrire("page_seule.py", "import sys\nopen(sys.argv[2], 'w').write('<html></html>')\n")
+        sortie = self.verifier("--tableau", self.tableau, "--generateur", seul)
+        self.assertEqual(sortie.verdict(6), ECART)
+        self.assertEqual(sortie.details(6), ["le générateur n'a pas écrit le fichier de données chantiers.json"])
 
 
 class TestControle7Journal(CasVerifier):

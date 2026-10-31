@@ -1,11 +1,23 @@
 #!/usr/bin/env python3
-"""Workstreams board — a readable page drawn from workstreams.yaml.
+"""Workstreams board — a fixed page and its data file, drawn from workstreams.yaml.
 
     python3 -B make_board.py workstreams.yaml workstreams.html
 
+Writes TWO files: the page (the second argument, "workstreams.html") and, next to it, the
+data file of the same name in ".json" ("workstreams.json"). The page is fixed: it holds no
+workstream data, only the project name; it reads its data from the JSON file with "fetch" and
+builds the board in the browser. Two sources with the same header give the same page, byte for
+byte; only the data changes, so only the data is republished when a workstream moves. The data
+file is deterministic (two generations of the same source are byte-identical, except for the
+"generated on" date).
+
+The two files are published together, side by side. The page opened from the disk ("file://")
+does not load its data: this is a browser limit, and the page says so ("Cannot load
+workstreams.json (…)"). Open it served ("python3 -m http.server" in the folder) or published.
+
 The PL's tool (not part of the deliverable), copied as is from the method package
 into the living-docs repository, next to workstreams.yaml. No dependency, no
-network at run time. The reader covers ONLY the file's shape (“- id:” then
+network when the generator runs. The reader covers ONLY the file's shape (“- id:” then
 “key: value” on one line): this is intended, the source stays readable by eye.
 
 What is specific to the project is read from the header of workstreams.yaml,
@@ -68,58 +80,28 @@ def read(path: pathlib.Path):
     return project, labels, workstreams
 
 
-def label(labels, v):
-    return labels.get(v) or (v or "—").replace("-", " ").capitalize()
+def data_path(output: pathlib.Path) -> pathlib.Path:
+    """The data file written next to the page: same name, .json extension."""
+    return output.with_suffix(".json")
 
 
-def card(w: dict, labels) -> str:
-    e = lambda x: html.escape(str(x or ""))
-    pr, cx = w.get("priority") or "medium", w.get("complexity") or "medium"
-    rank = f'<span class="rank">{e(w["rank"])}</span>' if w.get("rank") else ""
-    refs = f'<span class="ref">{e(w["refs"])}</span>' if w.get("refs") else ""
-    cost = f'<p class="cost">{e(w.get("cost"))}</p>' if w.get("cost") else ""
-    dots = {"high": "●●●", "medium": "●●", "low": "●"}[cx]
-    cat = f'<span class="cat">{e(label(labels, w.get("category")))}</span>' if w.get("category") else ""
-    return f"""<article class="card pr-{e(pr)}" data-mod="{e(w.get('module'))}" data-pr="{e(pr)}" data-cx="{e(cx)}">
-      <header>{rank}<h3>{e(w.get('title') or w['id'])}</h3></header>
-      <p class="basis">{e(w.get('basis'))}</p>
-      {cost}
-      <footer>
-        <span class="mod">{e(label(labels, w.get('module')))}</span>{cat}
-        <span class="cx" title="{e(dict(COMPLEXITIES)[cx].lower())} complexity">{dots}</span>
-        {refs}
-      </footer>
-    </article>"""
+def data(project, labels, workstreams: list[dict]) -> dict:
+    """Everything the page shows: the entries in the order of the file, with all their keys."""
+    return {"project": project, "generated": date.today().strftime("%d/%m/%Y"),
+            "labels": labels, "workstreams": workstreams}
 
 
-def page(project, labels, workstreams: list[dict]) -> str:
-    columns = ""
-    for key, lab in STATUSES:
-        subset = [w for w in workstreams if w["status"] == key]
-        subset.sort(key=lambda w: int(w["rank"]) if w.get("rank", "").isdigit() else 99)
-        columns += (f'<section class="column st-{key}" data-status="{key}">'
-                    f'<h2>{lab}<b>{len(subset)}</b></h2>'
-                    + "".join(card(w, labels) for w in subset) + "</section>")
-    modules = []
-    for w in workstreams:
-        if w.get("module") and w["module"] not in modules:
-            modules.append(w["module"])
+def data_text(project, labels, workstreams: list[dict]) -> str:
+    return json.dumps(data(project, labels, workstreams), ensure_ascii=False, indent=1) + "\n"
 
-    def group(title, field, values, attr):
-        buttons = "".join(
-            f'<button type="button" class="chip {attr}-{html.escape(v)}" data-field="{attr}" data-val="{html.escape(v)}">'
-            f'{html.escape(lab)}<b>{sum(1 for x in workstreams if x.get(field) == v)}</b></button>'
-            for v, lab in values if any(x.get(field) == v for x in workstreams))
-        return f'<div class="group"><span class="gt">{title}</span>{buttons}</div>' if buttons else ""
-    chips = (group("Module", "module", [(m, label(labels, m)) for m in modules], "mod")
-             + group("Priority", "priority", PRIORITIES, "pr")
-             + group("Complexity", "complexity", COMPLEXITIES, "cx")
-             + group("Status", "status", STATUSES, "st"))
-    e = html.escape
-    return (TEMPLATE.replace("%PROJECT%", e(project)).replace("%COLUMNS%", columns).replace("%CHIPS%", chips)
-            .replace("%DATE%", date.today().strftime("%d/%m/%Y"))
-            .replace("%TOTAL%", str(len(workstreams)))
-            .replace("%DEBTS%", str(sum(1 for w in workstreams if w["status"] == "debt"))))
+
+def page(project: str, data_name: str) -> str:
+    """The fixed page: it depends only on the project name and on the name of the data file."""
+    def js(value) -> str:
+        return json.dumps(value, ensure_ascii=False).replace("<", "\\u003c")
+    values = {"PROJECT": html.escape(project), "DATA": js(data_name), "STATUSES": js(STATUSES),
+              "PRIORITIES": js(PRIORITIES), "COMPLEXITIES": js(COMPLEXITIES)}
+    return re.sub(r"%(PROJECT|DATA|STATUSES|PRIORITIES|COMPLEXITIES)%", lambda m: values[m.group(1)], TEMPLATE)
 
 
 TEMPLATE = """<!doctype html>
@@ -165,12 +147,13 @@ header.head p{margin:.35rem 0 0;color:var(--mute);font-size:.78rem}
 .chip[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
 .chip:hover{border-color:var(--ink);color:var(--ink)}
 .board{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1rem;align-items:start}
+.column{min-width:0}
 .column h2{font-family:var(--label);font-weight:500;letter-spacing:.1em;text-transform:uppercase;
   font-size:.8rem;color:var(--ink);border-bottom:1px solid var(--border);padding-bottom:.3rem;
   margin:0 0 .7rem;display:flex;justify-content:space-between;align-items:baseline}
 .column h2 b{font-family:var(--mono);font-size:.75rem;font-weight:400;color:var(--mute)}
 .card{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--p-medium);
-  box-shadow:0 1px 3px var(--shadow);padding:.65rem .7rem;margin-bottom:.7rem}
+  box-shadow:0 1px 3px var(--shadow);padding:.65rem .7rem;margin-bottom:.7rem;overflow-wrap:anywhere}
 .card.pr-high{border-left-color:var(--p-high)}
 .card.pr-low{border-left-color:var(--p-low)}
 .card header{display:flex;gap:.45rem;align-items:baseline}
@@ -185,6 +168,7 @@ header.head p{margin:.35rem 0 0;color:var(--mute);font-size:.78rem}
   background:var(--ink);color:var(--card);padding:.04rem .32rem}
 .cx{font-size:.6rem;color:var(--mute);letter-spacing:.08em}
 .ref{font-size:.66rem;color:var(--mute);margin-left:auto}
+.error{margin:1rem 0;padding:.7rem .9rem;border:1px solid var(--border);border-left:4px solid var(--p-high);font-size:.85rem}
 .masked{display:none}
 footer.foot{margin-top:2rem;border-top:1px solid var(--border);padding-top:.6rem;font-size:.72rem;color:var(--mute)}
 @media (max-width:1300px){.board{grid-template-columns:repeat(3,minmax(0,1fr))}}
@@ -196,15 +180,92 @@ footer.foot{margin-top:2rem;border-top:1px solid var(--border);padding-top:.6rem
 <div class="wrap">
 <header class="head">
   <h1>Workstreams — %PROJECT%</h1>
-  <p><b id="count">%TOTAL%</b> entries shown out of %TOTAL% · %DEBTS% in debt · generated on %DATE% from <code>workstreams.yaml</code></p>
+  <p id="meta"></p>
 </header>
-<div class="filters">%CHIPS%<button type="button" class="chip reset" id="reset" hidden>Show all</button></div>
-<div class="board">%COLUMNS%</div>
+<div class="filters" id="filters"><button type="button" class="chip reset" id="reset" hidden>Show all</button></div>
+<div class="board" id="board"></div>
 <footer class="foot">This board is not kept by hand: it is regenerated from <code>workstreams.yaml</code>,
 the single source. A workstream missing from the file is missing from the project.</footer>
 </div>
 <script>
+const DATA_NAME = %DATA%;
+const STATUSES = %STATUSES%;
+const PRIORITIES = %PRIORITIES%;
+const COMPLEXITIES = %COMPLEXITIES%;
+const DOTS = {high:"●●●", medium:"●●", low:"●"};
 const active = {mod:new Set(), pr:new Set(), cx:new Set(), st:new Set()};
+let labels = {};
+
+function el(name, className, text){
+  const n = document.createElement(name);
+  if(className) n.className = className;
+  if(text !== undefined && text !== null) n.textContent = String(text);
+  return n;
+}
+function label(v){
+  v = v || "";
+  if(Object.prototype.hasOwnProperty.call(labels, v) && labels[v]) return labels[v];
+  const s = (v || "—").replace(/-/g, " ");
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+}
+function rankOf(w){ return /^[0-9]+$/.test(w.rank || "") ? parseInt(w.rank, 10) : 99; }
+function card(w){
+  const pr = w.priority || "medium", cx = w.complexity || "medium";
+  const a = el("article", "card pr-" + pr);
+  a.dataset.mod = w.module || ""; a.dataset.pr = pr; a.dataset.cx = cx;
+  const head = el("header");
+  if(w.rank) head.appendChild(el("span", "rank", w.rank));
+  head.appendChild(el("h3", null, w.title || w.id));
+  a.appendChild(head);
+  a.appendChild(el("p", "basis", w.basis || ""));
+  if(w.cost) a.appendChild(el("p", "cost", w.cost));
+  const foot = el("footer");
+  foot.appendChild(el("span", "mod", label(w.module)));
+  if(w.category) foot.appendChild(el("span", "cat", label(w.category)));
+  const x = el("span", "cx", DOTS[cx] || "");
+  const cxName = (COMPLEXITIES.find(k => k[0] === cx) || [cx, cx])[1];
+  x.title = cxName.toLowerCase() + " complexity";
+  foot.appendChild(x);
+  if(w.refs) foot.appendChild(el("span", "ref", w.refs));
+  a.appendChild(foot);
+  return a;
+}
+function columns(workstreams){
+  const board = el("div", "board");
+  STATUSES.forEach(([key, lab]) => {
+    const subset = workstreams.filter(w => w.status === key).sort((a, b) => rankOf(a) - rankOf(b));
+    const col = el("section", "column st-" + key);
+    col.dataset.status = key;
+    const h2 = el("h2", null, lab);
+    h2.appendChild(el("b", null, subset.length));
+    col.appendChild(h2);
+    subset.forEach(w => col.appendChild(card(w)));
+    board.appendChild(col);
+  });
+  return board;
+}
+function group(workstreams, title, field, values, attr){
+  const present = values.filter(([v]) => workstreams.some(x => x[field] === v));
+  if(!present.length) return null;
+  const g = el("div", "group");
+  g.appendChild(el("span", "gt", title));
+  present.forEach(([v, lab]) => {
+    const b = el("button", "chip " + attr + "-" + v);
+    b.type = "button";
+    b.dataset.field = attr; b.dataset.val = v;
+    b.setAttribute("aria-pressed", "false");
+    b.appendChild(document.createTextNode(lab));
+    b.appendChild(el("b", null, workstreams.filter(x => x[field] === v).length));
+    b.addEventListener("click", () => {
+      const set = active[attr];
+      if(set.has(v)){ set.delete(v); b.setAttribute("aria-pressed", "false"); }
+      else { set.add(v); b.setAttribute("aria-pressed", "true"); }
+      applyFilters();
+    });
+    g.appendChild(b);
+  });
+  return g;
+}
 function applyFilters(){
   document.querySelectorAll(".column").forEach(col=>{
     col.classList.toggle("masked", active.st.size > 0 && !active.st.has(col.dataset.status));
@@ -224,21 +285,43 @@ function applyFilters(){
   document.getElementById("count").textContent = total;
   document.getElementById("reset").hidden = !Object.values(active).some(s => s.size > 0);
 }
-document.querySelectorAll(".chip[data-field]").forEach(ch=>{
-  ch.setAttribute("aria-pressed","false");
-  ch.addEventListener("click",()=>{
-    const set = active[ch.dataset.field], v = ch.dataset.val;
-    if(set.has(v)){ set.delete(v); ch.setAttribute("aria-pressed","false"); }
-    else { set.add(v); ch.setAttribute("aria-pressed","true"); }
-    applyFilters();
-  });
-});
-document.getElementById("reset").addEventListener("click",()=>{
-  Object.values(active).forEach(s=>s.clear());
-  document.querySelectorAll(".chip[data-field]").forEach(c=>c.setAttribute("aria-pressed","false"));
+function show(d){
+  labels = d.labels || {};
+  const workstreams = d.workstreams;
+  const debts = workstreams.filter(w => w.status === "debt").length;
+  const meta = document.getElementById("meta");
+  const count = el("b", null, workstreams.length);
+  count.id = "count";
+  meta.replaceChildren(count, " entries shown out of " + workstreams.length + " · " + debts
+    + " in debt · generated on " + (d.generated || "?") + " from ", el("code", null, "workstreams.yaml"));
+  const modules = [];
+  workstreams.forEach(w => { if(w.module && !modules.includes(w.module)) modules.push(w.module); });
+  const filters = document.getElementById("filters"), reset = document.getElementById("reset");
+  [group(workstreams, "Module", "module", modules.map(m => [m, label(m)]), "mod"),
+   group(workstreams, "Priority", "priority", PRIORITIES, "pr"),
+   group(workstreams, "Complexity", "complexity", COMPLEXITIES, "cx"),
+   group(workstreams, "Status", "status", STATUSES, "st")]
+    .forEach(g => { if(g) filters.insertBefore(g, reset); });
+  document.getElementById("board").replaceWith(columns(workstreams));
+  applyFilters();
+}
+function failure(detail){
+  const m = el("p", "error", "Cannot load " + DATA_NAME + " (" + detail + ").");
+  m.setAttribute("role", "alert");
+  document.getElementById("board").replaceWith(m);
+}
+document.getElementById("reset").addEventListener("click", ()=>{
+  Object.values(active).forEach(s => s.clear());
+  document.querySelectorAll(".chip[data-field]").forEach(c => c.setAttribute("aria-pressed", "false"));
   applyFilters();
 });
-applyFilters();
+fetch(DATA_NAME, {cache: "no-cache"})
+  .then(r => { if(!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+  .then(d => {
+    if(!d || !Array.isArray(d.workstreams)) throw new Error("unexpected format");
+    show(d);
+  })
+  .catch(e => failure(e && e.message ? e.message : String(e)));
 </script>
 </body>
 </html>
@@ -249,6 +332,11 @@ if __name__ == "__main__":
         sys.exit("usage: make_board.py <workstreams.yaml> <workstreams.html>")
     source, output = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
     project, labels, workstreams = read(source)
-    output.write_text(page(project, labels, workstreams), encoding="utf-8")
+    data_output = data_path(output)
+    if data_output == output:
+        sys.exit("STOP: the page cannot have the .json extension (it is the one of the data file).")
+    output.write_text(page(project, data_output.name), encoding="utf-8")
+    data_output.write_text(data_text(project, labels, workstreams), encoding="utf-8")
     by_status = {s: sum(1 for w in workstreams if w["status"] == s) for s, _ in STATUSES}
-    print(f"{len(workstreams)} workstreams read · {json.dumps(by_status, ensure_ascii=False)} · written to {output}")
+    print(f"{len(workstreams)} workstreams read · {json.dumps(by_status, ensure_ascii=False)} · "
+          f"written to {output} and {data_output}")

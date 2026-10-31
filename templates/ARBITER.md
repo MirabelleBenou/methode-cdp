@@ -1,4 +1,4 @@
-# THE LIVING-DOCS ARBITER — <Project> · v4
+# THE LIVING-DOCS ARBITER — <Project> · v5
 ### <date> · <coordination session> · read by the daily scheduled task · drawn from the PL method package
 
 *A fresh session, started every morning by a scheduled task, that checks the shared living docs **and the checkpoints**
@@ -37,7 +37,7 @@ nothing**, whoever holds the file corrects. A single write, mechanical: the arch
   flight without `pl:`, two batches in flight on the same deliverable or the same resource, a board that no longer
   matches the yaml, a plan log ahead of the workstreams (`check_living_docs.py`, checks 1 to 8); **a checkpoint that
   lags behind the workstreams** (check 9, and the Monday reading); **a checkpoint that is too big** (check 10);
-  **forgotten sessions** that keep a baton.
+  **forgotten sessions** that keep a baton (the coordination excepted: its silence is not judged).
 - **What it does not see**: the quality of a decision, the state of the code, production. It only judges the form of
   the shared living docs.
 
@@ -52,10 +52,13 @@ cases, on the first project run this way:
 3. **A workstream stayed in flight with no declared project lead**, and two batches were ready to start on **the same
    deliverable**. → checks 5 and 8.
 4. **The published workstreams board no longer matched the file**: the yaml had changed, the page had not, and the page
-   is what the owner reads. → check 6.
+   is what the owner reads; since the page is fixed and its data is in a file next to it, the check compares both with
+   their regeneration. → check 6.
 5. **Forgotten sessions kept a baton** and blocked the resumption of a domain. The first rule judged the baton's age: it
    reported two very much alive sessions, which were only waiting for a move from the owner. It became the *silence*
-   rule: no commit from the session for 24 hours. → §1.3.
+   rule: no commit from the session for 24 hours. That rule then accused the coordination session, which the owner keeps
+   open to take a fixed line or reopen a workstream, and which stays days without a commit without being forgotten:
+   **the silence check excludes the coordination**. → §1.3.
 6. **The workstreams file grew without end** (169 KB, then nearly 200 KB, three quarters of it finished workstreams).
    → the automatic archiving, §1.4a.
 7. **Checkpoints fell behind the workstreams.** Ten subjects existed only in checkpoints — which the owner does not
@@ -89,7 +92,7 @@ The sign that it is time: the first duplicate decision number, or the first forg
 1. it clones the living docs;
 2. it runs `check_living_docs.py` with `--archives` **and `--domains`**: ten checks, including check 9 on the
    checkpoints and check 10, their size;
-3. it judges the batons by their silence;
+3. it judges the batons by their silence (the coordination's excepted);
 4. it files **one `for:` workstream per new gap** — except check 9, **grouped into a single workstream per domain**
    (check 10 has one line per domain, so one workstream per domain too);
 5. it archives the workstreams accepted for seven days;
@@ -196,7 +199,10 @@ step. **A false positive is corrected in the procedure, not case by case.**
    commit from that session for more than 24 hours** — or none at all, and a baton set more than 24 hours ago — is a
    **finding** (a forgotten or dead session), addressed to the coordinator; the measurement is written in the
    workstream, with the date of the last commit (“last commit on …”). A free baton (“none — free since …”) is not
-   checked.
+   checked. **The coordination is excluded from this check** (its checkpoint, `Method/CHECKPOINT_METHOD.md`): it is a
+   long consultation session — the owner takes a fixed line or reopens a workstream there —, which can stay days without
+   a commit without being forgotten. Its other checks remain (9 and 10); it hands over on the measure of its context
+   (method §6), not on silence.
 4. **One workstream per new gap**: for each case (an indented line under a check marked GAP — **except check 9, grouped
    below, and check 10, which has its own id** — and each silent baton), an entry **at the end** of `<Folder>/workstreams.yaml`:
    ```
@@ -238,8 +244,9 @@ step. **A false positive is corrected in the procedure, not case by case.**
    `arbiter-c10-short-checkpoint-<domain>-*` already exists without being accepted, add nothing** for that domain: the PL
    has not resumed yet.
 
-   Then regenerate the board (`python3 -B <Folder>/make_board.py <Folder>/workstreams.yaml <Folder>/workstreams.html`)
-   and run the check again: the board check must be OK. The commit is made at §1.5.
+   Then regenerate the board (`python3 -B <Folder>/make_board.py <Folder>/workstreams.yaml <Folder>/workstreams.html`,
+   which writes the page and, next to it, `workstreams.json`) and run the check again: the board check (6) must be OK for
+   the page and for its data. The commit is made at §1.5, with both files.
 4a. **The archiving, after the findings** — the arbiter's only mechanical write, never a correction by hand:
    ```
    python3 -B <Folder>/archive_workstreams.py archive --workstreams <Folder>/workstreams.yaml \
@@ -308,7 +315,7 @@ step. **A false positive is corrected in the procedure, not case by case.**
 - Correct an entry, a number, a checkpoint, a baton or the domain table: it reports, whoever holds the file corrects.
   **The only exception, mechanical: the archiving** (§1.4a) — `archive_workstreams.py` dates, undates and moves out the
   accepted entries; the arbiter never touches by hand an accepted entry or an `accepted-on:` line.
-- Write anywhere other than at the end of `workstreams.yaml`, in the regenerated `workstreams.html`, at the end of
+- Write anywhere other than at the end of `workstreams.yaml`, in the regenerated `workstreams.html` and `workstreams.json`, at the end of
   `ARBITER_LOG.md`, and what `archive_workstreams.py` does (the `accepted-on:` lines, the entries moved out,
   `Archives/WORKSTREAMS_<YYYY-MM>.yaml`).
 - Judge a checkpoint on style or timeliness: the Monday reading only flags what a decision or a workstream contradicts,
@@ -352,7 +359,7 @@ step. **A false positive is corrected in the procedure, not case by case.**
    `git clone --depth 1 https://github.com/<owner>/<Project> living-docs` (a single clone, 10-minute command timeout),
    then read `Method/ARBITER.md` in full and follow it to the letter: check with `check_living_docs.py` (with
    `--archives` and `--domains`), one `for:` workstream per new gap (never twice) — the one for the checkpoint check
-   grouped into a single one per domain —, checkpoint batons judged by their silence, accepted workstreams archived by
+   grouped into a single one per domain —, checkpoint batons judged by their silence (the coordination's excepted), accepted workstreams archived by
    `archive_workstreams.py`, board regenerated, on Mondays only the reading of the checkpoints against the week's
    decisions, one line at the end of `Method/ARBITER_LOG.md` at every run, even without a gap, a single commit pushed.
    You correct nothing else; you reserve no number, take no deliverable, launch no dev, open no other session and send
@@ -407,6 +414,7 @@ step. **A false positive is corrected in the procedure, not case by case.**
   opinion or a false flag?).
 - **A false positive is corrected in the procedure, not case by case.** A real example: the first baton rule judged
   their age (“taken for more than 24 hours”); it reported two very much alive sessions that were waiting for the owner.
-  The rule became the silence rule (§1.3).
+  The rule became the silence rule (§1.3); then, the coordination having been flagged as forgotten while the owner kept
+  it open, it was excluded from it.
 - A change to the procedure changes this file (version at the top), not the task's prompt — unless the procedure gains or
   loses a family of moves (§4.5).

@@ -1,8 +1,11 @@
-"""Tests of make_board.py: a page drawn from workstreams.yaml, deterministic, escaped, one column per status.
+"""Tests of make_board.py: a fixed page and a data file drawn from workstreams.yaml, deterministic.
 
-Every test builds its source in a temporary folder (see test_tools.py) and calls the script on the
-command line.
+The page holds no workstream data; the workstreams are in the .json file written next to it. Every
+test builds its source in a temporary folder (see test_tools.py) and calls the script on the command
+line. The JavaScript of the page does not run here (standard library only): the tests read the data
+in the JSON and check the page as a text.
 """
+import json
 import re
 import unittest
 from datetime import date
@@ -12,21 +15,22 @@ from .test_tools import GENERATOR, TempCase, block, yaml
 STATUSES = [("upcoming", "Upcoming"), ("to-brief", "To brief"), ("in-flight", "In flight"),
             ("debt", "Debt"), ("accepted", "Accepted")]
 RE_DATE = re.compile(r"\d{2}/\d{2}/\d{4}")
+DEFAULT_LABELS = {"screen": "Screen", "data": "Data", "doc": "Documentation", "tooling": "Tooling",
+                  "engine": "Engine", "operations": "Operations", "core": "Core"}
 
 
-def columns(html: str) -> dict:
-    """{status: (label, total shown, [titles of the cards])} from the sections of the page."""
-    found = {}
-    for m in re.finditer(r'<section class="column st-(\S+?)" data-status="\S+?"><h2>(.*?)<b>(\d+)</b></h2>(.*?)</section>',
-                         html, flags=re.S):
-        found[m.group(1)] = (m.group(2), int(m.group(3)), re.findall(r"<h3>(.*?)</h3>", m.group(4)))
-    return found
+def constant(page: str, name: str):
+    """The JSON value of a constant "const NAME = …;" of the script of the page."""
+    m = re.search(rf"^const {name} = (.*);$", page, flags=re.M)
+    assert m, f"constant {name} missing from the page"
+    return json.loads(m.group(1))
 
 
 class GeneratorCase(TempCase):
     def setUp(self):
         super().setUp()
         self.html = self.folder / "workstreams.html"
+        self.json = self.folder / "workstreams.json"
 
     def generate(self, *blocks: str, header: str = "# Workstreams — Test", source_name: str = "workstreams.yaml"):
         self.source = self.write(source_name, yaml(*blocks, header=header))
@@ -37,6 +41,15 @@ class GeneratorCase(TempCase):
     def page(self) -> str:
         return self.html.read_text(encoding="utf-8")
 
+    def data_text(self) -> str:
+        return self.json.read_text(encoding="utf-8")
+
+    def data(self) -> dict:
+        return json.loads(self.data_text())
+
+    def workstreams(self) -> list:
+        return self.data()["workstreams"]
+
 
 class TestGeneration(GeneratorCase):
     def test_the_output_summarizes_what_was_read(self):
@@ -46,182 +59,234 @@ class TestGeneration(GeneratorCase):
         self.assertIn('"upcoming": 1', output.stdout)
         self.assertIn('"debt": 2', output.stdout)
         self.assertIn('"accepted": 0', output.stdout)
-        self.assertTrue(output.stdout.rstrip().endswith(f"written to {self.html}"), output.stdout)
+        self.assertTrue(output.stdout.rstrip().endswith(f"written to {self.html} and {self.json}"), output.stdout)
+
+    def test_two_files_are_written_and_the_second_has_the_same_name_in_json(self):
+        self.generate(block("alpha-1", status="upcoming"))
+        self.assertTrue(self.html.is_file())
+        self.assertTrue(self.json.is_file())
+        self.assertEqual(sorted(p.name for p in self.folder.iterdir()),
+                         ["workstreams.html", "workstreams.json", "workstreams.yaml"])
+
+    def test_the_data_file_is_put_next_to_the_page_under_its_name(self):
+        source = self.write("workstreams.yaml", yaml(block("alpha-1", status="upcoming")))
+        (self.folder / "x").mkdir()
+        output = self.run_script(GENERATOR, source, self.folder / "x" / "board.html")
+        self.assertEqual(output.code, 0, output.stdout + output.stderr)
+        self.assertEqual(sorted(p.name for p in (self.folder / "x").iterdir()), ["board.html", "board.json"])
+        self.assertTrue(output.stdout.rstrip().endswith(
+            f"written to {self.folder / 'x' / 'board.html'} and {self.folder / 'x' / 'board.json'}"), output.stdout)
+        self.assertIn('"board.json"', (self.folder / "x" / "board.html").read_text(encoding="utf-8"))
 
     def test_two_generations_of_the_same_source_are_identical_except_the_date(self):
         self.generate(block("alpha-1", title="First", status="upcoming", module="module-a", priority="high"),
                       block("alpha-2", title="Second", status="accepted", module="module-b", complexity="high"))
-        first = self.page()
-        second_output = self.folder / "second.html"
-        self.assertEqual(self.run_script(GENERATOR, self.source, second_output).code, 0)
-        second = second_output.read_text(encoding="utf-8")
-        self.assertEqual(RE_DATE.sub("<date>", first), RE_DATE.sub("<date>", second))
-        self.assertEqual(len(RE_DATE.findall(first)), 1)
+        first, first_data = self.page(), self.data_text()
+        second_page = self.folder / "second.html"
+        self.assertEqual(self.run_script(GENERATOR, self.source, second_page).code, 0)
+        second = second_page.read_text(encoding="utf-8")
+        second_data = (self.folder / "second.json").read_text(encoding="utf-8")
+        self.assertEqual(RE_DATE.sub("<date>", first_data), RE_DATE.sub("<date>", second_data))
+        self.assertEqual(len(RE_DATE.findall(first_data)), 1)
+        # the page holds no date; it differs only by the name of the data file
+        self.assertEqual(RE_DATE.findall(first), [])
+        self.assertEqual(first.replace("workstreams.json", "second.json"), second)
 
-    def test_the_page_is_dated_with_the_day(self):
+    def test_the_data_is_dated_with_the_day(self):
+        before = date.today().strftime("%d/%m/%Y")
         self.generate(block("alpha-1", status="upcoming"))
-        self.assertIn(f"generated on {date.today().strftime('%d/%m/%Y')}", self.page())
+        after = date.today().strftime("%d/%m/%Y")  # the day may have changed during the call
+        self.assertIn(self.data()["generated"], {before, after})
 
     def test_the_page_is_a_complete_html_document(self):
         self.generate(block("alpha-1", status="upcoming"))
         page = self.page()
         self.assertTrue(page.startswith("<!doctype html>"))
         self.assertTrue(page.rstrip().endswith("</html>"))
-        for marker in ("%PROJECT%", "%COLUMNS%", "%CHIPS%", "%DATE%", "%TOTAL%", "%DEBTS%"):
+        for marker in ("%PROJECT%", "%DATA%", "%STATUSES%", "%PRIORITIES%", "%COMPLEXITIES%"):
             self.assertNotIn(marker, page)
 
-    def test_each_status_has_its_column_in_the_order_of_the_method(self):
-        self.generate(*(block(f"alpha-{n}", title=f"Title {status}", status=status)
-                        for n, (status, _) in enumerate(STATUSES, start=1)))
-        found = columns(self.page())
-        self.assertEqual(list(found), [status for status, _ in STATUSES])
-        for status, label in STATUSES:
-            self.assertEqual(found[status], (label, 1, [f"Title {status}"]), status)
+    def test_the_page_is_the_same_for_two_sources_with_the_same_header(self):
+        self.generate(block("alpha-1", title="First", status="upcoming", module="module-a"))
+        first = self.page()
+        self.generate(block("beta-1", title="Other", status="debt", module="module-z", priority="high"),
+                      block("beta-2", title="Again", status="accepted"), block("beta-3", status="in-flight", pl="X"))
+        self.assertEqual(self.page(), first)
 
-    def test_a_column_without_entries_is_shown_empty(self):
-        self.generate(block("alpha-1", title="Alone", status="debt"))
-        found = columns(self.page())
-        self.assertEqual(len(found), 5)
-        self.assertEqual(found["debt"], ("Debt", 1, ["Alone"]))
-        for status in ("upcoming", "to-brief", "in-flight", "accepted"):
-            self.assertEqual(found[status][1:], (0, []), status)
+    def test_the_page_holds_no_workstream_data(self):
+        self.generate(block("zeta-one", title="Unique title", status="upcoming", module="module-q", basis="Rare basis",
+                            cost="Rare cost", refs="RARE-REF", rank="3", category="doc"),
+                      block("zeta-two", title="Other title", status="debt"), block("zeta-three", status="accepted"))
+        page = self.page()
+        for value in ("zeta-one", "Unique title", "module-q", "Rare basis", "Rare cost", "RARE-REF",
+                      "zeta-two", "Other title", "zeta-three"):
+            self.assertNotIn(value, page)
 
-    def test_the_cards_go_in_the_column_of_their_status(self):
-        self.generate(block("alpha-1", title="One", status="in-flight", pl="Opus-PL-Alpha"),
-                      block("alpha-2", title="Two", status="in-flight", pl="Opus-PL-Alpha"),
-                      block("alpha-3", title="Three", status="to-brief"))
-        found = columns(self.page())
-        self.assertEqual(found["in-flight"][1:], (2, ["One", "Two"]))
-        self.assertEqual(found["to-brief"][1:], (1, ["Three"]))
+    def test_the_page_depends_only_on_the_project_name(self):
+        self.generate(block("alpha-1", status="upcoming"), header="# Workstreams — Project One · more\n# label: x = Y")
+        one = self.page()
+        self.generate(block("beta-1", status="debt"), header="# Workstreams — Project One · any other text")
+        self.assertEqual(self.page(), one)
+        self.generate(block("alpha-1", status="upcoming"), header="# Workstreams — Project Two")
+        self.assertNotEqual(self.page(), one)
 
-    def test_a_card_without_a_title_carries_its_id(self):
-        self.generate(block("alpha-1", status="upcoming"))
-        self.assertEqual(columns(self.page())["upcoming"][2], ["alpha-1"])
-
-    def test_sorted_by_rank_then_file_order(self):
-        self.generate(block("a", title="No rank", status="upcoming"),
-                      block("b", title="Rank 2", status="upcoming", rank="2"),
-                      block("c", title="Rank 1", status="upcoming", rank="1"),
-                      block("d", title="No rank bis", status="upcoming"))
-        self.assertEqual(columns(self.page())["upcoming"][2], ["Rank 1", "Rank 2", "No rank", "No rank bis"])
-
-    def test_an_added_entry_appears(self):
+    def test_the_page_does_not_contain_innerhtml(self):
         self.generate(block("alpha-1", title="First", status="upcoming"))
-        before = self.page()
-        self.assertNotIn("Added afterwards", before)
-        self.assertIn('<b id="count">1</b>', before)
+        self.assertNotIn("innerHTML", self.page())
+        self.assertNotIn("insertAdjacentHTML", self.page())
+        self.assertNotIn("document.write", self.page())
+
+    def test_the_page_builds_the_dom_with_createelement_and_textcontent(self):
+        self.generate(block("alpha-1", status="upcoming"))
+        page = self.page()
+        self.assertIn("document.createElement(", page)
+        self.assertIn(".textContent", page)
+
+    def test_the_page_contains_the_name_of_the_data_file_and_reads_it_with_fetch(self):
+        self.generate(block("alpha-1", status="upcoming"))
+        page = self.page()
+        self.assertEqual(constant(page, "DATA_NAME"), "workstreams.json")
+        self.assertIn("fetch(DATA_NAME", page)
+
+    def test_the_page_shows_a_visible_failure_when_the_data_is_missing(self):
+        self.generate(block("alpha-1", status="upcoming"))
+        page = self.page()
+        self.assertIn('"Cannot load " + DATA_NAME + " ("', page)
+        self.assertIn(".catch(", page)
+
+    def test_the_page_carries_the_statuses_priorities_and_complexities_of_the_method(self):
+        self.generate(block("alpha-1", status="upcoming"))
+        page = self.page()
+        self.assertEqual(constant(page, "STATUSES"), [list(x) for x in STATUSES])
+        self.assertEqual([v for v, _ in constant(page, "PRIORITIES")], ["high", "medium", "low"])
+        self.assertEqual([v for v, _ in constant(page, "COMPLEXITIES")], ["high", "medium", "low"])
+
+    def test_the_page_prevents_horizontal_overflow_on_a_phone(self):
+        self.generate(block("alpha-1", status="upcoming"))
+        css = re.search(r"<style>(.*?)</style>", self.page(), flags=re.S).group(1)
+        self.assertRegex(css, r"(?m)^\.column\{[^}]*min-width:0[;}]")
+        self.assertRegex(css, r"(?m)^\.card\{[^}]*overflow-wrap:anywhere[;}]")
+
+    def test_the_page_carries_the_light_and_dark_themes(self):
+        self.generate(block("alpha-1", status="upcoming"))
+        page = self.page()
+        self.assertIn("--bg:#EFE9DC;", page)
+        self.assertIn("@media (prefers-color-scheme:dark)", page)
+        self.assertIn(':root[data-theme="dark"]', page)
+
+    def test_the_data_file_has_its_four_keys_in_order(self):
+        self.generate(block("alpha-1", status="upcoming"))
+        data = self.data()
+        self.assertEqual(list(data), ["project", "generated", "labels", "workstreams"])
+        self.assertEqual(data["project"], "Test")
+        self.assertRegex(data["generated"], r"^\d{2}/\d{2}/\d{4}$")
+
+    def test_the_data_file_is_utf8_indented_with_a_final_newline(self):
+        self.generate(block("alpha-1", title="Élan à l'île", status="upcoming"))
+        raw = self.json.read_bytes()
+        self.assertTrue(raw.endswith(b"}\n"))
+        text = raw.decode("utf-8")
+        self.assertIn("Élan à l'île", text, "accents are written as they are, not as \\u00c9")
+        self.assertIn('\n "project": "Test",\n', text, "indent=1")
+        self.assertEqual(text, json.dumps(json.loads(text), ensure_ascii=False, indent=1) + "\n")
+
+    def test_the_entries_are_in_the_order_of_the_file_without_sorting_or_filtering(self):
+        ids = ["zeta", "alpha", "mu", "beta", "omega"]
+        statuses = ["accepted", "debt", "upcoming", "in-flight", "to-brief"]
+        self.generate(*(block(i, status=s, pl="X" if s == "in-flight" else None, rank=str(n))
+                        for n, (i, s) in enumerate(zip(ids, statuses), start=1)))
+        self.assertEqual([w["id"] for w in self.workstreams()], ids)
+
+    def test_every_entry_keeps_all_its_keys_as_read(self):
+        self.generate(block("alpha-1", title="First", status="in-flight", pl="Opus-PL-Alpha", module="module-a",
+                            category="doc", priority="high", complexity="high", rank="2", basis="A basis",
+                            cost="2 days", refs="R1 R2", version="v1.0.0", deliverable="repo", waits="alpha-2"),
+                      block("alpha-2", status="upcoming", unknown_key="value"))
+        first, second = self.workstreams()
+        self.assertEqual(first, {"id": "alpha-1", "title": "First", "status": "in-flight", "pl": "Opus-PL-Alpha",
+                                 "module": "module-a", "category": "doc", "priority": "high", "complexity": "high",
+                                 "rank": "2", "basis": "A basis", "cost": "2 days", "refs": "R1 R2",
+                                 "version": "v1.0.0", "deliverable": "repo", "waits": "alpha-2"})
+        self.assertEqual(list(first), ["id", "title", "status", "pl", "module", "category", "priority", "complexity",
+                                       "rank", "basis", "cost", "refs", "version", "deliverable", "waits"])
+        self.assertEqual(second, {"id": "alpha-2", "status": "upcoming", "unknown-key": "value"})
+        for entry in (first, second):
+            self.assertTrue(all(isinstance(v, str) for v in entry.values()), entry)
+
+    def test_the_default_labels_are_in_the_data(self):
+        self.generate(block("alpha-1", status="upcoming"))
+        self.assertEqual(self.data()["labels"], DEFAULT_LABELS)
+
+    def test_the_labels_of_the_header_are_added_to_the_defaults_and_replace_them(self):
+        self.generate(block("alpha-1", status="upcoming", module="module-a", category="doc"),
+                      header="# Workstreams — Test\n# label: module-a = Module Alpha\n# label: doc = Notices")
+        labels = self.data()["labels"]
+        self.assertEqual(labels["module-a"], "Module Alpha")
+        self.assertEqual(labels["doc"], "Notices")
+        self.assertEqual(labels["screen"], "Screen")
+        self.assertEqual(list(labels), list(DEFAULT_LABELS) + ["module-a"])
+
+    def test_an_added_entry_appears_in_the_data(self):
+        self.generate(block("alpha-1", title="First", status="upcoming"))
+        self.assertEqual([w["id"] for w in self.workstreams()], ["alpha-1"])
         output = self.generate(block("alpha-1", title="First", status="upcoming"),
-                               block("alpha-2", title="Added afterwards", status="debt"))
-        after = self.page()
+                               block("alpha-2", title="Added later", status="debt"))
         self.assertTrue(output.stdout.startswith("2 workstreams read"))
-        self.assertEqual(columns(after)["debt"][1:], (1, ["Added afterwards"]))
-        self.assertIn('<b id="count">2</b>', after)
-        self.assertIn("entries shown out of 2 · 1 in debt", after)
+        self.assertEqual([w["title"] for w in self.workstreams() if w["status"] == "debt"], ["Added later"])
+        self.assertNotIn("Added later", self.page())
 
-    def test_the_count_of_debts_is_in_the_header(self):
-        self.generate(block("alpha-1", status="debt"), block("alpha-2", status="debt"), block("alpha-3", status="upcoming"))
-        self.assertIn("entries shown out of 3 · 2 in debt", self.page())
-
-    def test_the_source_is_read_again_at_every_generation(self):
+    def test_the_source_is_re_read_at_every_generation(self):
         self.generate(block("alpha-1", title="Old title", status="upcoming"))
         self.generate(block("alpha-1", title="New title", status="upcoming"))
-        self.assertNotIn("Old title", self.page())
-        self.assertIn("New title", self.page())
+        self.assertNotIn("Old title", self.data_text())
+        self.assertIn("New title", self.data_text())
 
 
 class TestEscaping(GeneratorCase):
-    def test_a_title_with_html_characters_comes_out_escaped(self):
-        self.generate(block("alpha-1", title="Title <b>bold</b> & more", status="upcoming"))
-        page = self.page()
-        self.assertIn("<h3>Title &lt;b&gt;bold&lt;/b&gt; &amp; more</h3>", page)
-        self.assertNotIn("<b>bold</b>", page)
-        self.assertNotIn("& more", page)
-
-    def test_the_less_than_character_alone_is_escaped(self):
-        self.generate(block("alpha-1", title="a<b", status="upcoming"))
-        page = self.page()
-        self.assertIn("<h3>a&lt;b</h3>", page)
-        self.assertNotIn("<h3>a<b", page)
-
-    def test_the_other_fields_of_the_card_are_escaped(self):
-        self.generate(block("alpha-1", title="T", status="upcoming", basis="<script>alert(1)</script>",
-                            cost="cost < 5 & > 2", refs="R<1>", category="a&b", module="mod<x>"))
-        page = self.page()
-        self.assertIn("&lt;script&gt;alert(1)&lt;/script&gt;", page)
-        self.assertNotIn("<script>alert(1)", page)
-        self.assertIn("cost &lt; 5 &amp; &gt; 2", page)
-        self.assertIn('<span class="ref">R&lt;1&gt;</span>', page)
-        self.assertIn('<span class="cat">A&amp;b</span>', page)
-        self.assertIn('data-mod="mod&lt;x&gt;"', page)
-
-    def test_a_quote_in_an_attribute_is_escaped(self):
-        self.generate(block("alpha-1", title="T", status="upcoming", module='x"y'))
-        page = self.page()
-        self.assertIn('data-mod="x&quot;y"', page)
-        self.assertNotIn('data-mod="x"y"', page)
-
-    def test_the_project_name_is_escaped(self):
+    def test_the_project_name_is_escaped_in_the_page(self):
         self.generate(block("alpha-1", status="upcoming"), header="# Workstreams — Test & <Co> · more")
         page = self.page()
         self.assertIn("<title>Workstreams Test &amp; &lt;Co&gt;</title>", page)
+        self.assertIn("<h1>Workstreams — Test &amp; &lt;Co&gt;</h1>", page)
         self.assertNotIn("<Co>", page)
+        self.assertEqual(self.data()["project"], "Test & <Co>", "the JSON carries the value read, without HTML escaping")
 
-    def test_the_labels_are_escaped(self):
-        self.generate(block("alpha-1", status="upcoming", module="module-a"),
-                      header="# Workstreams — Test\n# label: module-a = Module <A> & Co")
+    def test_a_project_name_that_looks_like_a_marker_is_not_substituted(self):
+        self.generate(block("alpha-1", status="upcoming"), header="# Workstreams — %DATA% %STATUSES% · more")
         page = self.page()
-        self.assertIn("Module &lt;A&gt; &amp; Co", page)
-        self.assertNotIn("Module <A>", page)
+        self.assertIn("<title>Workstreams %DATA% %STATUSES%</title>", page)
+        self.assertEqual(constant(page, "DATA_NAME"), "workstreams.json")
+
+    def test_values_with_html_characters_are_in_the_json_as_they_are_and_absent_from_the_page(self):
+        self.generate(block("alpha-1", title="Title <b>bold</b> & more", status="upcoming",
+                            basis="<script>alert(1)</script>", cost="cost < 5 & > 2", refs="R<1>",
+                            category="a&b", module='x"y'))
+        entry = self.workstreams()[0]
+        self.assertEqual(entry["title"], "Title <b>bold</b> & more")
+        self.assertEqual(entry["basis"], "<script>alert(1)</script>")
+        self.assertEqual(entry["module"], 'x"y')
+        page = self.page()
+        for value in ("<b>bold</b>", "alert(1)", "cost < 5", "R<1>", "a&b"):
+            self.assertNotIn(value, page)
+
+    def test_the_json_cannot_close_a_script_of_the_page(self):
+        self.generate(block("alpha-1", title="</script><b>x</b>", status="upcoming"))
+        self.assertNotIn("</script><b>", self.page())
+        self.assertEqual(self.workstreams()[0]["title"], "</script><b>x</b>")
 
 
-class TestHeaderAndLabels(GeneratorCase):
+class TestHeader(GeneratorCase):
     def test_the_title_comes_from_the_first_line(self):
         self.generate(block("alpha-1", status="upcoming"), header="# Workstreams — Witness Project · something else")
         page = self.page()
         self.assertIn("<title>Workstreams Witness Project</title>", page)
         self.assertIn("<h1>Workstreams — Witness Project</h1>", page)
+        self.assertEqual(self.data()["project"], "Witness Project")
 
     def test_without_a_title_it_is_the_name_of_the_source_folder(self):
-        self.generate(block("alpha-1", status="upcoming"), header="# No title here", source_name="untitled-project/workstreams.yaml")
-        self.assertIn("<title>Workstreams untitled-project</title>", self.page())
-
-    def test_label_given_by_the_header(self):
-        self.generate(block("alpha-1", status="upcoming", module="module-a", category="doc"),
-                      header="# Workstreams — Test\n# label: module-a = Module Alpha\n# label: doc = Notices")
-        page = self.page()
-        self.assertIn('<span class="mod">Module Alpha</span>', page)
-        self.assertIn('<span class="cat">Notices</span>', page)
-        self.assertIn("Module Alpha<b>1</b>", page, "the filter carries the label too")
-
-    def test_default_label(self):
-        self.generate(block("alpha-1", status="upcoming", module="module-a", category="tooling"),
-                      block("alpha-2", status="upcoming", module="screen"))
-        page = self.page()
-        self.assertIn('<span class="mod">Module a</span>', page, "dashes as spaces, first letter capitalized")
-        self.assertIn('<span class="cat">Tooling</span>', page)
-        self.assertIn('<span class="mod">Screen</span>', page)
-
-    def test_priority_and_complexity_by_default_and_given(self):
-        self.generate(block("alpha-1", status="upcoming"),
-                      block("alpha-2", status="upcoming", priority="high", complexity="high"),
-                      block("alpha-3", status="upcoming", priority="low", complexity="low"))
-        page = self.page()
-        self.assertIn('class="card pr-medium" data-mod="" data-pr="medium" data-cx="medium"', page)
-        self.assertIn('class="card pr-high" data-mod="" data-pr="high" data-cx="high"', page)
-        self.assertIn('class="card pr-low" data-mod="" data-pr="low" data-cx="low"', page)
-        for dots in ('">●●●</span>', '">●●</span>', '">●</span>'):
-            self.assertIn(dots, page)
-
-    def test_the_filters_only_offer_the_values_present(self):
-        self.generate(block("alpha-1", status="upcoming", module="module-a", priority="high"),
-                      block("alpha-2", status="debt", module="module-b", priority="high"))
-        page = self.page()
-        self.assertIn('data-field="mod" data-val="module-a"', page)
-        self.assertIn('data-field="mod" data-val="module-b"', page)
-        self.assertIn('data-field="pr" data-val="high"', page)
-        self.assertNotIn('data-field="pr" data-val="low"', page)
-        self.assertIn('data-field="st" data-val="debt"', page)
-        self.assertNotIn('data-field="st" data-val="accepted"', page)
+        self.generate(block("alpha-1", status="upcoming"), header="# No title here", source_name="project-without-title/workstreams.yaml")
+        self.assertIn("<title>Workstreams project-without-title</title>", self.page())
+        self.assertEqual(self.data()["project"], "project-without-title")
 
 
 class TestRefusals(GeneratorCase):
@@ -231,6 +296,7 @@ class TestRefusals(GeneratorCase):
         self.assertNotEqual(output.code, 0, output.stdout)
         self.assertIn(message, output.stderr)
         self.assertFalse(self.html.exists(), "no page is written")
+        self.assertFalse(self.json.exists(), "no data file is written")
 
     def test_unknown_status(self):
         self.refuses(yaml(block("alpha-1", status="finished")), "STOP: unknown status ['finished'].")
@@ -262,6 +328,14 @@ class TestRefusals(GeneratorCase):
         output = self.run_script(GENERATOR, self.folder / "missing.yaml", self.html)
         self.assertNotEqual(output.code, 0)
         self.assertFalse(self.html.exists())
+        self.assertFalse(self.json.exists())
+
+    def test_a_page_that_would_carry_the_data_extension_is_refused(self):
+        self.source = self.write("workstreams.yaml", yaml(block("alpha-1", status="debt")))
+        output = self.run_script(GENERATOR, self.source, self.folder / "board.json")
+        self.assertNotEqual(output.code, 0)
+        self.assertIn("STOP: the page cannot have the .json extension", output.stderr)
+        self.assertFalse((self.folder / "board.json").exists())
 
 
 if __name__ == "__main__":

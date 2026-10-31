@@ -2,7 +2,8 @@
 
 *To paste into the claude.ai project instructions, after replacing the `<…>`. The text stays short: it says who
 you are, what you expect, and **where** the rules are — never the rules themselves, which live in the skill and in the
-project's method. A rule copied here would drift from its source. The blocks below are in English; you can paste them
+project's method. A rule copied here would drift from its source. **Read `CORE.md` first** (two pages): it says what
+the words of this text — PL, batch, living docs, checkpoint — cover. The blocks below are in English; you can paste them
 in your own language.*
 
 ---

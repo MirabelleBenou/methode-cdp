@@ -78,9 +78,12 @@ class TestDater(CasArchiver):
     def test_la_date_du_jour_par_defaut_est_celle_de_l_horloge(self):
         from datetime import date
         self.ecrire_chantiers(bloc("alpha-1", statut="recette"))
+        avant = date.today().isoformat()
         sortie = self.archiver(date=None)
+        apres = date.today().isoformat()  # le jour a pu changer pendant l'appel : l'une des deux dates convient
         self.assertEqual(sortie.code, 0)
-        self.assertIn(f"  recette-le: {date.today().isoformat()}\n", self.lire_chantiers())
+        self.assertTrue(any(f"  recette-le: {jour}\n" in self.lire_chantiers() for jour in {avant, apres}),
+                        self.lire_chantiers())
 
     def test_fin_de_ligne_windows_conservee(self):
         texte = "# Chantiers — Essai\r\n\r\n- id: alpha-1\r\n  statut: recette\r\n"

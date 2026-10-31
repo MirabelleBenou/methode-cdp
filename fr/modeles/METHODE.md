@@ -6,6 +6,7 @@
   fondent.*
 - *Le côté du dev est au `PROMPT_DEV_<P>.md`, à la racine du dépôt `<Projet>-App`.*
 - *Elle prime sur la skill `methode-cdp`, qui porte la partie commune à tous les projets.*
+- *Les termes (témoin, file, lot, livrable, vivants…) sont définis au `GLOSSAIRE.md` du package méthode.*
 - *Elle ne porte que ce qui vaut pour tous les domaines : tous les CdP la relisent, et sur le premier projet 40 % de son
   texte ne servait qu'à un seul produit (mesures, maquette, banc, pièges d'écran). **Ce qui est propre à un produit va à
   sa fiche produit** (celle que tient la coordination quand un produit a plusieurs CdP) **ou au checkpoint de son
@@ -117,12 +118,27 @@ accepté → l'entrée se rédige à sa place. Une entrée ne porte pas de total
 vol** : le lot en vol porte dans `chantiers.yaml` `statut: en-vol`, `cdp:` et `livrable:`, et pousser cette entrée
 prend le livrable. **Un autre lot du même livrable est suspendu**, même s'il vient d'un autre CdP : il reste `a-cadrer`
 avec `attend: <id>`, sans cadrage poussé, branche ni dev, jusqu'à ce que le premier soit validé en production et
-fusionné (ou abandonné sur décision du porteur). **L'étude et le pré-cadrage restent libres** : le pré-cadrage (règles,
-critères, textes, sans version ni attendus) peut se pousser au dépôt des lots, sous `lots/<lot>/PRECADRAGE.md` ; il
-devient le cadrage quand le lot prend le livrable. **Personne ne décide d'un numéro de version à l'avance** : la version
-se calcule quand le lot prend le livrable (`main` plus un), s'écrit alors dans `version:` et le cadrage ; un lot
-suspendu qui reprend la calcule sur le nouveau `main` et refait sa base. Un fichier d'un autre livrable se déclare
-(`touche:`). Un lot sans release (une sonde, une étude jouée, de la documentation) ne porte pas de `livrable:`.
+fusionné (ou, pour un livrable publié par release, fusionné après réception — voir plus bas ; ou abandonné sur décision
+du porteur). **L'étude et le pré-cadrage restent libres** : le pré-cadrage (règles, critères, textes, sans version ni
+attendus) peut se pousser au dépôt des lots, sous `lots/<lot>/PRECADRAGE.md` ; il devient le cadrage quand le lot prend
+le livrable. Un fichier d'un autre livrable se déclare (`touche:`). Un lot sans release (une sonde, une étude jouée, de
+la documentation) ne porte pas de `livrable:`.
+
+**Personne ne décide d'un numéro de version à l'avance** : aucun checkpoint, chantier, étude ou message n'annonce « telle
+version pour tel lot ». **Deux régimes de version, selon le livrable** :
+- **déployé à chaque lot** (une application en production, son agent, le déployeur) : la version se calcule quand le lot
+  prend le livrable, avant sa branche : la version de `main` plus un ; elle s'écrit alors dans `version:` de l'entrée en
+  vol et dans le cadrage ; un lot suspendu qui reprend la calcule sur le nouveau `main`, refait sa base et ses attendus ;
+- **publié par release** (un outil que l'on télécharge en paquet) : **le lot ne porte pas de version** (ni `version:` ni
+  numéro au cadrage) ; il complète la section « Unreleased » du `CHANGELOG` (et les fichiers à télécharger, s'il y en a)
+  et **libère le livrable à sa fusion, après réception**. **La release se fait à la demande du porteur** : le CdP fixe
+  alors le numéro par la règle du `CHANGELOG` du dépôt, renomme la section, refait les paquets en une passe et remet au
+  porteur le texte et les paquets. Pour ce régime, la validation en production est cette release ; ce qui dépend d'une
+  release (des données déposées sur un serveur) attend la release.
+
+*Pourquoi deux régimes* : « la version se calcule quand le lot prend le livrable » vaut pour ce qui se déploie à chaque
+lot. Pour une suite que l'on télécharge par release, une release par lot fait du bruit chez ceux qui la téléchargent, sans
+rien leur apporter : on regroupe les lots dans une release que le porteur demande.
 
 **Une ressource partagée se prend comme un livrable** : la machine du porteur et ce qu'elle fait tourner pour un lot
 (l'exécutant local, un jeu, un logiciel piloté) n'accueillent qu'un lot à la fois, quel que soit son domaine. Le lot qui
@@ -141,7 +157,11 @@ cherchait le témoin dans les commits. La session qui reprend le pose par un pus
 trouve après un `pull` un autre identifiant que le sien n'écrit plus aux vivants et le dit au porteur ; une session qui
 attend un geste du porteur garde le témoin. **Un témoin se juge à son silence, pas à son âge** : une session peut vivre
 plusieurs jours en attendant le porteur ; c'est l'absence de tout commit de cette session depuis plus de 24 heures qui
-signale une session oubliée (le contrôle de l'arbitre, s'il existe).
+signale une session oubliée (le contrôle de l'arbitre, s'il existe). **La coordination fait exception** : elle garde son
+témoin entre deux travaux, parce que le porteur la consulte pour rouvrir un chantier ou prendre une ligne fixe et qu'elle
+peut rester des jours sans commit (l'arbitre la signalait comme une session oubliée, à tort). Le contrôle de silence des
+témoins l'exclut ; ses autres contrôles (checkpoints, taille) restent ; **elle passe la main à la mesure de son contexte
+(§6), pas au silence**.
 
 **Le titre de la session** : `<nom du CdP> · <chantier en cours>`, changé à chaque chantier ; `-2` pour un second CdP sur
 le même domaine, avec son propre checkpoint. La session se renomme si elle le peut, sinon elle donne le titre au porteur
@@ -191,7 +211,9 @@ en tête de réponse.
    ouverte. **L'addendum sous la même version ne sert que tant que rien n'a été remis ni déployé** : lever un arrêt,
    corriger un écart de la réception.
 7. **La validation en production par le porteur**, puis **la fusion** : `git push origin lot/v<X.Y>:main` en avance rapide,
-   jamais `--force` ; enfin **la clôture** (§6), une fois par lot.
+   jamais `--force` ; enfin **la clôture** (§6), une fois par lot. *(Pour un livrable publié par release, il n'y a ni
+   version ni validation en production par lot : la fusion se fait après la réception, et la release, à la demande du
+   porteur — §1 bis.)*
 
 ---
 
@@ -358,7 +380,8 @@ procédure manuelle, la date de mise en service.⟩
 
 - **Rien ne se croit, tout se mesure**, sur l'archive déballée à froid. Les portes se lisent en deltas.
 - **La version** : ⟨qui la fait monter — script `release` côté dev, pré-autorisé, +1 cran par lot / seulement avec
-  l'accord explicite du porteur⟩. Un lot qui ne change pas le code (méthode, banc) ne prend pas de version.
+  l'accord explicite du porteur⟩. Un lot qui ne change pas le code (méthode, banc) ne prend pas de version, ni un lot
+  d'un livrable publié par release (§1 bis, « Le livrable et sa version »).
 - ⟨Les invariants du projet : un fichier, un module ou une empreinte qui ne bougent que sur autorisation écrite du
   porteur portée par le cadrage.⟩
 - **Les textes produits restent neutres en genre** : jamais présumer le genre d'une personne d'après un pseudonyme.
@@ -375,9 +398,11 @@ procédure manuelle, la date de mise en service.⟩
 ## §6 · La clôture et les documents
 
 **À chaque lot clos, une fois** :
-- la ligne du journal du plan, pour un lot qui prend une version ;
+- la ligne du journal du plan, pour un lot qui prend une version (livrable déployé à chaque lot) ; **pour un livrable
+  publié par release, le lot ne prend pas de version** : il complète la section « Unreleased » du `CHANGELOG` et libère
+  le livrable à sa fusion, après réception (§1 bis) ;
 - le registre (la décision, et « ce que le lot apprend » quand il y a une leçon) ;
-- `chantiers.yaml`, **puis `chantiers.html` régénéré** (ci-dessous) ;
+- `chantiers.yaml`, **puis la page et le fichier de données du tableau régénérés** (ci-dessous) ;
 - **un commit « Lot v<X.Y> clos »** au dépôt des vivants, puis **le miroir au projet** ;
 - le checkpoint **du domaine**, à la passation, **sa file relue face à `chantiers.yaml`** (ci-dessous).
 
@@ -441,18 +466,30 @@ premier projet, un fichier de chantiers est passé de 95 à 146 Ko en un jour, u
   chaque passage et, **le lundi, relit les checkpoints face aux décisions de la semaine** (`Methode/ARBITRE.md` §1.4 ter) ;
   **sans arbitre**, le coordinateur lance le vérificateur avec `--domaines` à sa clôture.
 
-**Le tableau des chantiers** — la page lisible de `chantiers.yaml` :
-- **Chaque fois que le CdP écrit `chantiers.yaml`** — à la clôture, mais aussi en cours d'échange (un chantier ajouté,
-  un statut qui change) —, il régénère dans le même geste `chantiers.html` par
-  `python3 -B <Dossier>/generer_tableau.py <Dossier>/chantiers.yaml <Dossier>/chantiers.html`. Un `chantiers.yaml`
-  modifié sans sa page n'est pas fini.
-- Il commite les deux ensemble au dépôt des vivants, recopie les deux au projet en miroir, **publie la page en artefact
-  au même lien** (le lien est noté au §6 du checkpoint) et **la remet en fichier `.html`** dans la discussion.
-- **Le tableau se republie par un sous-agent.** L'outil d'artefact exige de lire la page en entier avant de la republier
-  (80 000 à 90 000 jetons pour un tableau de cent chantiers ; une lecture « par fichier » ne compte pas). Le CdP ne la lit
-  donc pas : **il lance un sous-agent léger (Haiku)**, qui lit la page au lien, la republie au même lien depuis le fichier
-  régénéré, sans rien changer, et ne répond que « publié ». Sa lecture reste hors du contexte du CdP, dont la passation
-  recule d'autant.
+**Le tableau des chantiers** — la page lisible de `chantiers.yaml` : **une page fixe et son fichier de données** :
+- `generer_tableau.py` écrit `chantiers.html`, **une page fixe d'environ 11 Ko, sans aucune donnée de chantier**, et
+  `chantiers.json` à côté (même nom) ; la page lit ses données dans ce fichier. La ligne de commande est
+  `python3 -B <Dossier>/generer_tableau.py <Dossier>/chantiers.yaml <Dossier>/chantiers.html`. **Le contrôle 6** de
+  `verifier_vivants.py` compare les deux fichiers à leur régénération. Une page ouverte depuis le disque ne charge pas ses
+  données : on la sert ou on la publie.
+- **Chaque fois que le CdP écrit `chantiers.yaml`** — à la clôture, mais aussi en cours d'échange (un chantier ajouté, un
+  statut qui change) —, il régénère les deux fichiers dans le même geste. Un `chantiers.yaml` modifié sans ses deux
+  fichiers n'est pas fini. Il les commite ensemble au dépôt des vivants et les recopie au projet en miroir.
+- **Avant de republier** :
+  - **régénérer après le dernier `git pull` / rebase, jamais avant** (cas vécu : un fichier de données tiré avant la base
+    a manqué trois chantiers d'une autre session ; le contrôle 6 l'a vu) ; **le vérificateur passe, contrôle 6 OK** —
+    c'est lui qui garantit les données, pas une lecture ;
+  - **le CdP lit la page en entier** (l'outil d'artefact l'exige ; une lecture « par fichier » ne compte pas), environ
+    4 000 jetons ;
+  - **il relit le diff de ses propres écritures** dans `chantiers.yaml` depuis sa dernière publication.
+- **Il republie la page et le fichier de données ensemble, au même lien** (le lien est noté au §6 du checkpoint), même si
+  seule la donnée a changé, et remet la page en fichier `.html` dans la discussion.
+- *Pourquoi pas le fichier de données entier à chaque fois* : la règle de l'outil est de ne pas diffuser ce qu'on n'a pas
+  vu. Ici le fichier est produit par le générateur depuis un yaml que seules les sessions de CdP écrivent : chaque ligne a
+  été vue par la session qui l'a écrite, et la session qui publie relit ses propres écritures. **Le fichier de données se
+  relit en entier, par un sous-agent léger (Haiku)**, dans deux cas seulement : la première publication d'un tableau, et
+  une entrée tirée d'une source extérieure (texte collé, page web) que nulle session n'a relue. **C'est aussi le repli** :
+  si l'outil venait à exiger la lecture de chaque fichier publié, on repasse à ce sous-agent pour toute republication.
 - `generer_tableau.py` ne se modifie pas pour un projet : titre et libellés se lisent dans l'en-tête de
   `chantiers.yaml`.
 
@@ -471,7 +508,7 @@ jamais à la racine ; un ancien rejoint son dossier à sa prochaine mise à jour
 | dossier du projet | porte |
 |---|---|
 | `Methode/` | cette méthode, le prompt du dev (miroir), les chartes communes |
-| `<Dossier>/` | le plan, le registre, `chantiers.yaml` et `chantiers.html`, `generer_tableau.py`, le checkpoint, les notes de référence |
+| `<Dossier>/` | le plan, le registre, `chantiers.yaml`, `chantiers.html` et `chantiers.json`, `generer_tableau.py`, le checkpoint, les notes de référence |
 | `<Dossier>/Archives/` | les archives figées |
 | `<Dossier>/Specs/` · `<Dossier>/GuideDeStyle/` | les références du produit |
 | ⟨`<SousProjet>/`⟩ | ⟨un dossier par sous-projet⟩ |
@@ -482,14 +519,17 @@ dépôt. **Plus de prompt de reprise** (la passation, ci-dessous). **Les images*
 **La passation se mesure, elle ne se devine pas** :
 - **Ce qui se mesure** : la taille du contexte au dernier tour, par `python3 -B <Dossier>/outils_cdp/contexte.py` (copié
   du package). Ce n'est pas le cumul consommé depuis le début de la session, qui grossit bien plus vite.
+- **Pourquoi ces seuils** : chaque tour relit tout le contexte, cache compris. Plus il est gros, plus chaque tour coûte
+  et plus la qualité baisse.
 - **Quand** : à chaque clôture de lot, avant chaque cadrage ou lancement de dev, et au moins tous les dix échanges.
-- **À 600 000 jetons, le CdP prévient le porteur**, en tête de sa réponse : « Contexte : ~N jetons — passation à prévoir ».
+- **À 450 000 jetons, le CdP prévient le porteur**, en tête de sa réponse : « Contexte : ~N jetons — passation à prévoir ».
   Il ne lance plus de lot neuf ; il finit celui en cours.
-- **À 700 000 jetons au plus tard**, ou à une fin de file naturelle avant, **il passe la main**, sans attendre qu'on le
-  lui demande, d'un bloc, en une réponse :
+- **À 550 000 jetons au plus tard**, ou à une fin de file naturelle avant, ou au premier signe de saturation, **il passe
+  la main**, sans attendre qu'on le lui demande, d'un bloc, en une réponse :
   1. le §0 du checkpoint du domaine réécrit sur l'état réel (où on en est, ce qui bloque, ce qui attend le porteur), **sa
-     file relue face à `chantiers.yaml`** (ce qui manque s'inscrit, ce qui est clos sort), et la ligne fixe en tête
-     vérifiée : elle nomme **tous les dépôts du domaine** (§7) ;
+     file relue face à `chantiers.yaml`** (ce qui manque s'inscrit, ce qui est clos sort), **les signes de saturation
+     vus pendant la session notés (ou « aucun »)**, et la ligne fixe en tête vérifiée : elle nomme **tous les dépôts du
+     domaine** (§7) ;
   2. le témoin remis à « aucune — libre depuis <heure> » ;
   3. push, puis le miroir au projet ;
   4. **la ligne fixe du domaine**, sous « **Opus · conversation neuve dans le projet** » : « Tu es <CdP>. Reprends :
@@ -501,8 +541,9 @@ dépôt. **Plus de prompt de reprise** (la passation, ci-dessous). **Les images*
 - **La reprise peut être lancée par la session elle-même** : une tâche planifiée unique dont le prompt est la ligne
   fixe ; le porteur ouvre la session dans sa liste de tâches. Quand le porteur n'est pas là pour l'ouvrir, la ligne fixe suffit.
 - **Au premier signe de saturation** avant le seuil (pertes de fil, contradictions, une décision oubliée) : même
-  passation, tout de suite.
-- Le contexte d'un sous-agent (dev, ou celui qui republie le tableau) ne compte pas dans celui du CdP ; son crédit, si.
+  passation, tout de suite. **Chaque passation note les signes vus, ou « aucun »** : ces notes servent à recalibrer les
+  seuils sur des mesures, pas sur une impression.
+- Le contexte d'un sous-agent (dev, ou une lecture déléguée) ne compte pas dans celui du CdP ; son crédit, si.
 
 ---
 
@@ -539,7 +580,7 @@ Un piège qui ne touche qu'un produit va à sa fiche produit ou au checkpoint de
 - **Un lot ordinaire** : une dizaine à une vingtaine de minutes de dev, une réception de quelques minutes.
 - **Un écran avec maquette du CdP** : de 15 minutes à 1 h 30 de dev ; la maquette validée en un ou deux tours.
 - **Un addendum lancé par le CdP** : quelques minutes, sans un geste du porteur.
-- **Le CdP note son propre coût** à chaque passation : contexte mesuré, premiers postes.
+- **Le CdP note son propre coût** à chaque passation : contexte mesuré, signes de saturation vus, premiers postes.
 
 ---
 

@@ -372,6 +372,7 @@ class TestCheck6Board(CheckerCase):
     def setUp(self):
         super().setUp()
         self.board = self.folder / "workstreams.html"
+        self.data = self.folder / "workstreams.json"
         self.regenerate()
 
     def regenerate(self):
@@ -384,29 +385,80 @@ class TestCheck6Board(CheckerCase):
     def test_ok(self):
         output = self.check_board()
         self.assertEqual(output.verdict(6), "OK", output.stdout)
-        self.assertEqual(output.count(6), f"2 workstreams, {self.board.stat().st_size} bytes identical except the date")
+        self.assertEqual(output.count(6), f"2 workstreams, page {self.board.stat().st_size} bytes and data "
+                                          f"{self.data.stat().st_size} bytes identical except the date")
+        self.assertEqual(output.code, 0)
 
     def test_ok_despite_another_date(self):
-        html = self.board.read_text(encoding="utf-8")
-        self.assertRegex(html, r"\d{2}/\d{2}/\d{4}")
-        self.board.write_text(re.sub(r"\d{2}/\d{2}/\d{4}", "01/01/2000", html), encoding="utf-8")
+        text = self.data.read_text(encoding="utf-8")
+        self.assertRegex(text, r"\d{2}/\d{2}/\d{4}")
+        self.data.write_text(re.sub(r"\d{2}/\d{2}/\d{4}", "01/01/2000", text), encoding="utf-8")
         self.assertEqual(self.check_board().verdict(6), "OK")
 
-    def test_gap_board_out_of_sync(self):
+    def test_ok_with_a_page_published_in_another_folder_under_another_name(self):
+        other = self.subfolder("published")
+        board = other / "board.html"
+        self.assertEqual(self.run_script(GENERATOR, self.workstreams, board).code, 0)
+        output = self.check("--board", board, "--generator", GENERATOR)
+        self.assertEqual(output.verdict(6), "OK", output.stdout)
+
+    def test_gap_page_out_of_sync_with_another_project(self):
+        self.workstreams = self.write("workstreams.yaml", yaml(
+            block("alpha-1", title="First", status="upcoming", module="module-a"),
+            block("alpha-2", title="Second", status="accepted", module="module-a", version="v1.0.0"),
+            header="# Workstreams — Other project"))
+        output = self.check_board()
+        self.assertEqual(output.verdict(6), GAP)
+        self.assertEqual(output.count(6), "2 workstreams")
+        details = output.details(6)
+        self.assertEqual(len(details), 2, details)
+        self.assertTrue(details[0].startswith("the board page differs from its regeneration (dates masked): "
+                                              "first difference at byte "), details)
+        self.assertTrue(details[1].startswith("the data file differs from its regeneration (dates masked): "
+                                              "first difference at byte "), details)
+        self.assertEqual(output.code, 1)
+
+    def test_gap_data_out_of_sync_page_intact(self):
         self.with_workstreams(block("alpha-1", title="First", status="upcoming"),
                               block("alpha-2", title="Second", status="accepted"),
                               block("alpha-3", title="Added later", status="debt"))
         output = self.check_board()
         self.assertEqual(output.verdict(6), GAP)
         self.assertEqual(output.count(6), "3 workstreams")
-        self.assertEqual(len(output.details(6)), 1)
-        self.assertTrue(output.details(6)[0].startswith("the board differs from its regeneration (dates masked): "
-                                                        "first difference at byte "), output.details(6))
+        self.assertEqual(len(output.details(6)), 1, "the page is fixed: it does not differ, only the data")
+        self.assertTrue(output.details(6)[0].startswith("the data file differs from its regeneration "
+                                                        "(dates masked): first difference at byte "), output.details(6))
+        self.assertRegex(output.details(6)[0], r"\(line \d+\); \d+ bytes against \d+ regenerated$")
         self.assertEqual(output.code, 1)
 
-    def test_gap_board_edited_by_hand(self):
+    def test_gap_data_edited_by_hand_page_intact(self):
+        self.data.write_text(self.data.read_text(encoding="utf-8").replace("First", "Touched"), encoding="utf-8")
+        output = self.check_board()
+        self.assertEqual(output.verdict(6), GAP)
+        self.assertEqual(len(output.details(6)), 1)
+        self.assertTrue(output.details(6)[0].startswith("the data file differs"), output.details(6))
+
+    def test_gap_page_edited_by_hand_data_intact(self):
         self.board.write_text(self.board.read_text(encoding="utf-8") + "<!-- touch-up -->\n", encoding="utf-8")
-        self.assertEqual(self.check_board().verdict(6), GAP)
+        output = self.check_board()
+        self.assertEqual(output.verdict(6), GAP)
+        self.assertEqual(len(output.details(6)), 1)
+        self.assertTrue(output.details(6)[0].startswith("the board page differs"), output.details(6))
+
+    def test_gap_data_file_missing(self):
+        self.data.unlink()
+        output = self.check_board()
+        self.assertEqual(output.verdict(6), GAP)
+        self.assertEqual(output.details(6), [f"data file missing: {self.data}"])
+        self.assertEqual(output.code, 1)
+
+    def test_gap_data_missing_and_page_edited_give_two_lines(self):
+        self.data.unlink()
+        self.board.write_text(self.board.read_text(encoding="utf-8") + "<!-- touch-up -->\n", encoding="utf-8")
+        details = self.check_board().details(6)
+        self.assertEqual(len(details), 2, details)
+        self.assertTrue(details[0].startswith("data file missing: "), details)
+        self.assertTrue(details[1].startswith("the board page differs"), details)
 
     def test_gap_generator_that_fails(self):
         fake = self.write("fake_generator.py", "import sys\nsys.exit(3)\n")
@@ -426,6 +478,12 @@ class TestCheck6Board(CheckerCase):
         output = self.check("--board", self.board, "--generator", empty)
         self.assertEqual(output.verdict(6), GAP)
         self.assertTrue(output.details(6)[0].startswith("the generator failed (code 0)"), output.details(6))
+
+    def test_generator_that_writes_only_the_page(self):
+        only = self.write("page_only.py", "import sys\nopen(sys.argv[2], 'w').write('<html></html>')\n")
+        output = self.check("--board", self.board, "--generator", only)
+        self.assertEqual(output.verdict(6), GAP)
+        self.assertEqual(output.details(6), ["the generator did not write the data file workstreams.json"])
 
 
 class TestCheck7VersionLog(CheckerCase):

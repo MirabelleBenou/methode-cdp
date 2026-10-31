@@ -1,11 +1,24 @@
 #!/usr/bin/env python3
-"""Tableau de bord des chantiers — page lisible tirée de chantiers.yaml.
+"""Tableau de bord des chantiers — une page fixe et son fichier de données, tirés de chantiers.yaml.
 
     python3 -B generer_tableau.py chantiers.yaml chantiers.html
 
+Écrit DEUX fichiers : la page (le second argument, « chantiers.html ») et, à côté d'elle, le
+fichier de données du même nom en « .json » (« chantiers.json »). La page est fixe : elle ne
+contient aucune donnée de chantier, seulement le nom du projet ; elle lit ses données dans
+le fichier JSON par « fetch » et construit le tableau dans le navigateur. Deux sources au
+même en-tête donnent la même page à l'octet ; seules les données changent, donc seules
+elles se republient quand un chantier bouge. Le fichier de données est déterministe (deux
+générations de la même source sont identiques à l'octet, hors la date « engendré le »).
+
+Les deux fichiers se publient ensemble, côte à côte. La page ouverte depuis le disque
+(« file:// ») ne charge pas ses données : c'est une limite des navigateurs, et la page
+l'affiche (« Impossible de charger chantiers.json (…) »). Elle s'ouvre servie
+(« python3 -m http.server » dans le dossier) ou publiée.
+
 Outil du CdP (pas du livrable), copié tel quel du package méthode dans le dépôt
 des vivants, à côté de chantiers.yaml. Aucune dépendance, aucun réseau à
-l'exécution. Le lecteur ne couvre QUE la forme du fichier (« - id: » puis des
+l'exécution du générateur. Le lecteur ne couvre QUE la forme du fichier (« - id: » puis des
 « clé: valeur » sur une ligne) : c'est voulu, la source reste lisible à l'œil.
 
 Ce qui est propre au projet se lit dans l'en-tête de chantiers.yaml, rien à
@@ -68,58 +81,28 @@ def lire(chemin: pathlib.Path):
     return projet, libelles, chantiers
 
 
-def libelle(libelles, v):
-    return libelles.get(v) or (v or "—").replace("-", " ").capitalize()
+def chemin_donnees(sortie: pathlib.Path) -> pathlib.Path:
+    """Le fichier de données écrit à côté de la page : même nom, extension .json."""
+    return sortie.with_suffix(".json")
 
 
-def carte(c: dict, libelles) -> str:
-    e = lambda x: html.escape(str(x or ""))
-    pr, cx = c.get("priorite") or "moyen", c.get("complexite") or "moyenne"
-    rang = f'<span class="rang">{e(c["rang"])}</span>' if c.get("rang") else ""
-    refs = f'<span class="ref">{e(c["refs"])}</span>' if c.get("refs") else ""
-    cout = f'<p class="cout">{e(c.get("cout"))}</p>' if c.get("cout") else ""
-    points = {"forte": "●●●", "moyenne": "●●", "faible": "●"}[cx]
-    cat = f'<span class="cat">{e(libelle(libelles, c.get("categorie")))}</span>' if c.get("categorie") else ""
-    return f"""<article class="carte pr-{e(pr)}" data-mod="{e(c.get('module'))}" data-pr="{e(pr)}" data-cx="{e(cx)}">
-      <header>{rang}<h3>{e(c.get('titre') or c['id'])}</h3></header>
-      <p class="mesure">{e(c.get('mesure'))}</p>
-      {cout}
-      <footer>
-        <span class="mod">{e(libelle(libelles, c.get('module')))}</span>{cat}
-        <span class="cx" title="complexité {e(dict(COMPLEXITES)[cx].lower())}">{points}</span>
-        {refs}
-      </footer>
-    </article>"""
+def donnees(projet, libelles, chantiers: list[dict]) -> dict:
+    """Tout ce que la page affiche : les entrées dans l'ordre du fichier, avec toutes leurs clés."""
+    return {"projet": projet, "engendre": date.today().strftime("%d/%m/%Y"),
+            "libelles": libelles, "chantiers": chantiers}
 
 
-def page(projet, libelles, chantiers: list[dict]) -> str:
-    colonnes = ""
-    for cle, lib in STATUTS:
-        lot = [c for c in chantiers if c["statut"] == cle]
-        lot.sort(key=lambda c: int(c["rang"]) if c.get("rang", "").isdigit() else 99)
-        colonnes += (f'<section class="colonne st-{cle}" data-statut="{cle}">'
-                     f'<h2>{lib}<b>{len(lot)}</b></h2>'
-                     + "".join(carte(c, libelles) for c in lot) + "</section>")
-    modules = []
-    for c in chantiers:
-        if c.get("module") and c["module"] not in modules:
-            modules.append(c["module"])
+def texte_donnees(projet, libelles, chantiers: list[dict]) -> str:
+    return json.dumps(donnees(projet, libelles, chantiers), ensure_ascii=False, indent=1) + "\n"
 
-    def groupe(titre, champ, valeurs, attr):
-        boutons = "".join(
-            f'<button type="button" class="chip {attr}-{html.escape(v)}" data-champ="{attr}" data-val="{html.escape(v)}">'
-            f'{html.escape(lib)}<b>{sum(1 for x in chantiers if x.get(champ) == v)}</b></button>'
-            for v, lib in valeurs if any(x.get(champ) == v for x in chantiers))
-        return f'<div class="groupe"><span class="gt">{titre}</span>{boutons}</div>' if boutons else ""
-    chips = (groupe("Module", "module", [(m, libelle(libelles, m)) for m in modules], "mod")
-             + groupe("Priorité", "priorite", PRIORITES, "pr")
-             + groupe("Complexité", "complexite", COMPLEXITES, "cx")
-             + groupe("Statut", "statut", STATUTS, "st"))
-    e = html.escape
-    return (TEMPLATE.replace("%PROJET%", e(projet)).replace("%COLONNES%", colonnes).replace("%CHIPS%", chips)
-            .replace("%DATE%", date.today().strftime("%d/%m/%Y"))
-            .replace("%TOTAL%", str(len(chantiers)))
-            .replace("%DETTES%", str(sum(1 for c in chantiers if c["statut"] == "dette"))))
+
+def page(projet: str, nom_donnees: str) -> str:
+    """La page fixe : elle ne dépend que du nom du projet et du nom du fichier de données."""
+    def js(valeur) -> str:
+        return json.dumps(valeur, ensure_ascii=False).replace("<", "\\u003c")
+    valeurs = {"PROJET": html.escape(projet), "DONNEES": js(nom_donnees), "STATUTS": js(STATUTS),
+               "PRIORITES": js(PRIORITES), "COMPLEXITES": js(COMPLEXITES)}
+    return re.sub(r"%(PROJET|DONNEES|STATUTS|PRIORITES|COMPLEXITES)%", lambda m: valeurs[m.group(1)], TEMPLATE)
 
 
 TEMPLATE = """<!doctype html>
@@ -165,12 +148,13 @@ header.tete p{margin:.35rem 0 0;color:var(--mute);font-size:.78rem}
 .chip[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
 .chip:hover{border-color:var(--ink);color:var(--ink)}
 .tableau{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1rem;align-items:start}
+.colonne{min-width:0}
 .colonne h2{font-family:var(--label);font-weight:500;letter-spacing:.1em;text-transform:uppercase;
   font-size:.8rem;color:var(--ink);border-bottom:1px solid var(--bord);padding-bottom:.3rem;
   margin:0 0 .7rem;display:flex;justify-content:space-between;align-items:baseline}
 .colonne h2 b{font-family:var(--mono);font-size:.75rem;font-weight:400;color:var(--mute)}
 .carte{background:var(--carte);border:1px solid var(--bord);border-left:4px solid var(--p-moyen);
-  box-shadow:0 1px 3px var(--ombre);padding:.65rem .7rem;margin-bottom:.7rem}
+  box-shadow:0 1px 3px var(--ombre);padding:.65rem .7rem;margin-bottom:.7rem;overflow-wrap:anywhere}
 .carte.pr-haut{border-left-color:var(--p-haut)}
 .carte.pr-faible{border-left-color:var(--p-faible)}
 .carte header{display:flex;gap:.45rem;align-items:baseline}
@@ -185,6 +169,7 @@ header.tete p{margin:.35rem 0 0;color:var(--mute);font-size:.78rem}
   background:var(--ink);color:var(--carte);padding:.04rem .32rem}
 .cx{font-size:.6rem;color:var(--mute);letter-spacing:.08em}
 .ref{font-size:.66rem;color:var(--mute);margin-left:auto}
+.erreur{margin:1rem 0;padding:.7rem .9rem;border:1px solid var(--bord);border-left:4px solid var(--p-haut);font-size:.85rem}
 .masque{display:none}
 footer.pied{margin-top:2rem;border-top:1px solid var(--bord);padding-top:.6rem;font-size:.72rem;color:var(--mute)}
 @media (max-width:1300px){.tableau{grid-template-columns:repeat(3,minmax(0,1fr))}}
@@ -196,15 +181,92 @@ footer.pied{margin-top:2rem;border-top:1px solid var(--bord);padding-top:.6rem;f
 <div class="enveloppe">
 <header class="tete">
   <h1>Chantiers — %PROJET%</h1>
-  <p><b id="compte">%TOTAL%</b> entrées affichées sur %TOTAL% · %DETTES% en dette · engendré le %DATE% depuis <code>chantiers.yaml</code></p>
+  <p id="meta"></p>
 </header>
-<div class="filtres">%CHIPS%<button type="button" class="chip raz" id="raz" hidden>Tout afficher</button></div>
-<div class="tableau">%COLONNES%</div>
+<div class="filtres" id="filtres"><button type="button" class="chip raz" id="raz" hidden>Tout afficher</button></div>
+<div class="tableau" id="tableau"></div>
 <footer class="pied">Ce tableau ne se tient pas à la main : il se régénère depuis <code>chantiers.yaml</code>,
 seule source. Un chantier absent du fichier est absent du projet.</footer>
 </div>
 <script>
+const NOM_DONNEES = %DONNEES%;
+const STATUTS = %STATUTS%;
+const PRIORITES = %PRIORITES%;
+const COMPLEXITES = %COMPLEXITES%;
+const POINTS = {forte:"●●●", moyenne:"●●", faible:"●"};
 const actifs = {mod:new Set(), pr:new Set(), cx:new Set(), st:new Set()};
+let libelles = {};
+
+function el(nom, classe, texte){
+  const n = document.createElement(nom);
+  if(classe) n.className = classe;
+  if(texte !== undefined && texte !== null) n.textContent = String(texte);
+  return n;
+}
+function libelle(v){
+  v = v || "";
+  if(Object.prototype.hasOwnProperty.call(libelles, v) && libelles[v]) return libelles[v];
+  const s = (v || "—").replace(/-/g, " ");
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+}
+function rangDe(c){ return /^[0-9]+$/.test(c.rang || "") ? parseInt(c.rang, 10) : 99; }
+function carte(c){
+  const pr = c.priorite || "moyen", cx = c.complexite || "moyenne";
+  const a = el("article", "carte pr-" + pr);
+  a.dataset.mod = c.module || ""; a.dataset.pr = pr; a.dataset.cx = cx;
+  const tete = el("header");
+  if(c.rang) tete.appendChild(el("span", "rang", c.rang));
+  tete.appendChild(el("h3", null, c.titre || c.id));
+  a.appendChild(tete);
+  a.appendChild(el("p", "mesure", c.mesure || ""));
+  if(c.cout) a.appendChild(el("p", "cout", c.cout));
+  const pied = el("footer");
+  pied.appendChild(el("span", "mod", libelle(c.module)));
+  if(c.categorie) pied.appendChild(el("span", "cat", libelle(c.categorie)));
+  const x = el("span", "cx", POINTS[cx] || "");
+  const nomCx = (COMPLEXITES.find(k => k[0] === cx) || [cx, cx])[1];
+  x.title = "complexité " + nomCx.toLowerCase();
+  pied.appendChild(x);
+  if(c.refs) pied.appendChild(el("span", "ref", c.refs));
+  a.appendChild(pied);
+  return a;
+}
+function colonnes(chantiers){
+  const tableau = el("div", "tableau");
+  STATUTS.forEach(([cle, lib]) => {
+    const lot = chantiers.filter(c => c.statut === cle).sort((a, b) => rangDe(a) - rangDe(b));
+    const col = el("section", "colonne st-" + cle);
+    col.dataset.statut = cle;
+    const h2 = el("h2", null, lib);
+    h2.appendChild(el("b", null, lot.length));
+    col.appendChild(h2);
+    lot.forEach(c => col.appendChild(carte(c)));
+    tableau.appendChild(col);
+  });
+  return tableau;
+}
+function groupe(chantiers, titre, champ, valeurs, attr){
+  const presentes = valeurs.filter(([v]) => chantiers.some(x => x[champ] === v));
+  if(!presentes.length) return null;
+  const g = el("div", "groupe");
+  g.appendChild(el("span", "gt", titre));
+  presentes.forEach(([v, lib]) => {
+    const b = el("button", "chip " + attr + "-" + v);
+    b.type = "button";
+    b.dataset.champ = attr; b.dataset.val = v;
+    b.setAttribute("aria-pressed", "false");
+    b.appendChild(document.createTextNode(lib));
+    b.appendChild(el("b", null, chantiers.filter(x => x[champ] === v).length));
+    b.addEventListener("click", () => {
+      const jeu = actifs[attr];
+      if(jeu.has(v)){ jeu.delete(v); b.setAttribute("aria-pressed", "false"); }
+      else { jeu.add(v); b.setAttribute("aria-pressed", "true"); }
+      appliquer();
+    });
+    g.appendChild(b);
+  });
+  return g;
+}
 function appliquer(){
   document.querySelectorAll(".colonne").forEach(col=>{
     col.classList.toggle("masque", actifs.st.size > 0 && !actifs.st.has(col.dataset.statut));
@@ -224,21 +286,43 @@ function appliquer(){
   document.getElementById("compte").textContent = total;
   document.getElementById("raz").hidden = !Object.values(actifs).some(s => s.size > 0);
 }
-document.querySelectorAll(".chip[data-champ]").forEach(ch=>{
-  ch.setAttribute("aria-pressed","false");
-  ch.addEventListener("click",()=>{
-    const jeu = actifs[ch.dataset.champ], v = ch.dataset.val;
-    if(jeu.has(v)){ jeu.delete(v); ch.setAttribute("aria-pressed","false"); }
-    else { jeu.add(v); ch.setAttribute("aria-pressed","true"); }
-    appliquer();
-  });
-});
-document.getElementById("raz").addEventListener("click",()=>{
-  Object.values(actifs).forEach(s=>s.clear());
-  document.querySelectorAll(".chip[data-champ]").forEach(c=>c.setAttribute("aria-pressed","false"));
+function afficher(d){
+  libelles = d.libelles || {};
+  const chantiers = d.chantiers;
+  const dettes = chantiers.filter(c => c.statut === "dette").length;
+  const meta = document.getElementById("meta");
+  const compte = el("b", null, chantiers.length);
+  compte.id = "compte";
+  meta.replaceChildren(compte, " entrées affichées sur " + chantiers.length + " · " + dettes
+    + " en dette · engendré le " + (d.engendre || "?") + " depuis ", el("code", null, "chantiers.yaml"));
+  const modules = [];
+  chantiers.forEach(c => { if(c.module && !modules.includes(c.module)) modules.push(c.module); });
+  const filtres = document.getElementById("filtres"), raz = document.getElementById("raz");
+  [groupe(chantiers, "Module", "module", modules.map(m => [m, libelle(m)]), "mod"),
+   groupe(chantiers, "Priorité", "priorite", PRIORITES, "pr"),
+   groupe(chantiers, "Complexité", "complexite", COMPLEXITES, "cx"),
+   groupe(chantiers, "Statut", "statut", STATUTS, "st")]
+    .forEach(g => { if(g) filtres.insertBefore(g, raz); });
+  document.getElementById("tableau").replaceWith(colonnes(chantiers));
+  appliquer();
+}
+function echec(detail){
+  const m = el("p", "erreur", "Impossible de charger " + NOM_DONNEES + " (" + detail + ").");
+  m.setAttribute("role", "alert");
+  document.getElementById("tableau").replaceWith(m);
+}
+document.getElementById("raz").addEventListener("click", ()=>{
+  Object.values(actifs).forEach(s => s.clear());
+  document.querySelectorAll(".chip[data-champ]").forEach(c => c.setAttribute("aria-pressed", "false"));
   appliquer();
 });
-appliquer();
+fetch(NOM_DONNEES, {cache: "no-cache"})
+  .then(r => { if(!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+  .then(d => {
+    if(!d || !Array.isArray(d.chantiers)) throw new Error("format inattendu");
+    afficher(d);
+  })
+  .catch(e => echec(e && e.message ? e.message : String(e)));
 </script>
 </body>
 </html>
@@ -249,6 +333,11 @@ if __name__ == "__main__":
         sys.exit("usage : generer_tableau.py <chantiers.yaml> <chantiers.html>")
     source, sortie = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
     projet, libelles, chantiers = lire(source)
-    sortie.write_text(page(projet, libelles, chantiers), encoding="utf-8")
+    sortie_donnees = chemin_donnees(sortie)
+    if sortie_donnees == sortie:
+        sys.exit("ARRÊT : la page ne peut pas porter l'extension .json (c'est celle du fichier de données).")
+    sortie.write_text(page(projet, sortie_donnees.name), encoding="utf-8")
+    sortie_donnees.write_text(texte_donnees(projet, libelles, chantiers), encoding="utf-8")
     par_statut = {s: sum(1 for c in chantiers if c["statut"] == s) for s, _ in STATUTS}
-    print(f"{len(chantiers)} chantiers lus · {json.dumps(par_statut, ensure_ascii=False)} · écrit dans {sortie}")
+    print(f"{len(chantiers)} chantiers lus · {json.dumps(par_statut, ensure_ascii=False)} · "
+          f"écrit dans {sortie} et {sortie_donnees}")

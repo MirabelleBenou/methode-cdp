@@ -4,13 +4,15 @@
 Quand plusieurs chefs de projet écrivent en même temps dans un dépôt de
 « vivants », ce script vérifie que les documents partagés restent cohérents :
 le registre des arbitrages, la source des chantiers (chantiers.yaml), la page
-qui s'en régénère (chantiers.html) et le journal des lots du plan.
+fixe et le fichier de données qui s'en régénèrent (chantiers.html et chantiers.json, à côté)
+et le journal des lots du plan.
 
     python3 -B verifier_vivants.py --chantiers <chantiers.yaml> --registre <registre.md> \\
         [--tableau <chantiers.html> --generateur <generer_tableau.py>] [--journal <plan.md>] \\
         [--archives <dossier>] [--domaines <fichier> [--racine <dossier>] [--plafond-checkpoint <octets>]]
 
-« --tableau » et « --generateur » vont ensemble ; « --journal » est facultatif.
+« --tableau » et « --generateur » vont ensemble ; « --tableau » désigne la page, son fichier
+de données est celui qui est à côté, même nom en « .json » ; « --journal » est facultatif.
 « --archives » donne le dossier des archives de chantiers (les fichiers CHANTIERS_*.yaml,
 même forme que chantiers.yaml, que fait archiver_chantiers.py) ; il doit exister. Sans cette
 option, rien ne change. Avec elle, deux contrôles s'étendent aux archives : le 3 et le 7.
@@ -32,10 +34,15 @@ Les dix contrôles, dans cet ordre :
      présent deux fois dans les archives, et le compte devient « <n> chantiers, <a> archivés » ;
   4. versions des lots : aucune valeur de « version: » portée par deux entrées ;
   5. chantiers en vol : chaque entrée « statut: en-vol » porte un « cdp: » non vide ;
-  6. tableau : la régénération de chantiers.yaml par le générateur, dans un
-     dossier temporaire, est égale à l'octet à chantiers.html, après avoir
-     remplacé dans les deux textes chaque date « jj/mm/aaaa » par un même jeton
-     (le générateur date la page du jour où il tourne) ;
+  6. tableau : la page fixe et son fichier de données (celui qui est à côté de
+     « --tableau », même nom en « .json ») sont égaux à la régénération de
+     chantiers.yaml par le générateur, faite dans un dossier temporaire sous le
+     même nom de page, à l'octet, après avoir remplacé dans les textes de chaque
+     paire chaque date « jj/mm/aaaa » par un même jeton (le générateur date le
+     fichier de données du jour où il tourne). Un écart par fichier qui diffère
+     (premier octet et ligne) ; un écart si le fichier de données publié manque
+     (« fichier de données absent : <chemin> ») ; le compte donne les octets de la
+     page et des données ;
   7. journal : la dernière version du journal (dernière ligne du plan qui
      commence par « | `v…` | ») a une entrée de chantiers.yaml en
      « statut: recette » dont l'id ou la version la contient ; avec « --archives », cette
@@ -232,23 +239,49 @@ def controle_en_vol(chantiers: list[dict]):
     return ("ÉCART" if details else "OK"), f"{len(en_vol)} en vol", details
 
 
+def ecart_texte(voulu: bytes, obtenu: bytes):
+    """None si les deux textes sont égaux ; sinon (octet du premier écart, ligne)."""
+    if voulu == obtenu:
+        return None
+    rang = next((i for i, (a, b) in enumerate(zip(voulu, obtenu)) if a != b), min(len(voulu), len(obtenu)))
+    return rang, voulu.count(b"\n", 0, rang) + 1
+
+
 def controle_tableau(chantiers: list[dict], chantiers_yaml: Path, tableau: Path, generateur: Path):
+    """La page et son fichier de données (à côté, même nom en .json) contre leur régénération."""
     compte = f"{len(chantiers)} chantiers"
+    donnees = tableau.with_suffix(".json")
     with tempfile.TemporaryDirectory(prefix="vivants-") as dossier:
-        sortie = Path(dossier) / "regeneration.html"
+        # même nom que la page publiée : la page porte le nom de son fichier de données
+        sortie = Path(dossier) / tableau.name
+        sortie_donnees = sortie.with_suffix(".json")
         essai = subprocess.run([sys.executable, "-B", str(generateur.resolve()), str(chantiers_yaml.resolve()), str(sortie)],
                                capture_output=True, text=True, cwd=dossier)
         if essai.returncode != 0 or not sortie.is_file():
             message = (essai.stderr.strip() or essai.stdout.strip() or "sans message").splitlines()[-1]
             return "ÉCART", compte, [f"le générateur a échoué (code {essai.returncode}) : {message}"]
-        brut, regenere = tableau.read_bytes(), sortie.read_bytes()
-    voulu, obtenu = RE_DATE.sub(b"<date>", brut), RE_DATE.sub(b"<date>", regenere)
-    if voulu == obtenu:
-        return "OK", f"{compte}, {len(brut)} octets identiques hors date", []
-    rang = next((i for i, (a, b) in enumerate(zip(voulu, obtenu)) if a != b), min(len(voulu), len(obtenu)))
-    ligne = voulu.count(b"\n", 0, rang) + 1
-    return "ÉCART", compte, [f"le tableau diffère de sa régénération (dates masquées) : premier écart à l'octet "
-                             f"{rang} (ligne {ligne}) ; {len(voulu)} octets contre {len(obtenu)} régénérés"]
+        if not sortie_donnees.is_file():
+            return "ÉCART", compte, [f"le générateur n'a pas écrit le fichier de données {sortie_donnees.name}"]
+        page_publiee, page_regeneree = tableau.read_bytes(), sortie.read_bytes()
+        donnees_regenerees = sortie_donnees.read_bytes()
+        donnees_publiees = donnees.read_bytes() if donnees.is_file() else None
+    details = []
+    comparaisons = [("la page du tableau", page_publiee, page_regeneree)]
+    if donnees_publiees is None:
+        details.append(f"fichier de données absent : {donnees}")
+    else:
+        comparaisons.append(("le fichier de données", donnees_publiees, donnees_regenerees))
+    for nom_fichier, brut, regenere in comparaisons:
+        voulu, obtenu = RE_DATE.sub(b"<date>", brut), RE_DATE.sub(b"<date>", regenere)
+        ecart = ecart_texte(voulu, obtenu)
+        if ecart:
+            rang, ligne = ecart
+            details.append(f"{nom_fichier} diffère de sa régénération (dates masquées) : premier écart à l'octet "
+                           f"{rang} (ligne {ligne}) ; {len(voulu)} octets contre {len(obtenu)} régénérés")
+    if details:
+        return "ÉCART", compte, details
+    return "OK", (f"{compte}, page {len(page_publiee)} octets et données {len(donnees_publiees)} octets "
+                  f"identiques hors date"), []
 
 
 def controle_journal(chantiers: list[dict], journal: Path):

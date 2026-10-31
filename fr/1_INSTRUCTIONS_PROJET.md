@@ -2,7 +2,8 @@
 
 *À coller dans les instructions du projet claude.ai, après avoir remplacé les `<…>`. Le texte reste court : il dit qui
 tu es, ce que tu attends, et **où** sont les règles — jamais les règles elles-mêmes, qui vivent dans la skill et dans la
-méthode du projet. Une règle copiée ici dériverait de sa source.*
+méthode du projet. Une règle copiée ici dériverait de sa source. **Lis `NOYAU.md` d'abord** (deux pages) : il dit ce que
+les mots de ce texte — CdP, lot, vivants, checkpoint — recouvrent.*
 
 ---
 

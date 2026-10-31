@@ -94,10 +94,12 @@ lot/vX.Y ●─ CADRAGE ─ … travail … ─ LIVRAISON ─ RAPPORT
 5. **La réception** : le CdP refait `git archive` du commit de livraison, remesure à froid, relit le diff, regarde les
    rendus. Il te remet le livrable sous son nom exact, avec son sha256.
 6. **Après ta validation en production** : `git push origin lot/v<X.Y>:main` — **avance rapide, jamais `--force`**.
-   Puis la clôture des vivants, un commit « Lot v<X.Y> clos » au dépôt des vivants, le miroir au projet.
+   Puis la clôture des vivants, un commit « Lot v<X.Y> clos » au dépôt des vivants, le miroir au projet. *(Un livrable
+   publié par release n'a ni version ni validation en production par lot : la fusion suit la réception, et la release se
+   fait à ta demande.)*
 
-**Une livraison = un nouveau numéro** : un correctif ou des retours d'essai après une remise font un lot de la version
-suivante, sur sa propre branche partie de celle du lot, un commit et un rapport chacun. L'addendum sous la même version ne
+**Une livraison = un nouveau numéro** (livrable déployé à chaque lot ; un livrable publié par release ne porte pas de
+version par lot) : un correctif ou des retours d'essai après une remise font un lot de la version suivante, sur sa propre branche partie de celle du lot, un commit et un rapport chacun. L'addendum sous la même version ne
 sert que tant que rien n'a été remis ni déployé.
 
 ---
@@ -112,7 +114,7 @@ sert que tant que rien n'a été remis ni déployé.
   ce qui s'applique dans chaque cas.
 - **Plusieurs CdP peuvent partager les vivants**, un par domaine (méthode §1 bis) : chacun son checkpoint et son
   témoin ; registre, plan et chantiers en ajout seul ; un numéro de décision se réserve par un push ; un livrable n'a qu'un lot en vol, sa version se
-  calcule quand le lot le prend ; `pull` avant
+  calcule quand le lot le prend (déployé à chaque lot) ou n'existe pas par lot (publié par release : méthode §1 bis) ; `pull` avant
   chaque écriture, un conflit se voit au `pull` au lieu de s'écraser.
 - **Le miroir au projet** : à chaque clôture, chaque fichier modifié se recopie par l'outil du projet en envoyant le
   fichier depuis le clone (`project_write` avec `local_path`), sous le même nom. **Jamais depuis le texte que rend
@@ -163,8 +165,9 @@ CdP n'écrit pas le livré » s'applique au code, pas à la documentation, que l
   les attendus de la réception.
 - **Un outil simple peut se passer de prompt du dev** : le cadrage se suffit alors, et nomme les fonctions à lire dans un
   gros fichier de build.
-- Après ta validation : avance rapide de `main` public (à l'octet de l'archive reçue) ; au jalon, le `CHANGELOG` et ce
-  que sert GitHub Pages, puis **tu poses le tag et la release**.
+- Après ta validation : avance rapide de `main` public (à l'octet de l'archive reçue) ; **la release se fait à ta
+  demande** : le CdP fixe le numéro par la règle du `CHANGELOG`, renomme la section « Unreleased », refait les paquets
+  et ce que sert GitHub Pages, puis **tu poses le tag et la release**.
 - **Le CdP relit chaque diff poussé au public** : aucun prénom, aucun profil, aucune référence à la méthode, au registre
   ou à un autre projet. Les lignes d'attribution des commits, imposées par la session, s'y voient.
 

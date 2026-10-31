@@ -3,6 +3,10 @@
 
 > **Modèle pour le CdP — un cadrage ne le cite jamais.** Le cadrage est autoportant : avec le prompt du dev, il se
 > suffit. Il porte des règles, des critères et les textes que l'utilisateur lira — **jamais le code tout écrit**.
+> **La version** : `v<X.Y>` n'existe que pour un livrable **déployé à chaque lot** (elle se calcule quand le lot prend le
+> livrable, `main` plus un). Pour un livrable **publié par release**, le lot ne porte pas de version : retirer `v<X.Y>` du
+> titre, nommer la branche et le dossier d'après le lot (`lot/<nom>`), et le §6 complète la section « Unreleased » du
+> `CHANGELOG` (méthode §1 bis, « Le livrable et sa version »).
 > Supprimer cet encadré.
 
 **Dev : Sonnet · Medium · session neuve** *(Opus pour ⟨…⟩ ; High pour une migration, plusieurs écrans, un moteur, des
@@ -71,7 +75,8 @@ l'utilisateur à la fin.*
 
 ## §6 · Le `CHANGELOG`
 
-Texte de l'entrée, mot pour mot :
+Texte de l'entrée, mot pour mot — *une entrée `v<X.Y>` pour un livrable déployé à chaque lot ; pour un livrable publié
+par release, il complète la section « Unreleased », sans version* :
 
 ```
 ⟨…⟩
@@ -105,4 +110,6 @@ En plus de ceux du prompt du dev :
 - [ ] Les API, fichiers et fonctions que la règle impose, tous nommés.
 - [ ] Une règle de couleur mesurée sur tous les thèmes ; un libellé à la largeur la plus étroite.
 - [ ] Aucun code tout écrit.
+- [ ] La version calculée quand le lot prend le livrable (`main` plus un) — ou aucune version, pour un livrable publié
+  par release.
 - [ ] Modèle, effort, session en tête.

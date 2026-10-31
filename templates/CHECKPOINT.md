@@ -89,7 +89,9 @@ the table a PL touches.*
 
 - **Opened** on <date time>, **closed** on <date time>.
 - **Work done**: <…>.
-- **Context**: about <n> tokens at the last turn (target: under 700,000).
+- **Context**: about <n> tokens at the last turn (target: under 450,000; handover at 550,000 at the latest).
+- **Saturation signs seen**: <losing the thread, contradictions, a forgotten decision — or “none”> (they serve to
+  recalibrate the threshold on measurements).
 - **Main items**: <…>.
 
 ---
@@ -97,7 +99,8 @@ the table a PL touches.*
 ## §6 · The documents
 
 **In the `<Project>` repository** (source): <list, with their version>.
-**The workstreams board**: `workstreams.html`, published as an artifact at <link> — to republish at the same link.
+**The workstreams board**: `workstreams.html` (the fixed page) and `workstreams.json` (its data), published together as
+an artifact at <link> — to republish at the same link, both together (method §6).
 **In the `<Project>-App` repository**: the code, `bench/` (v<n>), `DEV_PROMPT_<P>.md` (v<n>), `batches/…`.
 **In the project, as a mirror**: <list>.
 **In the project, written once**: <list>.

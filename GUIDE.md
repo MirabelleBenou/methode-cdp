@@ -1,9 +1,16 @@
-# PL METHOD PACKAGE · v17
+# PL METHOD PACKAGE · v18
 ### 31 October 2026 · to start a new project under the PL method
 
 *This package reproduces a way of working proven batch after batch: a **project lead** (PL, Opus) who decides
 with you, writes the briefs, launches the dev and accepts; a **dev** (Sonnet by default) who builds one batch at a time;
 **you**, who decide and validate on screen. Everything flows through GitHub; you upload nothing and run no command.*
+
+**Where to start**: if you start alone with a PL, first read **`CORE.md`** — two pages that stand on their own, with at the
+end the table of extensions (what you install only the day the sign you have lived through occurs). The rest of this
+guide adds to the core, it does not come before it. **The terms** of the method are in **`GLOSSARY.md`**; **what the
+method assumes of the Claude product**, and the fallback when a function changes, in **`CLAUDE_DEPENDENCIES.md`**. **The
+method has been proven on three projects, one of them complex** (several PLs in parallel on several products, a
+production server).
 
 **The owner**, in the templates and the skill, is you: the person who decides and validates. What is between `<…>` or
 `⟨…⟩` is to be filled in — the PL does it at bootstrap, except for the skill, which you customize yourself (§1 and §8).
@@ -15,6 +22,9 @@ with you, writes the briefs, launches the dev and accepts; a **dev** (Sonnet by 
 | file | used for | where it ends up |
 |---|---|---|
 | `GUIDE.md` | these instructions for use | nowhere, it is for you |
+| `CORE.md` | **to read first**: the method of an owner alone with a PL (mode A) in two pages — the three roles, the three layers, the cycle of a batch, the checkpoint and the handover, what does not forgive — and the table of extensions: when you need one, where to read it | nowhere, it is for you |
+| `GLOSSARY.md` | every term of the method (owner, PL, batch, baton, queue, deliverable, mode A / B / C…), one or two lines and the document where it lives | nowhere, it is for you |
+| `CLAUDE_DEPENDENCIES.md` | what the method assumes of the Claude product (projects, sub-agents, artifacts, repositories, session identifier, bridge, scheduled tasks, context, skill), what breaks if a function changes, the fallback; **a dated survey, to be re-read at every version** | nowhere, it is for you |
 | `1_PROJECT_INSTRUCTIONS.md` | the text to paste into **the claude.ai project instructions** (one PL, or several PLs with a coordination) | project instructions |
 | `2_PL_BOOTSTRAP_PROMPT.md` | the **first message** of the first PL session; §D, the one that opens the coordination | pasted into a conversation |
 | `3_GITHUB.md` | the repositories, their structure, the circuit of a batch, the pitfalls | read by the PL at bootstrap |
@@ -27,17 +37,17 @@ with you, writes the briefs, launches the dev and accepts; a **dev** (Sonnet by 
 | `templates/DECISION_LOG.md` | the decisions, numbered D1, D2… | living-docs repository, mirror in the project |
 | `templates/PLAN.md` | the roadmap and the version log | living-docs repository, mirror in the project |
 | `templates/workstreams.yaml` | the single source of the workstreams (upcoming, debts, delivered) | living-docs repository, mirror in the project |
-| `templates/context.py` | measures the context of the PL session: warn at 600,000 tokens, hand over at 700,000 | `pl_tools/` in the living-docs repository |
-| `templates/make_board.py` | builds `workstreams.html`, the readable page of the workstreams, at every write of the yaml | living-docs repository, mirror in the project |
-| `templates/check_living_docs.py` | checks the shared living docs (decision numbers, workstreams, reserved versions, workstreams in flight, board, log) when several PLs write to them; read-only; with `--archives <folder>`, checks 3 (identifiers) and 7 (log) also read the workstream archives; with `--domains <file>` (and `--root <folder>`), check 9 cross-checks each checkpoint's queue with `workstreams.yaml`, check 10 flags a checkpoint over 10 KB (`--checkpoint-cap`) | living-docs repository, run by the coordinator and the arbiter |
+| `templates/context.py` | measures the context of the PL session: warn at 450,000 tokens, hand over at 550,000 at the latest | `pl_tools/` in the living-docs repository |
+| `templates/make_board.py` | at every write of the yaml, builds **two files**: `workstreams.html`, a fixed page of about 11 KB **with no data at all**, and `workstreams.json` next to it (same name), the data it reads; the command line has not changed; the two are republished together | living-docs repository, mirror in the project |
+| `templates/check_living_docs.py` | checks the shared living docs (decision numbers, workstreams, reserved versions, workstreams in flight, board — the page and its data —, log) when several PLs write to them; read-only; with `--archives <folder>`, checks 3 (identifiers) and 7 (log) also read the workstream archives; with `--domains <file>` (and `--root <folder>`), check 9 cross-checks each checkpoint's queue with `workstreams.yaml`, check 10 flags a checkpoint over 10 KB (`--checkpoint-cap`) | living-docs repository, run by the coordinator and the arbiter |
 | `templates/domains.yaml` | **modes B and C** — the domain table that check 9 of `check_living_docs.py` reads: per domain, its PL, its checkpoint, the title of its queue section (stable: `## §<n> · The queue`), its modules; the coordination has an entry of its own; kept by the coordinator | `Method/domains.yaml` in the living-docs repository, mirror in the project |
 | `templates/archive_workstreams.py` | archives the accepted workstreams: dates `accepted-on:` on every entry that becomes accepted, moves out to `Archives/WORKSTREAMS_<YYYY-MM>.yaml` those accepted for 7 days (lossless, idempotent, `--dry-run`); `search` finds a workstream, living or archived | living-docs repository, run by the arbiter at every run, otherwise by the PL or the coordinator at their close-out |
 | `templates/ARBITER.md` | **optional, mode C** — the living-docs arbiter, explained in full: what it is, why (the real cases), when, what it costs, how to read what it produces; its procedure (check of the living docs **and of the checkpoints**, reporting without correcting, archiving of the accepted workstreams, the Monday reading), its log, the set-up step by step with the “who does what” (time, prompt, notifications), the trial | `Method/ARBITER.md` in the living-docs repository, read by the scheduled task |
 | `templates/LOCAL_RUNNER.md` | **the fallback** — the local Claude Code runner on the PC, driven by files (`sync\`), for when the Claude app's bridge does not give your machine | used by the PL and the runner |
 | `templates/SERVER_RUNNER.md` | **optional** — the server runner: a deterministic program on the production server, driven by an orders repository; the PL deploys on your “go” (step-by-step guide); the same orders repository serves as the **file-exchange bridge**: data produced in a session reaches the server through `transfers/` (§2c). **No production server: skip it** | used by the PL, and by you at installation |
 | `templates/server-runner/` | **optional** — its reference implementation (Python, systemd, installer, tests), in French, with example values | the project's code repository, then the server |
-| `templates/living-docs-repo/` | `README.md` of the living-docs repository | living-docs repository |
-| `templates/code-repo/` | `.gitattributes`, `.gitignore`, `CHANGELOG.md` of the code repository | code repository |
+| `templates/living-docs-repo/` | `README.md` of the living-docs repository, including the board's republication | living-docs repository |
+| `templates/code-repo/` | `.gitattributes`, `.gitignore`, `CHANGELOG.md` of the code repository (an “Unreleased” section at the top) | code repository |
 | `skill/SKILL.md` | the personal skill `methode-cdp`, **to customize (§1 and §8) then install** | your claude.ai skills |
 | `fr/` | the same package in French | the same places as its English counterpart |
 
@@ -119,7 +129,8 @@ is one; without it (modes A and B), the PL or the coordinator runs `archive_work
 
 **Three things the method fixes so that the tools find their way.** *The baton*: a session's short id is the last eight
 characters of its session identifier (the one in the attribution line of its commits); all the sessions of one account
-share the beginning. *The queue*: each checkpoint carries it under a stable title `## §<n> · The queue`, with the list
+share the beginning; a baton is judged by its silence, **except the coordination's**, which you keep open for days
+without a commit. *The queue*: each checkpoint carries it under a stable title `## §<n> · The queue`, with the list
 itself; the domain table names that title, an empty `queue:` line is a gap, and the coordination has an entry of its own
 there. *Your machine*: when the project drives a game or an application on your PC, the PL's session uses it **through
 the Claude app's bridge** (linked folders, a terminal if one is offered, the screen, which you validate); the local
@@ -159,7 +170,8 @@ run this way:
 - a workstream stayed in flight with no declared PL, and two batches were ready on the same deliverable;
 - the published board no longer matched the file;
 - forgotten sessions kept a baton — and the first rule, which judged the baton's age, accused two very much alive ones:
-  it became the silence rule;
+  it became the silence rule; which then accused the coordination, which the owner keeps open for days to take a fixed
+  line or reopen a workstream, without a commit: **the silence check excludes it**;
 - the workstreams file grew without end (nearly 200 KB, three quarters of it finished workstreams);
 - the checkpoints fell behind the workstreams: ten subjects existed only in them, which the owner does not read.
 
@@ -170,7 +182,8 @@ dated trace even when all is well, and it corrects nothing — it cannot make an
 day.
 
 **Every morning, and on Mondays.** The check of the living docs (`check_living_docs.py --archives --domains`: ten
-checks, including check 9 “checkpoints” and check 10, the size of the checkpoints), the batons judged by their silence, one
+checks, including check 9 “checkpoints” and check 10, the size of the checkpoints), the batons judged by their silence (the
+coordination's excepted), one
 `for:` workstream per new gap (for checks 9 and 10, a single one per domain), the archiving of the workstreams accepted
 for seven days, a line in the log, a summary. **On Mondays**, in addition: the reading
 of the checkpoints against the decisions of the last seven days — it flags only what a decision or a workstream
@@ -267,6 +280,9 @@ The complete circuit, the orders and their limits: `templates/SERVER_RUNNER.md` 
 ---
 
 ## 3 · Starting a new project — your actions, in order
+
+**Start by reading `CORE.md`** (two pages): it says what a PL, a dev and a batch are, and what you do not yet have to
+install. The actions below start a project with a single PL (mode A); everything else is added later.
 
 1. **On GitHub, create two empty private repositories** (without README):
    - `<Project>` — the living docs (method, checkpoint, decision log, plan, workstreams);
@@ -396,7 +412,7 @@ three modes.
 | Checkpoint (10 KB at most, the history in the domain's archive) | living-docs repository | yes | PL | at every handover |
 | Decision log (an entry of about 800 characters; cut into slices of 50 numbers beyond about 150 KB) | living-docs repository | yes | PL | at every closed batch |
 | Plan + version log | living-docs repository | yes | PL | at every batch that takes a version |
-| `workstreams.yaml` and `workstreams.html` | living-docs repository | yes, and the page as an artifact | PL | at every write of the yaml |
+| `workstreams.yaml`, `workstreams.html` and `workstreams.json` | living-docs repository | yes, and the page with its data file as an artifact, together | PL | at every write of the yaml |
 | Domain table `Method/domains.yaml` | living-docs repository | yes | coordinator | a domain opened or closed, a queue section renamed |
 | `Archives/WORKSTREAMS_<YYYY-MM>.yaml` | living-docs repository | yes | the archiving (`archive_workstreams.py`) | at every arbiter run, otherwise at the PL's close-out |
 | Acceptance expected results | living-docs repository `expected/<version>/` | no | PL | at the brief |
@@ -422,13 +438,19 @@ the living docs in the repository and their mirror; the fast-forward merge after
 **To adapt at the project's first batch** (the PL asks you at bootstrap):
 - **the test bench**: the tooling that measures an archive (file count, tests, lint, i18n, CSS, hashes);
 - **the gates** of the dev (P0 to Pn) and what it never touches;
-- **versioning**: who bumps the version, by how much, with your agreement or pre-authorized;
+- **versioning**, according to each deliverable's regime: *deployed per batch* — who bumps the version, by how much, with your agreement or pre-authorized; *released* — no version per batch (the batch completes “Unreleased”), the release is made at your request;
 - **the deliverable**: deployment zip, single HTML file, PDF, an agent's archive… and where it is dropped — or, if it
   runs on a production server you administer, how it is deployed there (the server runner, optional);
 - **the proof specific to the type of project**: byte-exact rebuild for a built HTML, tests and migration for an app,
   replay for a calculation engine, DOM checks for a page.
 
 **The test bench is built by a tooling batch**, briefed short by the PL and built by the dev — never by the PL.
+
+**What depends on the Claude product**: the method relies on functions of the app and its sessions — the claude.ai
+projects, the sub-agents, the artifacts, the attachment of repositories, the session identifier in the commits, the
+bridge to your machine, the scheduled tasks, the measure of the context, the personal skill. They can change:
+`CLAUDE_DEPENDENCIES.md` says, for each, where the package uses it, what breaks and the fallback. Re-read it at every
+version of the package.
 
 ---
 
@@ -437,7 +459,7 @@ the living docs in the repository and their mirror; the fast-forward merge after
 - an ordinary batch: 5 to 20 minutes of dev, a few minutes of acceptance;
 - a screen with a mock-up: 15 minutes to 1 h 30 of dev, one or two mock-up passes with you (made by the PL before the launch, or asked of the dev, who delivers it through a stop; the PL shows it to you and relays your verdict word for word);
 - an addendum launched by the PL: a few minutes, without a single action on your part;
-- a PL session: hand over before ~700,000 tokens of context, or at a natural end of the queue.
+- a PL session: warn at 450,000 tokens of context, hand over at 550,000 at the latest, or at a natural end of the queue (every handover notes the saturation signs seen, to recalibrate these thresholds on measurements).
 
 *A dev sub-agent consumes the credit of the PL session. The first project costs a tooling batch (the test bench) before
 the first product batch.*
@@ -501,3 +523,10 @@ flagged, the coordination in the domain table; the owner's machine through the C
 the fallback (`templates/LOCAL_RUNNER.md` v2); short living docs: entry caps, accepted workstreams archived at seven
 days, the log cut into slices of 50 numbers, a 10 KB checkpoint and check 10 (`templates/ARBITER.md` v4: ten checks);
 a project's method carries only its common part; the board republished by a light sub-agent; skill v16.
+v18, 31 October 2026 — a two-page core for an owner alone with a PL (`CORE.md`, with the table of extensions, their sign and
+their pointer); a glossary (`GLOSSARY.md`); the dependencies on the Claude product, their fallback and the date of the
+survey (`CLAUDE_DEPENDENCIES.md`); the coordination is no longer judged by its silence (`templates/ARBITER.md` v5); the
+handover: warn at 450,000 tokens, hand over at 550,000 at the latest, the saturation signs noted; the published board, a
+fixed page and its data file (`workstreams.html`, `workstreams.json`), what the PL reads before republishing; two versioning
+regimes, deployed per batch or released (`templates/code-repo/CHANGELOG.md`, “Unreleased” section); the method, proven on
+three projects, one of them complex; skill v17.

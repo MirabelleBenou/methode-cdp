@@ -6,6 +6,7 @@
   it.*
 - *The dev's side is in `DEV_PROMPT_<P>.md`, at the root of the `<Project>-App` repository.*
 - *It takes precedence over the `methode-cdp` skill, which carries the part common to all projects.*
+- *The terms (baton, queue, batch, deliverable, living docs…) are defined in the package's `GLOSSARY.md`.*
 - *It carries only what holds for all the domains: every PL re-reads it, and on the first project 40% of its text served
   only a single product (measurements, mock-up, test bench, screen pitfalls). **What is specific to a product goes to its
   product sheet** (the one the coordination keeps when a product has several PLs) **or to the checkpoint of its
@@ -116,13 +117,28 @@ accepted → the entry is written in its place. An entry carries no total: it ma
 deliverable, a single batch in flight**: the batch in flight carries in `workstreams.yaml` `status: in-flight`, `pl:`
 and `deliverable:`, and pushing that entry takes the deliverable. **Another batch of the same deliverable is
 suspended**, even from another PL: it stays `to-brief` with `waits: <id>`, no brief pushed, no branch, no dev, until the
-first one is validated in production and merged (or abandoned on the owner's decision). **Study and pre-brief stay
-free**: the pre-brief (rules, criteria, texts, no version, no expected results) may be pushed to the batches repository,
-under `batches/<batch>/PRE_BRIEF.md`; it becomes the brief when the batch takes the deliverable. **Nobody decides a version
-number in advance**: the version is computed when the batch takes the deliverable (`main` plus one), then written in
-`version:` and the brief; a suspended batch that resumes computes it on the new `main` and redoes its base. A file of
-another deliverable is declared (`touches:`). A batch with no release (a probe, a played study, documentation) carries
-no `deliverable:`.
+first one is validated in production and merged (or, for a deliverable published by release, merged after acceptance —
+see below; or abandoned on the owner's decision). **Study and pre-brief stay free**: the pre-brief (rules, criteria,
+texts, no version, no expected results) may be pushed to the batches repository, under `batches/<batch>/PRE_BRIEF.md`; it
+becomes the brief when the batch takes the deliverable. A file of another deliverable is declared (`touches:`). A batch
+with no release (a probe, a played study, documentation) carries no `deliverable:`.
+
+**Nobody decides a version number in advance**: no checkpoint, workstream, study or message announces “such version for
+such batch”. **Two versioning regimes, depending on the deliverable**:
+- **deployed per batch** (an application in production, its agent, the deployer): the version is computed when the batch
+  takes the deliverable, before its branch: the version of `main` plus one; it is then written in `version:` of the
+  in-flight entry and in the brief; a suspended batch that resumes computes it on the new `main`, redoes its base and its
+  expected results;
+- **released** (a tool downloaded as a package): **the batch carries no version** (neither `version:` nor a number in the
+  brief); it completes the “Unreleased” section of the `CHANGELOG` (and the files to download, if there are any) and
+  **frees the deliverable at its merge, after acceptance**. **The release is made at the owner's request**: the PL then
+  fixes the number by the repository's `CHANGELOG` rule, renames the section, rebuilds the packages in one pass and
+  hands the owner the text and the packages. For this regime, validation in production is that release; whatever depends
+  on a release (data dropped on a server) waits for the release.
+
+*Why two regimes*: “the version is computed when the batch takes the deliverable” holds for what is deployed at every
+batch. For a suite downloaded by release, a release per batch is noise for those who download it, and brings them
+nothing: the batches are grouped into a release the owner asks for.
 
 **A shared resource is taken like a deliverable**: the owner's machine and what it runs for a batch (the local runner,
 a game, a driven piece of software) host one batch at a time, whatever its domain. The batch that occupies it carries
@@ -141,7 +157,10 @@ it by a push, its first move; a session that finds another id than its own after
 `pull` stops writing to the living docs and tells the owner; a session waiting for the owner keeps the baton. **A baton
 is judged by its silence, not by its age**: a session can live several days waiting for the owner; it is the absence
 of any commit from that session for more than 24 hours that signals a forgotten session (the arbiter's check, if there
-is one).
+is one). **The coordination is the exception**: it keeps its baton between two pieces of work, because the owner consults
+it to reopen a workstream or take a fixed line, and it can stay days without a commit (the arbiter used to flag it as a
+forgotten session, wrongly). The baton silence check excludes it; its other checks (checkpoints, size) remain; **it hands
+over on the measure of its context (§6), not on silence**.
 
 **The session title**: `<PL name> · <current workstream>`, changed at each workstream; `-2` for a second PL on the same
 domain, with its own checkpoint. The session renames itself if it can, otherwise it gives the title to the owner at the
@@ -191,7 +210,9 @@ top of its reply.
    **An addendum under the same version only serves while nothing has been handed over or deployed**: lifting a stop,
    correcting a gap found at acceptance.
 7. **Validation in production by the owner**, then **the merge**: `git push origin batch/v<X.Y>:main` as a
-   fast-forward, never `--force`; finally **the close-out** (§6), once per batch.
+   fast-forward, never `--force`; finally **the close-out** (§6), once per batch. *(For a deliverable published by
+   release, there is neither a version nor a validation in production per batch: the merge happens after acceptance, and
+   the release at the owner's request — §1a.)*
 
 ---
 
@@ -361,7 +382,8 @@ manual procedure, the date it went into service.⟩
 
 - **Nothing is believed, everything is measured**, on the archive unpacked cold. The gates are read as deltas.
 - **The version**: ⟨who bumps it — `release` script on the dev side, pre-authorized, +1 step per batch / only with
-  the owner's explicit agreement⟩. A batch that does not change the code (method, test bench) takes no version.
+  the owner's explicit agreement⟩. A batch that does not change the code (method, test bench) takes no version, nor
+  does a batch of a deliverable published by release (§1a, “The deliverable and its version”).
 - ⟨The project's invariants: a file, a module or a fingerprint that only move on the owner's written authorization
   carried by the brief.⟩
 - **Produced texts remain gender-neutral**: never presume a person's gender from a pseudonym.
@@ -379,9 +401,11 @@ manual procedure, the date it went into service.⟩
 ## §6 · Close-out and the documents
 
 **At each closed batch, once**:
-- the plan's version log line, for a batch that takes a version;
+- the plan's version log line, for a batch that takes a version (a deliverable deployed per batch); **for a deliverable
+  published by release, the batch takes no version**: it completes the “Unreleased” section of the `CHANGELOG` and frees
+  the deliverable at its merge, after acceptance (§1a);
 - the decision log (the decision, and “what the batch teaches” when there is a lesson);
-- `workstreams.yaml`, **then `workstreams.html` regenerated** (below);
+- `workstreams.yaml`, **then the board's page and data file regenerated** (below);
 - **a commit “Batch v<X.Y> closed”** in the living-docs repository, then **the mirror in the project**;
 - the checkpoint **of the domain**, at handover, **its queue re-read against `workstreams.yaml`** (below).
 
@@ -446,19 +470,31 @@ first project, a workstreams file went from 95 to 146 KB in one day, a decision 
   runs it at every run and, **on Mondays, re-reads the checkpoints against the week's decisions** (`Method/ARBITER.md`
   §1.4b); **without an arbiter**, the coordinator runs the checker with `--domains` at their close-out.
 
-**The workstreams board** — the readable page of `workstreams.yaml`:
+**The workstreams board** — the readable page of `workstreams.yaml`: **a fixed page and its data file**:
+- `make_board.py` writes `workstreams.html`, **a fixed page of about 11 KB, with no workstream data at all**, and
+  `workstreams.json` next to it (same name); the page reads its data in that file. The command line is
+  `python3 -B <Folder>/make_board.py <Folder>/workstreams.yaml <Folder>/workstreams.html`. **Check 6** of
+  `check_living_docs.py` compares both files with their regeneration. A page opened from the disk does not load its
+  data: it is served or published.
 - **Every time the PL writes `workstreams.yaml`** — at close-out, but also mid-exchange (a workstream added, a
-  status that changes) —, they regenerate `workstreams.html` in the same move with
-  `python3 -B <Folder>/make_board.py <Folder>/workstreams.yaml <Folder>/workstreams.html`. A `workstreams.yaml`
-  modified without its page is not finished.
-- They commit both together in the living-docs repository, copy both to the project as a mirror, **publish the page
-  as an artifact at the same link** (the link is recorded in §6 of the checkpoint) and **hand it over as an `.html`
-  file** in the conversation.
-- **The board is republished by a subagent.** The artifact tool requires reading the whole page before republishing it
-  (80,000 to 90,000 tokens for a board of a hundred workstreams; a reading “by file” does not count). The PL therefore
-  does not read it: **they launch a light subagent (Haiku)**, which reads the page at the link, republishes it at the
-  same link from the regenerated file, changing nothing, and answers only “published”. Its reading stays outside the
-  PL's context, whose handover recedes by as much.
+  status that changes) —, they regenerate both files in the same move. A `workstreams.yaml` modified without its two
+  files is not finished. They commit them together in the living-docs repository and copy them to the project as a
+  mirror.
+- **Before republishing**:
+  - **regenerate after the last `git pull` / rebase, never before** (a real case: a data file pulled before the base
+    missed three workstreams of another session; check 6 saw it); **the checker passes, check 6 OK** — it is what
+    guarantees the data, not a reading;
+  - **the PL reads the page in full** (the artifact tool requires it; a reading “by file” does not count), about 4,000
+    tokens;
+  - **they re-read the diff of their own writes** in `workstreams.yaml` since their last publication.
+- **They republish the page and the data file together, at the same link** (the link is recorded in §6 of the
+  checkpoint), even if only the data changed, and hand the page over as an `.html` file in the conversation.
+- *Why not the whole data file every time*: the tool's rule is not to distribute what one has not seen. Here the file is
+  produced by the generator from a yaml that only PL sessions write: every line was seen by the session that wrote it, and
+  the session that publishes re-reads its own writes. **The data file is re-read in full, by a light subagent (Haiku)**,
+  in two cases only: the first publication of a board, and an entry drawn from an outside source (pasted text, a web
+  page) that no session has re-read. **It is also the fallback**: if the tool were to require reading every published
+  file, we go back to that subagent for every republication.
 - `make_board.py` is not modified for a project: title and labels are read from the header of
   `workstreams.yaml`.
 
@@ -478,7 +514,7 @@ created in its folder, never at the root; an old one joins its folder at its nex
 | project folder | carries |
 |---|---|
 | `Method/` | this method, the dev prompt (mirror), the common charters |
-| `<Folder>/` | the plan, the decision log, `workstreams.yaml` and `workstreams.html`, `make_board.py`, the checkpoint, the reference notes |
+| `<Folder>/` | the plan, the decision log, `workstreams.yaml`, `workstreams.html` and `workstreams.json`, `make_board.py`, the checkpoint, the reference notes |
 | `<Folder>/Archives/` | the frozen archives |
 | `<Folder>/Specs/` · `<Folder>/StyleGuide/` | the product references |
 | ⟨`<SubProject>/`⟩ | ⟨one folder per sub-project⟩ |
@@ -489,14 +525,17 @@ handover prompt** (the handover, below). **Images** go through the conversation,
 **The handover is measured, not guessed**:
 - **What is measured**: the context size at the last turn, with `python3 -B <Folder>/pl_tools/context.py` (copied
   from the package). It is not the cumulative consumption since the start of the session, which grows much faster.
+- **Why these thresholds**: every turn re-reads the whole context, cache included. The bigger it is, the more each turn
+  costs and the more quality drops.
 - **When**: at each batch close-out, before each brief or dev launch, and at least every ten exchanges.
-- **At 600,000 tokens, the PL warns the owner**, at the top of their answer: “Context: ~N tokens — handover ahead”.
+- **At 450,000 tokens, the PL warns the owner**, at the top of their answer: “Context: ~N tokens — handover ahead”.
   They no longer launch a new batch; they finish the one in progress.
-- **At 700,000 tokens at the latest**, or at a natural end of a queue before that, **they hand over**, without waiting
-  to be asked, in one go, in a single answer:
+- **At 550,000 tokens at the latest**, or at a natural end of a queue before that, or at the first sign of saturation,
+  **they hand over**, without waiting to be asked, in one go, in a single answer:
   1. §0 of the domain's checkpoint rewritten on the real state (where things stand, what blocks, what awaits the owner),
-     **its queue re-read against `workstreams.yaml`** (what is missing gets registered, what is closed leaves), and the
-     fixed line at the top checked: it names **all the domain's repositories** (§7);
+     **its queue re-read against `workstreams.yaml`** (what is missing gets registered, what is closed leaves), **the
+     saturation signs seen during the session noted (or “none”)**, and the fixed line at the top checked: it names **all
+     the domain's repositories** (§7);
   2. the baton set back to “none — free since <time>”;
   3. push, then the mirror in the project;
   4. **the domain's fixed line**, under “**Opus · new conversation in the project**”: “You are <PL>. Resume: attach
@@ -508,8 +547,9 @@ handover prompt** (the handover, below). **Images** go through the conversation,
 - **The resume can be started by the session itself**: a one-off scheduled task whose prompt is the fixed line; the
   owner opens the session in their task list. When the owner is not there to open it, the fixed line is enough.
 - **At the first sign of saturation** before the threshold (losing the thread, contradictions, a forgotten decision):
-  same handover, right away.
-- The context of a sub-agent (the dev, or the one that republishes the board) does not count in the PL's; its credit does.
+  same handover, right away. **Every handover notes the signs seen, or “none”**: these notes serve to recalibrate the
+  thresholds on measurements, not on an impression.
+- The context of a sub-agent (the dev, or a delegated reading) does not count in the PL's; its credit does.
 
 ---
 
@@ -547,7 +587,7 @@ top of this method).⟩
 - **An ordinary batch**: ten to twenty minutes of dev, an acceptance of a few minutes.
 - **A screen with a PL mock-up**: from 15 minutes to 1 h 30 of dev; the mock-up validated in one or two rounds.
 - **An addendum launched by the PL**: a few minutes, without a move from the owner.
-- **The PL records their own cost** at each handover: measured context, main items.
+- **The PL records their own cost** at each handover: measured context, saturation signs seen, main items.
 
 ---
 

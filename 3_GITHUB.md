@@ -96,9 +96,11 @@ batch/vX.Y ●─ BRIEF ─ … work … ─ DELIVERY ─ REPORT
    the renders. It hands you the deliverable under its exact name, with its sha256.
 6. **After your validation in production**: `git push origin batch/v<X.Y>:main` — **fast-forward, never `--force`**.
    Then the close-out of the living docs, a commit “Batch v<X.Y> closed” in the living-docs repository, the mirror in
-   the project.
+   the project. *(A deliverable published by release has neither a version nor a validation in production per batch: the
+   merge follows the acceptance, and the release is made at your request.)*
 
-**One delivery = one new number**: a fix or trial feedback after a hand-over makes a batch of the next version, on its
+**One delivery = one new number** (a deliverable deployed per batch; a deliverable published by release carries no
+version per batch): a fix or trial feedback after a hand-over makes a batch of the next version, on its
 own branch started from the batch's branch, one commit and one report each. An addendum under the same version only
 serves while nothing has been handed over or deployed.
 
@@ -114,7 +116,7 @@ serves while nothing has been handed over or deployed.
   each case.
 - **Several PLs can share the living docs**, one per domain (method §1a): each its own checkpoint and baton; decision
   log, plan and workstreams append-only; a decision number is reserved by a push; a deliverable has a single batch in flight, its
-  version is computed when the batch takes it; `pull` before every write, a
+  version is computed when the batch takes it (deployed per batch) or does not exist per batch (released: method §1a); `pull` before every write, a
   conflict shows at the `pull` instead of being overwritten.
 - **The mirror in the project**: at every close-out, each modified file is copied over with the project tool by sending
   the file from the clone (`project_write` with `local_path`), under the same name. **Never from the text the project
@@ -167,8 +169,9 @@ authorization.
   repository, where the acceptance expected results are.
 - **A simple tool can do without a dev prompt**: the brief is then enough on its own, and names the functions to read
   in a large build file.
-- After your validation: fast-forward of the public `main` (byte-exact to the accepted archive); at the milestone, the
-  `CHANGELOG` and what GitHub Pages serves, then **you set the tag and the release**.
+- After your validation: fast-forward of the public `main` (byte-exact to the accepted archive); **the release is made at
+  your request**: the PL fixes the number by the `CHANGELOG` rule, renames the “Unreleased” section, rebuilds the
+  packages and what GitHub Pages serves, then **you set the tag and the release**.
 - **The PL rereads every diff pushed to the public repository**: no first name, no profile, no reference to the method,
   the decision log or another project. The attribution lines of the commits, imposed by the session, show there.
 

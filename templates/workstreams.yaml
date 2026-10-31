@@ -1,9 +1,10 @@
 # Workstreams — <Project> · single source of the workstreams
 #
-# This file is THE source: workstreams.html (the readable page, published as an
-# artifact), and §3 of the checkpoint are derived from it. A workstream that is not
-# here does not exist. Every write to this file regenerates the page, in the
-# same move: python3 -B make_board.py workstreams.yaml workstreams.html
+# This file is THE source: workstreams.html (the fixed page, published as an artifact)
+# and workstreams.json (its data, next to it), and §3 of the checkpoint are derived
+# from it. A workstream that is not here does not exist. Every write to this file
+# regenerates both files, in the same move:
+# python3 -B make_board.py workstreams.yaml workstreams.html
 #
 # Deliberately poor form: an entry starts with “- id:”, everything
 # else fits on ONE line “key: value”. No folded blocks.
@@ -22,7 +23,9 @@
 #   deliverable: the code repository the release comes out of; one batch in flight per deliverable, pushing the in-flight entry takes it
 #   waits      : the id of the batch in flight this suspended batch waits for (same deliverable or same resource)
 #   resource   : a shared resource occupied during the flight (the owner's machine, a game…); one batch in flight per resource
-#   version    : computed when the batch takes the deliverable (main + 1), never announced before
+#   version    : computed when the batch takes the deliverable (main + 1), never announced before — only for a deliverable
+#                deployed per batch; a batch of a deliverable published by release has no `version:` (it completes the
+#                “Unreleased” section of the CHANGELOG; the release is made at the owner's request)
 #   for        : the PL a workstream from another domain is addressed to, read after every pull
 #   touches    : the files or modules of another domain the batch will touch
 #   cost       : what it will cost (upcoming) or what it cost (delivered: version, dev, duration, stops, acceptance)
