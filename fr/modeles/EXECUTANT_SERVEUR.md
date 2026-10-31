@@ -1,5 +1,5 @@
-# L'exécutant serveur — un programme déterministe sur le serveur de production, piloté par un dépôt d'ordres · v2
-### 28 octobre 2026 · v2 le 30 octobre : le dépôt d'ordres, pont d'échange de fichiers · éprouvé sur un projet réel (une application web sous Docker Compose et deux pages HTML autoportantes)
+# L'exécutant serveur — un programme déterministe sur le serveur de production, piloté par un dépôt d'ordres · v3
+### 28 octobre 2026 · v2 le 30 octobre : le dépôt d'ordres, pont d'échange de fichiers · v3 le 31 octobre : le dépôt d'ordres cloné après la réception seulement · éprouvé sur un projet réel (une application web sous Docker Compose et deux pages HTML autoportantes)
 
 *Pour un projet dont le livrable tourne **sur un serveur que le porteur administre**. Le CdP y déploie lui-même, sur le
 « go » du porteur, sans que personne ne dépose de fichier ni ne lance de commande. Le reste de la méthode ne change pas :
@@ -34,7 +34,7 @@ machine chez vous), où un livrable reçu doit aujourd'hui être déposé puis l
 | **CdP** (cloud) | réceptionne, demande le « go », pousse l'ordre, lit le compte rendu, le dit au porteur, fusionne après la validation | ne se connecte jamais au serveur ; ne restaure jamais une base |
 | **Exécutant serveur** (le programme ; dans un projet, souvent « le déployeur ») | tire les ordres, n'exécute que sa liste blanche, vérifie la santé, revient en arrière quand c'est sûr, pousse son compte rendu | ne décide rien ; n'exécute jamais une commande écrite dans un ordre |
 | **Porteur** | installe une fois ; dit « go » en nommant l'action ; valide à l'écran ; décide après un échec qui touche aux données | ne dépose plus rien, ne lance plus rien, sauf en repli |
-| **Dev** | construit le livrable, comme toujours | **ne lit ni n'écrit jamais au dépôt d'ordres** |
+| **Dev** | construit le livrable, comme toujours | **ne lit ni n'écrit jamais au dépôt d'ordres** (le clone du CdP : méthode §4 bis) |
 
 **La règle : aucune IA dans le chemin du déploiement.** Le déploiement est un programme déterministe : mêmes entrées,
 même résultat. **Un agent sur un serveur de production, s'il existe, est borné** — ni secrets, ni écriture en base, ni
@@ -90,25 +90,21 @@ fusion dans main
    des **zones déclarées côté serveur**, sans go — sauf vider la corbeille, la seule suppression réelle, sur go.
 8. **Avant un cadrage qui touche la production**, le CdP lance `etat` : version servie, conteneurs, place disque,
    sauvegardes, comptes. C'est la sonde, sans geste du porteur.
-9. **Une donnée produite en session** (un paquet de pages rendues, demain des tuiles ou des cartes) **à servir** : elle
-   passe par **le dépôt d'ordres, qui sert aussi de pont d'échange de fichiers** — jamais par l'historique d'un dépôt de
-   code public (§5). Le CdP qui la produit (jamais le dev) :
-   1. la pousse au dépôt d'ordres sous `transferts/<domaine>/<édition>/` — **un fichier de 95 Mio au plus** —, après un
-      `git pull`, et relève le hash complet du commit qui la porte ;
-   2. **dit au porteur ce qui va être remplacé** sur le serveur, avant l'ordre qui contient `basculer` ;
-   3. pousse un ordre `fichiers` (§7) : `telecharger` **depuis le dépôt d'ordres, au commit de 40 hex, sha256
-      obligatoire**, `decompresser` dans un dossier neuf, `basculer` ;
-   4. lit le compte rendu (attente bornée, point 3), le dit au porteur, qui valide à l'écran ;
-   5. **retire le dossier de l'arbre** par un commit une fois le compte rendu réussi : l'historique garde le fichier, une
-      copie partielle au commit ne lit que ce qu'il faut.
+9. **Une donnée produite en session** (un paquet de pages rendues, demain des tuiles ou des cartes) **à servir** : **à
+   venir.** La voie — le dépôt d'ordres sert aussi de pont d'échange de fichiers, `transferts/<domaine>/<édition>/`
+   (§5), puis un ordre `fichiers` dont `telecharger` lit le dépôt d'ordres au commit — **ne se joue pas encore** :
+   l'implémentation de référence n'a pas la source privée qu'elle demande (§7, §13). Jamais l'historique d'un dépôt de
+   code public (§5).
 
    Une donnée produite **sur le PC du porteur** (captures, gros fonds) : `rsync` vers `entree/` (§4), puis un ordre
    `fichiers`. Une donnée **publiée ailleurs** (une release, un dépôt public connu, un hôte autorisé) : `telecharger`
-   comme pour tout fichier, sans passer par le pont. *Sur le pourquoi — les options écartées — et le pas à pas expliqué
-   au porteur : `LISEZ_MOI.md` §2 quater.*
+   comme pour tout fichier, sans passer par le pont. *Sur le pourquoi et les options écartées : [`LISEZ_MOI.md`](../LISEZ_MOI.md) §2
+   quater.*
 
-**Chaque CdP qui déploie rattache le dépôt d'ordres en écriture** en début de session. **Le dev ne le lit ni ne
-l'écrit** : il n'est pas dans sa commande, et le prompt du dev le lui interdit.
+**Le CdP qui déploie rattache le dépôt d'ordres en écriture** ; le moment de son clone suit la méthode §4 bis
+([`DEPENDANCES_CLAUDE.md`](../DEPENDANCES_CLAUDE.md) dit pourquoi). **Le dev ne le lit ni ne l'écrit** : il n'est pas dans sa commande, et le prompt du dev le lui
+interdit. **Un push depuis un clone peu profond qui n'a pas fait `git fetch` envoie l'arbre entier, que le proxy refuse
+pour sa taille (413) : `git fetch origin main` avant `git push`.**
 
 **Le repli** : quand l'exécutant serveur est en panne (ou désinstallé), le livrable se remet au porteur tel quel, sous
 son nom exact avec son sha256, et la procédure manuelle du dépôt de code s'applique. La réception continue de produire
@@ -147,7 +143,7 @@ LISEZ_MOI.md                          le format des ordres (copie de docs/ORDRES
 Écrit par le CdP (les ordres, les transferts) et par le serveur (les comptes rendus), **jamais par le dev**. Aucun secret,
 aucune donnée de production dans un ordre ni dans un compte rendu (le serveur filtre ses journaux avant de les pousser, §7).
 
-**Le pont d'échange de fichiers — `transferts/`.** Une donnée **produite dans une session cloud** et à servir arrive par le
+**Le pont d'échange de fichiers — `transferts/`** *(la route ne se joue pas encore : §3 point 9).* Une donnée **produite dans une session cloud** et à servir arrive par le
 dépôt d'ordres, sous `transferts/<domaine>/<édition>/` (`transferts/` et non `donnees/` : les zones du serveur portent
 souvent déjà ce nom ; le nom est une convention de la méthode, le programme ne lit que le chemin donné par l'ordre).
 - **Qui y pousse** : le CdP qui produit la donnée, jamais le dev. Une édition porte un nom neuf, jamais réécrit.
@@ -304,8 +300,9 @@ d'écrasement silencieux** (cible existante : refus, sauf `"si_existe": "remplac
    {"operation": "basculer", "zone": "donnees", "prepare": "cartes/fond-v2", "servi": "cartes/fond"}]}
 ```
 
-**Un paquet produit en session, poussé au dépôt d'ordres** (§3 point 9) — `telecharger` depuis le dépôt d'ordres, **au
-commit de 40 hex, avec le sha256** (obligatoire pour cette source), puis `decompresser` dans un dossier neuf et `basculer` :
+**Un paquet produit en session, poussé au dépôt d'ordres** (§3 point 9, à venir) — `telecharger` depuis le dépôt d'ordres,
+**au commit de 40 hex, avec le sha256** (obligatoire pour cette source), puis `decompresser` dans un dossier neuf et
+`basculer` :
 
 ```json
 {"id": "2026-10-27-11", "action": "fichiers", "demande_par": "chef de projet",
@@ -322,8 +319,9 @@ commit de 40 hex, avec le sha256** (obligatoire pour cette source), puis `decomp
 > publics, des releases et des hôtes autorisés (`docs/ORDRES.md`). Elle arrive dans sa prochaine version, sous la forme
 > qu'un premier projet a construite : la source `github-prive:<propriétaire>/<dépôt>@<commit>:<chemin>`, sha256
 > obligatoire, 95 Mio au plus, pour un dépôt déclaré dans une liste `depots_prives` de la configuration avec sa clé — le
-> dépôt d'ordres y figure avec la clé que l'exécutant a déjà pour lui. D'ici là, la voie du PC (`entree/`) ou une
-> source publiée ailleurs.
+> dépôt d'ordres y figure avec la clé que l'exécutant a déjà pour lui. **D'ici là, la voie du PC (`entree/`) ou une
+> source publiée ailleurs.** La route « session » du pont n'a donc pas de pas à pas ici : elle sera écrite avec son
+> implémentation.
 
 ```json
 {"id": "2026-10-27-09", "action": "fichiers", "demande_par": "chef de projet",
@@ -467,6 +465,11 @@ le repli.
 - **un commit mauvais mais reçu** : l'identité est le commit, et la porte est la réception, puis le go ;
 - **le programme lui-même** : il tourne en root (Docker équivaut à root). D'où un programme court, lu en entier à la
   réception, et ses mises à jour reçues comme un lot ;
+- **le « go » vérifiable par le programme** : l'exécutant ne contrôle pas que le champ `go` d'un ordre cite une
+  validation réelle du porteur ; il est écrit par le CdP, et c'est la règle de la méthode — pas le code — qui l'impose
+  (**limite connue**) ;
+- **le dépôt d'ordres contre un sous-agent** — **limite connue** : un sous-agent hérite des rattachements de la session ;
+  supprimer le clone du dépôt d'ordres avant le dev n'est qu'une barrière d'usage, pas un contrôle d'accès ;
 - **une source externe autorisée** dont le contenu change : le sha256 ne protège que s'il est donné dans l'ordre ;
 - **la panne du disque ou du serveur** : la sauvegarde entière du serveur reste le dernier filet ;
 - **le remplissage** de `entree/` par la clé de transfert : les seuils de place refusent les écritures suivantes, ils ne

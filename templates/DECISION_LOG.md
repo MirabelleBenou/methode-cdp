@@ -3,9 +3,9 @@
 
 *Kept by the PL. Updated at each closed batch. Last update: **<date>, by <session>**: **D1**.*
 
-> **This log carries only what is still alive.** **An entry fits in ~800 characters.** **The log is cut into slices of
-> fifty numbers when it exceeds ~150 KB**: what is no longer alive moves to a frozen archive, one per slice
-> (`Archives/DECISION_LOG_ARCHIVE_D<a>_to_D<b>.md`), which is never rewritten. The numbers stay stable from one
+> **This log carries only what is still alive.** **An entry fits under its cap, and the log is cut into slices beyond
+> its cut size** (both figures: the method §6): what is no longer alive moves to a frozen archive, one per slice
+> (`<Folder>/Archives/DECISION_LOG_ARCHIVE_D<a>_to_D<b>.md`), which is never rewritten. The numbers stay stable from one
 > document to the other. **An archived decision that changes is replayed here, under a new number that cites the old one.**
 
 ---
@@ -15,13 +15,14 @@
 Every decision that commits the project — product, visual, technical, method — carries a stable **D** number.
 A brief, a workstream, a method cite their D numbers. A decision once made is not reopened; it is replaced by a new one.
 
-**An entry states** — in ~800 characters; the detail goes to the batch folder or into a domain note, the entry only keeps
+**An entry states** — under its cap; the detail goes to the batch folder or into a domain note, the entry only keeps
 the summary and the path:
 - **what is decided**, in one sentence in bold;
 - **by whom**: “Decided by the owner” (in their own words when the words decide, the option chosen, the time if useful) /
   “Decided by the PL” (delegated technical decision);
 - **on what basis**: the measurement the decision rested on;
-- **the batch** and its result (dev, duration, stops, acceptance, fingerprint, validation in production).
+- **the batch, cited in the version log** of the plan (its version or its name): its dev, duration, stops,
+  acceptance, fingerprint and validation are written there, once, not here (method §6).
 
 **A “What the batch teaches” entry** follows a batch when there is a lesson: numbered ①, ②…; each correct stop or
 report by the dev counts there (“execution is right”), each PL defect seen in production opens the reverse

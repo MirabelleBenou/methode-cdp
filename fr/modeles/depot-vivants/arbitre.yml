@@ -1,0 +1,115 @@
+# L'arbitre des vivants, en action GitHub planifiée — MODÈLE à copier.
+#
+# À copier dans `.github/workflows/arbitre.yml` du dépôt des vivants (pas dans celui du package), puis à adapter :
+# les chemins du bloc `env:` ci-dessous (une variable par chemin, relatifs à la racine du dépôt), et rien d'autre.
+# À la copie, remplacer `Dossier` par le dossier des vivants (celui de `chantiers.yaml`) dans chaque chemin qui le porte.
+# Le script `arbitre.py` se copie, avec le vérificateur, l'archiveur et le générateur, dans ce même dossier `<Dossier>/`,
+# celui que désigne SCRIPT (modeles/arbitre.py du package ; il trouve les trois autres à côté de lui).
+#
+# Ce qu'il fait, chaque jour à 5 h 42 UTC (ou à la main : « Run workflow ») :
+#   1. il récupère le dépôt (300 commits : la mesure des témoins lit l'historique) ;
+#   2. il lance `arbitre.py` : normaliser, contrôler, déposer un chantier par écart nouveau, mesurer les témoins et
+#      le checkpoint en retard, archiver, régénérer le tableau, ajouter une ligne au journal de l'arbitre ;
+#   3. si des fichiers ont changé, UN SEUL commit « Arbitre <date> : … » (le message est celui du script), poussé
+#      après un `git pull --rebase`, avec un seul nouvel essai si le push est refusé ;
+#   4. il met le résumé du script dans la page du passage, puis ÉCHOUE si le script a rendu le code 1 (au moins un
+#      chantier nouveau) ou 2 (un fichier manque, un script échoue) : GitHub prévient alors le porteur.
+# Aucun jeton de modèle, aucun secret : le seul droit demandé est d'écrire dans le dépôt (`contents: write`).
+name: arbitre
+
+on:
+  schedule:
+    - cron: "42 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: arbitre
+  cancel-in-progress: false
+
+env:
+  SCRIPT: Dossier/arbitre.py
+  CHANTIERS: Dossier/chantiers.yaml
+  REGISTRE: Dossier/REGISTRE_ARBITRAGES.md
+  ARCHIVES: Dossier/Archives
+  DOMAINES: Methode/domaines.yaml
+  JOURNAL_ARBITRE: Methode/ARBITRE_JOURNAL.md
+  # Facultatifs : une variable vide retire l'option.
+  TABLEAU: Dossier/chantiers.html
+  GENERATEUR: Dossier/generer_tableau.py
+  JOURNAL_PLAN: Dossier/PLAN.md
+  METHODE: Methode/METHODE.md
+  FICHE: ""
+
+jobs:
+  arbitre:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 300
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Passage de l'arbitre
+        id: passage
+        shell: bash
+        run: |
+          args=(--chantiers "$CHANTIERS" --registre "$REGISTRE" --archives "$ARCHIVES"
+                --domaines "$DOMAINES" --journal-arbitre "$JOURNAL_ARBITRE")
+          if [ -n "$TABLEAU" ] && [ -n "$GENERATEUR" ]; then args+=(--tableau "$TABLEAU" --generateur "$GENERATEUR"); fi
+          if [ -n "$JOURNAL_PLAN" ]; then args+=(--journal "$JOURNAL_PLAN"); fi
+          if [ -n "$METHODE" ]; then args+=(--methode "$METHODE"); fi
+          if [ -n "$FICHE" ]; then args+=(--fiche "$FICHE"); fi
+          code=0
+          python3 -B "$SCRIPT" "${args[@]}" > "$RUNNER_TEMP/arbitre.txt" 2>&1 || code=$?
+          cat "$RUNNER_TEMP/arbitre.txt"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+
+      - name: Commit et push
+        shell: bash
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "Rien n'a changé : pas de commit."
+            exit 0
+          fi
+          message="$(sed -n 's/^Commit : //p' "$RUNNER_TEMP/arbitre.txt" | tail -n 1)"
+          if [ -z "$message" ]; then message="Arbitre $(date -u +%F)"; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "$message"
+          pousse=0
+          git pull --rebase origin "$GITHUB_REF_NAME" && git push origin "HEAD:$GITHUB_REF_NAME" && pousse=1
+          if [ "$pousse" -eq 0 ]; then
+            echo "Push refusé : un seul nouvel essai."
+            git rebase --abort 2>/dev/null || true
+            sleep 5
+            git pull --rebase origin "$GITHUB_REF_NAME" && git push origin "HEAD:$GITHUB_REF_NAME" && pousse=1
+          fi
+          if [ "$pousse" -eq 0 ]; then
+            echo "::error::Le push a été refusé deux fois : rien n'est forcé."
+            exit 1
+          fi
+
+      - name: Résumé, et échec si le script a rendu 1 ou 2
+        if: always()
+        shell: bash
+        env:
+          CODE: ${{ steps.passage.outputs.code }}
+        run: |
+          {
+            echo '### Arbitre des vivants'
+            echo '```'
+            cat "$RUNNER_TEMP/arbitre.txt" 2>/dev/null || echo "(pas de sortie)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "${CODE:-2}" != "0" ]; then
+            echo "::error::L'arbitre a rendu le code ${CODE:-2} (1 : chantier nouveau ; 2 : contrôle impossible)."
+            exit 1
+          fi

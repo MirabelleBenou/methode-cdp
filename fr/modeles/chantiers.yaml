@@ -1,18 +1,26 @@
 # Chantiers — <Projet> · source unique des chantiers
 #
 # Ce fichier est LA source : chantiers.html (la page fixe, publiée en artefact)
-# et chantiers.json (ses données, à côté), et le §3 du checkpoint s'en déduisent.
+# et chantiers.json (ses données, à côté : les seuls chantiers ouverts, en champs
+# courts) s'en déduisent. La file du checkpoint, elle, s'écrit à la main : le
+# contrôle 9 du vérificateur la recoupe avec ce fichier.
 # Un chantier qui n'est pas ici n'existe pas. Chaque écriture de ce fichier
 # régénère les deux fichiers, dans le même geste :
 # python3 -B generer_tableau.py chantiers.yaml chantiers.html
+#
+# C'est du YAML valide : un lecteur YAML standard lit les mêmes valeurs que les outils
+# des vivants (contrôle 11 du vérificateur). Une valeur qui contient « : » suivi d'une
+# espace, « # » précédé d'une espace, ou qui commence par un caractère spécial
+# s'écrit entre guillemets doubles (seuls \" et \\ y sont des échappements) ;
+# « archiver_chantiers.py normaliser » met un fichier au format, sans toucher au reste.
 #
 # Forme volontairement pauvre : une entrée commence par « - id: », tout le
 # reste tient sur UNE ligne « clé: valeur ». Pas de blocs repliés.
 #
 #   statut     : a-venir | a-cadrer | en-vol | dette | recette
-#                (recette = livré et validé ; on garde l'entrée, pour l'historique)
+#                (recette = livré et validé ; l'entrée reste le délai de la méthode §6, puis part aux archives)
 #   recette-le : la date d'entrée en recette, posée par archiver_chantiers.py (jamais écrite ni corrigée à la main) ;
-#                sept jours après, l'entrée sort vers Archives/CHANTIERS_<AAAA-MM>.yaml — la retrouver :
+#                ce délai passé, l'entrée sort vers <Dossier>/Archives/CHANTIERS_<AAAA-MM>.yaml — la retrouver :
 #                python3 -B archiver_chantiers.py chercher <id ou mot> --chantiers chantiers.yaml --archives Archives
 #   module     : <module-1> | <module-2> | socle | outillage | doc | exploitation
 #   categorie  : ecran | donnees | moteur | outillage | doc | exploitation
@@ -23,16 +31,19 @@
 #   livrable   : le dépôt de code d'où sort la release ; un seul lot en vol par livrable, pousser l'entrée en-vol le prend
 #   attend     : l'id du lot en vol dont ce lot suspendu attend la fin (même livrable ou même ressource)
 #   ressource  : une ressource partagée occupée pendant le vol (la machine du porteur, un jeu…) ; un seul lot en vol par ressource
-#   version    : calculée quand le lot prend le livrable (main + 1), jamais annoncée avant — seulement pour un livrable
-#                déployé à chaque lot ; un lot d'un livrable publié par release n'a pas de `version:` (il complète la
-#                section « Unreleased » du CHANGELOG ; la release se fait à la demande du porteur)
+#   version    : calculée quand le lot prend le livrable (la règle de la méthode §1 bis, jamais `main` plus un),
+#                annoncée au cadrage — seulement pour un livrable déployé à chaque lot ; un lot d'un livrable
+#                publié par release n'a pas de `version:` (il complète la section « Unreleased » du CHANGELOG ; la
+#                release se fait à la demande du porteur)
 #   pour       : le CdP à qui s'adresse un chantier venu d'un autre domaine, lu après chaque pull
 #   touche     : les fichiers ou modules d'un autre domaine que le lot va toucher
-#   cout       : ce que ça coûte (à venir) ou ce que ça a coûté (livré : version, dev, durée, arrêts, réception)
+#   cout       : ce que ça coûtera (à venir) ; livré, le coût du lot est au journal des versions du plan, pas ici
+#   fait       : à la clôture, une ligne : la date et la version (ou le nom du lot) — le détail du lot (dev, durée,
+#                arrêts, réception, empreinte) s'écrit une fois, au journal des versions du plan (méthode §6)
 #   mesure     : ce qui fonde le chantier — la demande du porteur, la mesure, le défaut vu
 #   refs       : R du registre · cadrage · rapport · autres chantiers
 #
-# Une entrée tient en ~1,5 Ko : l'état, la décision, le prochain geste. Un échange long va au dossier du lot ou dans une
+# Une entrée tient sous le plafond de la méthode §6 : l'état, la décision, le prochain geste. Un échange long va au dossier du lot ou dans une
 # note du domaine ; l'entrée n'en garde que le résumé et le chemin (méthode §6, « les plafonds »).
 #
 # Libellés affichés par la page (facultatifs ; sinon la valeur elle-même) :

@@ -1,13 +1,15 @@
-"""Tests de archiver_chantiers.py : dater, sortir, ne rien perdre, chercher ; les appels invalides.
+"""Tests de archiver_chantiers.py : dater, sortir, ne rien perdre, chercher, normaliser ; les appels invalides.
 
 Chaque test bâtit ses fixtures dans un dossier temporaire (voir outils_tests.py) et appelle le script en
 ligne de commande avec « --date », pour que les jours se comptent sans dépendre de l'horloge.
 """
+import os
 import re
 import unittest
 from collections import Counter
 
-from .outils_tests import ARCHIVER, CasTemporaire, bloc, charger, yaml
+from .outils_tests import (ARCHIVER, ECART, SANS_PYYAML, VERIFIER, CasTemporaire, bloc, charger, lecture_pyyaml,
+                           registre, sans_position, yaml)
 
 JOUR = "2026-03-15"            # la date du jour des essais
 IL_Y_A_7_JOURS = "2026-03-08"
@@ -482,6 +484,195 @@ class TestChercher(CasArchiver):
         self.assertEqual((self.chantiers.read_bytes(), self.archive.read_bytes()), avant)
 
 
+CHANTIERS_A_NORMALISER = (
+    "# Chantiers — Essai\n"
+    "# un commentaire : avec deux-points\n"
+    "\n"
+    "- id: alpha-1\n"
+    "  titre: Un titre\n"
+    "  mesure: texte : suite\n"
+    "  rang: 5\n"
+    "  \n"
+    "\n"
+    "\n"
+    "- id: alpha-2\n"
+    "  titre: Attention:\n"
+    "  recette-le: 2026-10-30\n"
+    '  refs: "déjà conforme : oui"\n'
+    "  cout:\n"
+    '  note: dit "oui" : c:\\dossier\n'
+)
+DOMAINES_A_NORMALISER = (
+    "# Domaines\n"
+    "- domaine: alpha\n"
+    "  file: ## §1 · La file\n"
+    "  modules: module-a\n"
+    "\n"
+    "- domaine: beta\n"
+    '  file: "## §3 · La file"\n'
+    "  modules:\n"
+)
+
+
+class TestNormaliser(CasArchiver):
+    """« normaliser » : n'écrit entre guillemets doubles que les valeurs non conformes, rien d'autre ; idempotent."""
+
+    def setUp(self):
+        super().setUp()
+        self.chantiers = self.ecrire("chantiers.yaml", CHANTIERS_A_NORMALISER)
+
+    def normaliser(self, *options, chantiers=None):
+        return self.lancer(ARCHIVER, "normaliser", "--chantiers", chantiers or self.chantiers, *options)
+
+    def test_reecrit_les_valeurs_non_conformes_et_laisse_le_reste_a_l_octet(self):
+        sortie = self.normaliser()
+        self.assertEqual(sortie.code, 0, sortie.stdout + sortie.stderr)
+        attendu = (CHANTIERS_A_NORMALISER
+                   .replace("  mesure: texte : suite\n", '  mesure: "texte : suite"\n')
+                   .replace("  titre: Attention:\n", '  titre: "Attention:"\n')
+                   .replace('  note: dit "oui" : c:\\dossier\n', '  note: "dit \\"oui\\" : c:\\\\dossier"\n'))
+        self.assertEqual(self.chantiers.read_bytes().decode("utf-8"), attendu)
+        self.assertEqual(sortie.stdout, f"{self.chantiers} : 3 valeur(s) réécrite(s)\n"
+                                        "normaliser · 3 valeur(s) réécrite(s) dans 1 fichier(s) sur 1\n")
+
+    def test_une_valeur_deja_normalisee_ou_conforme_n_est_pas_touchee(self):
+        conforme = yaml(bloc("alpha-1", titre='"texte : suite"', mesure="simple", rang="5"), bloc("alpha-2", cout=""))
+        self.chantiers = self.ecrire("chantiers.yaml", conforme)
+        avant = self.chantiers.stat()
+        sortie = self.normaliser()
+        self.assertEqual(sortie.code, 0)
+        self.assertEqual(self.chantiers.read_bytes().decode("utf-8"), conforme)
+        self.assertEqual(self.chantiers.stat().st_ino, avant.st_ino, "rien à écrire : le fichier n'est pas remplacé")
+        self.assertIn("0 valeur(s) réécrite(s)", sortie.stdout)
+
+    def test_idempotent(self):
+        self.normaliser()
+        premier = self.chantiers.read_bytes()
+        inode = self.chantiers.stat().st_ino
+        sortie = self.normaliser()
+        self.assertEqual(sortie.code, 0)
+        self.assertEqual(self.chantiers.read_bytes(), premier)
+        self.assertEqual(self.chantiers.stat().st_ino, inode)
+        self.assertEqual(sortie.stdout, f"{self.chantiers} : 0 valeur(s) réécrite(s)\n"
+                                        "normaliser · 0 valeur(s) réécrite(s) dans 0 fichier(s) sur 1\n")
+
+    def test_garde_les_fins_de_ligne_et_les_blancs_de_fin(self):
+        texte = "# Chantiers — Essai\r\n\r\n- id: a\r\n  mesure:   texte : suite \t \r\n  rang: 5\r\n\r\n- id: b\r\n  titre: fin:"
+        self.chantiers = self.ecrire("chantiers.yaml", texte)
+        self.assertEqual(self.normaliser().code, 0)
+        self.assertEqual(self.chantiers.read_bytes().decode("utf-8"),
+                         '# Chantiers — Essai\r\n\r\n- id: a\r\n  mesure:   "texte : suite" \t \r\n  rang: 5\r\n\r\n'
+                         '- id: b\r\n  titre: "fin:"', "fin de ligne, blancs, absence de saut final : tout reste")
+
+    def test_apres_lui_le_controle_11_est_ok_et_la_lecture_rend_les_memes_valeurs(self):
+        v = charger(VERIFIER, "verifier_vivants_pour_normaliser")
+        avant = sans_position(v.lire_chantiers(self.chantiers))
+        registre_md = self.ecrire("registre.md", registre(1, 2, 3))
+        verifier = lambda: self.lancer(VERIFIER, "--chantiers", self.chantiers, "--registre", registre_md)
+        self.assertEqual(verifier().verdict(11), ECART)
+        self.normaliser()
+        self.assertEqual(verifier().verdict(11), "OK")
+        self.assertEqual(sans_position(v.lire_chantiers(self.chantiers)), avant)
+        self.assertEqual(avant[0]["mesure"], "texte : suite")
+        self.assertEqual(avant[1]["note"], 'dit "oui" : c:\\dossier')
+
+    @SANS_PYYAML
+    def test_avec_pyyaml_le_fichier_normalise_se_lit_comme_par_notre_lecture(self):
+        v = charger(VERIFIER, "verifier_vivants_pour_pyyaml")
+        self.normaliser()
+        texte = self.chantiers.read_text(encoding="utf-8")
+        self.assertEqual(lecture_pyyaml(texte), sans_position(v.lire_chantiers(self.chantiers)))
+        self.assertEqual(lecture_pyyaml(texte)[0]["mesure"], "texte : suite")
+
+    def test_les_archives_et_la_table_se_normalisent_avec_leurs_options(self):
+        self.ecrire("archives/CHANTIERS_2026-01.yaml", yaml(bloc("old-1", titre="Fini : presque"), entete="# Archive"))
+        self.ecrire("archives/CHANTIERS_2026-02.yaml", yaml(bloc("old-2", titre="Net"), entete="# Archive"))
+        autre = self.ecrire("archives/autre.yaml", yaml(bloc("hors", titre="Pas : une archive")))
+        table = self.ecrire("domaines.yaml", DOMAINES_A_NORMALISER)
+        sortie = self.normaliser("--archives", self.dossier_archives, "--domaines", table)
+        self.assertEqual(sortie.code, 0, sortie.stdout + sortie.stderr)
+        self.assertEqual(sortie.stdout.split("\n"), [
+            f"{self.chantiers} : 3 valeur(s) réécrite(s)",
+            f"{self.dossier_archives}/CHANTIERS_2026-01.yaml : 1 valeur(s) réécrite(s)",
+            f"{self.dossier_archives}/CHANTIERS_2026-02.yaml : 0 valeur(s) réécrite(s)",
+            f"{table} : 1 valeur(s) réécrite(s)",
+            "normaliser · 5 valeur(s) réécrite(s) dans 3 fichier(s) sur 4", ""])
+        self.assertEqual(table.read_text(encoding="utf-8"),
+                         DOMAINES_A_NORMALISER.replace("file: ## §1 · La file", 'file: "## §1 · La file"'))
+        self.assertIn('  titre: "Fini : presque"\n', (self.dossier_archives / "CHANTIERS_2026-01.yaml").read_text(encoding="utf-8"))
+        self.assertIn("titre: Pas : une archive", autre.read_text(encoding="utf-8"), "seuls les CHANTIERS_*.yaml")
+
+    def test_sans_les_options_les_archives_et_la_table_ne_sont_pas_touchees(self):
+        archive = self.ecrire("archives/CHANTIERS_2026-01.yaml", yaml(bloc("old-1", titre="Fini : presque")))
+        table = self.ecrire("domaines.yaml", DOMAINES_A_NORMALISER)
+        avant = (archive.read_bytes(), table.read_bytes())
+        self.normaliser()
+        self.assertEqual((archive.read_bytes(), table.read_bytes()), avant)
+
+    def test_la_lecture_apres_normalisation_de_la_table_rend_les_memes_valeurs(self):
+        v = charger(VERIFIER, "verifier_vivants_pour_table")
+        table = self.ecrire("domaines.yaml", DOMAINES_A_NORMALISER)
+        avant = sans_position(v.lire_chantiers(table))
+        self.normaliser("--domaines", table)
+        self.assertEqual(sans_position(v.lire_chantiers(table)), avant)
+        self.assertEqual(avant[0]["file"], "## §1 · La file")
+
+    def test_une_valeur_nue_qui_commence_par_un_guillemet_est_ecrite_entre_guillemets_avec_echappements(self):
+        v = charger(VERIFIER, "verifier_vivants_pour_guillemets")
+        self.chantiers = self.ecrire("chantiers.yaml", '- id: a\n  titre: "a" b\n  note: "sans fin\n  autre: \'x\'\n')
+        avant = sans_position(v.lire_chantiers(self.chantiers))
+        self.normaliser()
+        self.assertEqual(self.chantiers.read_text(encoding="utf-8"),
+                         '- id: a\n  titre: "\\"a\\" b"\n  note: "\\"sans fin"\n  autre: "\'x\'"\n')
+        self.assertEqual(sans_position(v.lire_chantiers(self.chantiers)), avant)
+
+    def test_une_valeur_avec_un_caractere_de_controle_n_est_pas_touchee_et_le_code_est_1(self):
+        self.chantiers = self.ecrire("chantiers.yaml", "- id: a\n  titre: a\x01b\n  mesure: x : y\n")
+        sortie = self.normaliser()
+        self.assertEqual(sortie.code, 1, sortie.stdout + sortie.stderr)
+        self.assertEqual(self.chantiers.read_bytes().decode("utf-8"), '- id: a\n  titre: a\x01b\n  mesure: "x : y"\n')
+        self.assertIn(f"{self.chantiers}:2 : clé titre : valeur non normalisable (caractère de contrôle)", sortie.stdout)
+
+    def test_n_ecrit_que_par_un_fichier_temporaire_et_n_en_laisse_aucun(self):
+        self.normaliser()
+        self.assertEqual(sorted(p.name for p in self.dossier.iterdir() if p.is_file()), ["chantiers.yaml"])
+
+    def test_garde_le_mode_du_fichier(self):
+        os.chmod(self.chantiers, 0o640)
+        self.normaliser()
+        self.assertEqual(self.chantiers.stat().st_mode & 0o777, 0o640)
+
+    def test_l_archiveur_garde_un_bloc_tel_quel_guillemets_compris(self):
+        self.ecrire_chantiers(bloc('"alpha-1"', titre='"Le titre : suite"', statut="recette", recette_le=IL_Y_A_7_JOURS,
+                                   mesure='"dit \\"oui\\""'),
+                              bloc("alpha-2", statut="a-venir"))
+        sortie = self.archiver()
+        self.assertEqual(sortie.code, 0, sortie.stdout + sortie.stderr)
+        archive = self.archive.read_text(encoding="utf-8")
+        self.assertIn('- id: "alpha-1"\n  titre: "Le titre : suite"\n  statut: recette\n  recette-le: 2026-03-08\n'
+                      '  mesure: "dit \\"oui\\""\n', archive)
+        self.assertIn("  alpha-1\n", sortie.stdout, "l'id est lu sans guillemets")
+        trouve = self.chercher("alpha-1")
+        self.assertEqual(trouve.code, 0, trouve.stdout)
+        self.assertIn("· alpha-1 · recette · Le titre : suite\n", trouve.stdout, "la recherche lit les valeurs sans guillemets")
+
+    def test_appels_invalides(self):
+        absent = self.dossier / "absent.yaml"
+        sortie = self.lancer(ARCHIVER, "normaliser", "--chantiers", absent)
+        self.assertEqual((sortie.code, sortie.stdout), (2, ""))
+        self.assertIn(f"archiver_chantiers : fichier introuvable : --chantiers {absent}", sortie.stderr)
+        sortie = self.normaliser("--archives", self.dossier / "nulle-part")
+        self.assertEqual(sortie.code, 2)
+        self.assertIn(f"dossier introuvable : --archives {self.dossier / 'nulle-part'}", sortie.stderr)
+        sortie = self.normaliser("--domaines", self.dossier / "table.yaml")
+        self.assertEqual(sortie.code, 2)
+        self.assertIn("fichier introuvable : --domaines", sortie.stderr)
+        sortie = self.lancer(ARCHIVER, "normaliser")
+        self.assertEqual(sortie.code, 2)
+        self.assertIn("argument manquant : --chantiers", sortie.stderr)
+        self.assertEqual(self.chantiers.read_bytes().decode("utf-8"), CHANTIERS_A_NORMALISER, "rien n'a été écrit")
+
+
 class TestAppelsInvalides(CasArchiver):
     def setUp(self):
         super().setUp()
@@ -499,7 +690,7 @@ class TestAppelsInvalides(CasArchiver):
     def test_commande_inconnue(self):
         sortie = self.lancer(ARCHIVER, "effacer")
         self.invalide(sortie, "commande inconnue : ")
-        self.assertRegex(sortie.stderr, r"commande inconnue : '?effacer'? \(archiver ou chercher\)")
+        self.assertRegex(sortie.stderr, r"commande inconnue : '?effacer'? \(archiver, chercher ou normaliser\)")
 
     def test_chantiers_manquant(self):
         self.invalide(self.lancer(ARCHIVER, "archiver", "--archives", self.dossier_archives), "argument manquant")
@@ -582,6 +773,28 @@ class TestFonctions(CasTemporaire):
     def test_resserrer_une_ligne_vide_au_plus_autour_d_un_repere(self):
         self.assertEqual(self.a.resserrer(["a", "", "", None, "", "b"], 0, 0), ["a", "", "b"])
         self.assertEqual(self.a.resserrer(["a", "", None], 0, 0), ["a"])
+
+    def test_lire_valeur(self):
+        self.assertEqual(self.a.lire_valeur('  "Un \\"titre\\" avec \\\\ et : deux"  '), 'Un "titre" avec \\ et : deux')
+        self.assertEqual(self.a.lire_valeur('""'), "")
+        for brut, attendu in ((" texte : suite ", "texte : suite"), ('"sans fin', '"sans fin'), ('"a" b', '"a" b'),
+                              ('"a\\"', '"a\\"'), ('"a\\n"', '"a\\n"'), ("", "")):
+            self.assertEqual(self.a.lire_valeur(brut), attendu, brut)
+
+    def test_trouver_blocs_lit_les_valeurs_entre_guillemets(self):
+        blocs = self.a.trouver_blocs(['- id: "a"', '  titre: "Un : titre"', '  statut: recette'])
+        self.assertEqual((blocs[0].id, blocs[0].valeur("titre"), blocs[0].valeur("statut")), ("a", "Un : titre", "recette"))
+
+    def test_valeur_conforme_comme_le_verificateur(self):
+        v = charger(VERIFIER, "verifier_vivants_pour_comparer")
+        valeurs = ["", "texte", "a:b", "a#b", "5", '"x : y"', '"a \\" b"', "a: b", "fin:", "x # y", "## t", "- i", "'x'", '"x',
+                   "`x`", "a\tb", "a\x01b", '"a\\n"']
+        for valeur in valeurs:
+            self.assertEqual(self.a.valeur_conforme(valeur), v.valeur_conforme(valeur), repr(valeur))
+
+    def test_entre_guillemets(self):
+        self.assertEqual(self.a.entre_guillemets('a "b" \\ c'), '"a \\"b\\" \\\\ c"')
+        self.assertEqual(self.a.lire_valeur(self.a.entre_guillemets('a "b" \\ c : #')), 'a "b" \\ c : #')
 
     def test_en_francais_traduit_les_messages_de_l_analyseur(self):
         self.assertEqual(self.a.en_francais("the following arguments are required: --chantiers"),

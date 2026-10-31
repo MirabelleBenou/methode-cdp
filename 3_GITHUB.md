@@ -11,8 +11,8 @@ everything is rebuilt from the repositories.*
 
 | repository | visibility | holds | who writes there |
 |---|---|---|---|
-| **`<owner>/<Project>`** — the living docs | private | `README.md`; `Method/METHOD_<P>.md`; `<Folder>/`: checkpoint, decision log, plan, `workstreams.yaml`, statuses of the subprojects; `<Folder>/expected/<version>/`; `<Folder>/pl_tools/`; `<Folder>/Archives/` (frozen: the archiving of accepted workstreams writes `WORKSTREAMS_<YYYY-MM>.yaml` there, the PL the rest) | **PL sessions only** |
-| **`<owner>/<Project>-App`** — the code | private (public: §6 B) | the code at the root; `bench/`; `DEV_PROMPT_<P>.md`; `batches/<version>/`; `.gitattributes`, `.gitignore`, `CHANGELOG.md` | the PL on `main` (merge, brief); the dev on the branch of its batch |
+| **`<owner>/<Project>`** — the living docs | private | [`README.md`](templates/living-docs-repo/README.md); `Method/METHOD_<P>.md`; `<Folder>/`: checkpoint, decision log, plan, `workstreams.yaml`, statuses of the subprojects; `<Folder>/expected/<version>/`; `<Folder>/pl_tools/`; `<Folder>/Archives/` (frozen: the archiving of accepted workstreams writes `WORKSTREAMS_<YYYY-MM>.yaml` there, the PL the rest) | **PL sessions only** |
+| **`<owner>/<Project>-App`** — the code | private (public: §6 B) | the code at the root; `bench/`; `DEV_PROMPT_<P>.md`; `batches/<version>/`; `.gitattributes`, `.gitignore`, [`CHANGELOG.md`](templates/code-repo/CHANGELOG.md) | the PL on `main` (merge, brief); the dev on the branch of its batch |
 
 **The code repository is public** (GitHub Pages, open license): **the dev prompt and `batches/` never go there** — they
 name the owner, describe the method and cite the decision log. They go into a third, private repository (§6 B). A file
@@ -23,14 +23,14 @@ commit**.
 nor the pending decisions, nor the other workstreams. The living docs stay with the PL.
 
 **A third family, optional — the orders repository**: when the project has a production server and a server runner
-(`templates/SERVER_RUNNER.md`), the PL deploys there through orders.
+([`templates/SERVER_RUNNER.md`](templates/SERVER_RUNNER.md)), the PL deploys there through orders.
 
 | repository | visibility | holds | who writes there |
 |---|---|---|---|
 | **`<owner>/<Project>-Orders`** — the orders | private | `ordres/<id>.json` (orders); `resultats/<id>.md` (reports); `LISEZ_MOI.md`, the order format | **the PL** (the orders) and **the server** (the reports, through a deploy key with write access to this repository only); **never the dev** |
 
 The server reads the code repository through a second deploy key, **read-only**. Each PL who deploys attaches the orders
-repository with write access; the dev does not attach it. An order is never rewritten; its identifier is taken by the
+repository with write access (its clone: `templates/METHOD.md` §4a); the dev does not attach it. An order is never rewritten; its identifier is taken by the
 push, like a decision number.
 
 ---
@@ -44,7 +44,7 @@ push, like a decision number.
 ├── bench/                     ← export-ignore: the measuring tooling, its README first
 ├── DEV_PROMPT_<P>.md          ← export-ignore: the dev's standing command
 ├── batches/                   ← export-ignore
-│   └── v<X.Y>/
+│   └── v<X.Y>/            ← or <batch name>/ for a deliverable published by release (no version per batch)
 │       ├── BRIEF.md           ← the PL, a single commit on the batch's branch
 │       ├── ADDENDUM_<n>.md    ← the PL, to lift a stop or a gap, before hand-over
 │       ├── STOP_<n>.md        ← the dev, before stopping
@@ -81,10 +81,11 @@ batch/vX.Y ●─ BRIEF ─ … work … ─ DELIVERY ─ REPORT
 ```
 
 1. **The PL creates `batch/v<X.Y>` from the head of `main`** and pushes **a single commit** to it:
-   `batches/v<X.Y>/BRIEF.md` (and its mock-up if there is one). The brief names the base commit (the head of `main`).
-2. **The PL launches the dev as a sub-agent** (`templates/DEV_COMMAND.md`): model and effort from the brief, clone in a
+   `batches/v<X.Y>/BRIEF.md` (and its mock-up if there is one). The brief names the base commit (the head of `main`). *A deliverable published by release has no version per batch: the
+   branch is `batch/<batch name>` and the folder `batches/<batch name>/`.*
+2. **The PL launches the dev as a sub-agent** ([`templates/DEV_COMMAND.md`](templates/DEV_COMMAND.md)): model and effort from the brief, clone in a
    separate folder (`/home/claude/dev_<batch>/`, never at the paths of the PL's copies), nothing else in context; the
-   standing conditions are in the dev prompt, and **the dev talks only to the PL**. *Fallback: a line you paste into a new
+   standing conditions are in the dev prompt, and **the dev talks only to the PL**; **it pushes its branch at every step**. *Fallback: a line you paste into a new
    conversation.*
 3. **A stop**: the dev pushes its branch with `STOP_<n>.md` and stops. The PL reads it, pushes `ADDENDUM_<n>.md` on the
    same branch, relaunches the dev by message. **A mock-up requested from the dev goes through a stop**: it pushes the
@@ -95,12 +96,12 @@ batch/vX.Y ●─ BRIEF ─ … work … ─ DELIVERY ─ REPORT
 5. **The acceptance**: the PL redoes `git archive` of the delivery commit, re-measures cold, rereads the diff, looks at
    the renders. It hands you the deliverable under its exact name, with its sha256.
 6. **After your validation in production**: `git push origin batch/v<X.Y>:main` — **fast-forward, never `--force`**.
-   Then the close-out of the living docs, a commit “Batch v<X.Y> closed” in the living-docs repository, the mirror in
-   the project. *(A deliverable published by release has neither a version nor a validation in production per batch: the
+   Then the close-out of the living docs, a commit “Batch v<X.Y> closed” in the living-docs repository ⟨, the mirror in
+   the project⟩. *(A deliverable published by release has neither a version nor a validation in production per batch: the
    merge follows the acceptance, and the release is made at your request.)*
 
 **One delivery = one new number** (a deliverable deployed per batch; a deliverable published by release carries no
-version per batch): a fix or trial feedback after a hand-over makes a batch of the next version, on its
+version per batch): a fix or trial feedback after a hand-over makes a batch of the next version (the rule and its reason: [`templates/METHOD.md`](templates/METHOD.md) §1a), on its
 own branch started from the batch's branch, one commit and one report each. An addendum under the same version only
 serves while nothing has been handed over or deployed.
 
@@ -112,13 +113,13 @@ serves while nothing has been handed over or deployed.
 - `git pull` before writing, `git fetch origin main` before pushing.
 - It edits by targeted replacements; **a document's version is in its header, the history in git**; file
   names stay stable.
-- **A single PL, independent modules, or linked modules with a coordinator**: `GUIDE.md` §2a says what applies in
+- **A single PL, independent modules, or linked modules with a coordinator**: [`GUIDE.md`](GUIDE.md) §2a says what applies in
   each case.
 - **Several PLs can share the living docs**, one per domain (method §1a): each its own checkpoint and baton; decision
   log, plan and workstreams append-only; a decision number is reserved by a push; a deliverable has a single batch in flight, its
   version is computed when the batch takes it (deployed per batch) or does not exist per batch (released: method §1a); `pull` before every write, a
   conflict shows at the `pull` instead of being overwritten.
-- **The mirror in the project**: at every close-out, each modified file is copied over with the project tool by sending
+- **The mirror in the project** (an extension, `CORE.md` §6: when a conversation without a clone must read the living docs): at every close-out, each modified file is copied over with the project tool by sending
   the file from the clone (`project_write` with `local_path`), under the same name. **Never from the text the project
   tool returns**: it returns everything as text, with no byte-exact proof. A GitHub “Sync now” of the project is not
   automatic — the mirror by the PL spares you that action.
@@ -139,9 +140,10 @@ serves while nothing has been handed over or deployed.
 | **Single-branch clone** | `git fetch origin main` does not create `origin/main` | write `git fetch origin main:refs/remotes/origin/main` |
 | **Batch branch tracking `origin/main`** | the end-of-turn hook believes there are unpushed commits | set `branch.<batch>.merge` and add the branch to `remote.origin.fetch` |
 | **Attribution lines** | the session imposes its lines in the commits | on a public repository, they show: be aware of it |
-| **Secrets** | a pushed `.env` is published forever | only `.env.example` holds values, dummy ones; check before the first push |
+| **Secrets** | a pushed `.env` is published forever | only `.env.example` holds values, dummy ones; check before the first push; **turn on secret protection at push** (an account setting) |
+| **`main` without protection** | a force-push or a deletion of `main` is possible | **a branch rule** that blocks both. *On a free account, GitHub does not apply branch rules to private repositories: public repositories can be protected; private ones keep the written rule (the dev pushes only its branch).* |
 | **`dist/` folder ignored but tracked** | `git add` does not pick it up | `git add -f` |
-| **HTTP 413 rejection on push** | push of a copy that is not up to date | `git fetch origin main` before pushing |
+| **HTTP 413 rejection on push** | a push from a shallow clone that has not run `fetch` sends the whole tree, which the proxy refuses for its size (it is not a fast-forward refusal) | `git fetch origin main` before pushing |
 | **Case of the repository name** | the session clones in lowercase | both work; the canonical address is the one from creation |
 
 ---
@@ -197,7 +199,7 @@ separately.
 
 *And in a public repository, in addition: the dev prompt and `batches/` (§6 B).*
 
-- secrets, tokens, passwords, real `.env` files;
+- secrets, tokens, passwords, real `.env` files (the account's secret protection at push catches some, not all);
 - production data (logs, dumps, exports): they are uploaded into the session that needs them;
 - images for you to validate: they go through the conversation (or into `batches/<version>/mock-up/` when the
   brief orders them).

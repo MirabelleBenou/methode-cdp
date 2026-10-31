@@ -11,10 +11,12 @@
 # qu'il touche. Une table en retard fait un écart au contrôle 9.
 # LA COORDINATION A SON ENTRÉE, comme un domaine : elle a une file comme les autres.
 #
-# Même forme pauvre que chantiers.yaml (pas du YAML standard) : une entrée commence par « - domaine: », chaque clé tient
-# sur UNE ligne « clé: valeur », les lignes vides et celles qui commencent par « # » sont ignorées. Pas de commentaire en
-# fin de ligne : il serait lu comme une partie de la valeur. Chemins relatifs à la racine du dépôt des vivants
-# (ou au dossier de --racine).
+# Même forme pauvre que chantiers.yaml, et du YAML valide comme lui (contrôle 11 du vérificateur) : une entrée commence
+# par « - domaine: », chaque clé tient sur UNE ligne « clé: valeur », les lignes vides et celles qui commencent par « # »
+# sont ignorées. Pas de commentaire en fin de ligne : il serait lu comme une partie de la valeur. Une valeur qui contient
+# « : » suivi d'une espace, ou qui commence par un caractère spécial (c'est le cas de « file: » : il commence par « # »),
+# s'écrit entre guillemets doubles — « archiver_chantiers.py normaliser --chantiers <chantiers.yaml> --domaines <ce
+# fichier> » met la table au format. Chemins relatifs à la racine du dépôt des vivants (ou au dossier de --racine).
 #
 #   domaine   : le nom court du domaine (obligatoire)
 #   cdp       : le nom du CdP du domaine ; une entrée de chantiers.yaml qui porte ce `cdp:` est à lui
@@ -34,18 +36,18 @@
 - domaine: <domaine-1>
   cdp: Opus-CdP-<Domaine-1>
   checkpoint: <Dossier>/CHECKPOINT_<DOMAINE-1>.md
-  file: ## §3 · La file
+  file: "## §3 · La file"
   modules: <module-1>
 
 - domaine: <domaine-2>
   cdp: Opus-CdP-<Domaine-2>
   checkpoint: <Dossier>/CHECKPOINT_<DOMAINE-2>.md
-  file: ## §3 · La file
+  file: "## §3 · La file"
   modules: <module-2> <module-3>
   prefixes: <préfixe->
 
 - domaine: coordination
   cdp: Opus-Coordination
   checkpoint: Methode/CHECKPOINT_METHODE.md
-  file: ## §3 · La file
+  file: "## §3 · La file"
   modules: methode

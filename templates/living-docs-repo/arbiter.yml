@@ -1,0 +1,115 @@
+# The living-docs arbiter, as a scheduled GitHub Action — TEMPLATE to copy.
+#
+# Copy it to `.github/workflows/arbiter.yml` in the living-docs repository (not in the package's), then adapt: the
+# paths in the `env:` block below (one variable per path, relative to the repository root), and nothing else.
+# When copying, replace `Folder` by the living-docs folder (the one of `workstreams.yaml`) in each path that carries it.
+# The script `arbiter.py` is copied, with the checker, the archiver and the generator, into that same folder
+# `<Folder>/`, the one that SCRIPT names (templates/arbiter.py of the package; it finds the other three next to it).
+#
+# What it does, every day at 5:42 UTC (or by hand: "Run workflow"):
+#   1. it fetches the repository (300 commits: the baton measure reads the history);
+#   2. it runs `arbiter.py`: normalize, check, file one workstream per new gap, measure the batons and the late
+#      checkpoint, archive, regenerate the board, append a line to the arbiter's log;
+#   3. if files changed, A SINGLE commit "Arbiter <date>: …" (the message is the script's), pushed after a
+#      `git pull --rebase`, with one single new attempt if the push is rejected;
+#   4. it puts the script's summary in the run's page, then FAILS if the script returned code 1 (at least one new
+#      workstream) or 2 (a file is missing, a script fails): GitHub then notifies the owner.
+# No model token, no secret: the only right asked is to write to the repository (`contents: write`).
+name: arbiter
+
+on:
+  schedule:
+    - cron: "42 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: arbiter
+  cancel-in-progress: false
+
+env:
+  SCRIPT: Folder/arbiter.py
+  WORKSTREAMS: Folder/workstreams.yaml
+  LOG: Folder/DECISION_LOG.md
+  ARCHIVES: Folder/Archives
+  DOMAINS: Method/domains.yaml
+  ARBITER_LOG: Method/ARBITER_LOG.md
+  # Optional: an empty variable removes the option.
+  BOARD: Folder/workstreams.html
+  GENERATOR: Folder/make_board.py
+  PLAN_LOG: Folder/PLAN.md
+  METHOD: Method/METHOD.md
+  SHEET: ""
+
+jobs:
+  arbiter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 300
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: The arbiter's run
+        id: run
+        shell: bash
+        run: |
+          args=(--workstreams "$WORKSTREAMS" --log "$LOG" --archives "$ARCHIVES"
+                --domains "$DOMAINS" --arbiter-log "$ARBITER_LOG")
+          if [ -n "$BOARD" ] && [ -n "$GENERATOR" ]; then args+=(--board "$BOARD" --generator "$GENERATOR"); fi
+          if [ -n "$PLAN_LOG" ]; then args+=(--plan "$PLAN_LOG"); fi
+          if [ -n "$METHOD" ]; then args+=(--method "$METHOD"); fi
+          if [ -n "$SHEET" ]; then args+=(--sheet "$SHEET"); fi
+          code=0
+          python3 -B "$SCRIPT" "${args[@]}" > "$RUNNER_TEMP/arbiter.txt" 2>&1 || code=$?
+          cat "$RUNNER_TEMP/arbiter.txt"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+
+      - name: Commit and push
+        shell: bash
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "Nothing changed: no commit."
+            exit 0
+          fi
+          message="$(sed -n 's/^Commit: //p' "$RUNNER_TEMP/arbiter.txt" | tail -n 1)"
+          if [ -z "$message" ]; then message="Arbiter $(date -u +%F)"; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "$message"
+          pushed=0
+          git pull --rebase origin "$GITHUB_REF_NAME" && git push origin "HEAD:$GITHUB_REF_NAME" && pushed=1
+          if [ "$pushed" -eq 0 ]; then
+            echo "Push rejected: one single new attempt."
+            git rebase --abort 2>/dev/null || true
+            sleep 5
+            git pull --rebase origin "$GITHUB_REF_NAME" && git push origin "HEAD:$GITHUB_REF_NAME" && pushed=1
+          fi
+          if [ "$pushed" -eq 0 ]; then
+            echo "::error::The push was rejected twice: nothing is forced."
+            exit 1
+          fi
+
+      - name: Summary, and failure if the script returned 1 or 2
+        if: always()
+        shell: bash
+        env:
+          CODE: ${{ steps.run.outputs.code }}
+        run: |
+          {
+            echo '### Living-docs arbiter'
+            echo '```'
+            cat "$RUNNER_TEMP/arbiter.txt" 2>/dev/null || echo "(no output)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "${CODE:-2}" != "0" ]; then
+            echo "::error::The arbiter returned code ${CODE:-2} (1: new workstream; 2: check impossible)."
+            exit 1
+          fi

@@ -11,11 +11,11 @@ derniers caractères de l'identifiant de la session, celui de la ligne d'attribu
 > demandé en toutes lettres, et la ligne collée vaut cette demande.*
 ### <date, heure> · <session de CdP> · point d'entrée de la session suivante · remplace le checkpoint du <date>
 
-> *Source : dépôt privé `<owner>/<Projet>`, `<Dossier>/CHECKPOINT_<P>.md`. Le projet claude.ai en porte un miroir sous
-> le même nom, recopié par le CdP.*
+> *Source : dépôt privé `<owner>/<Projet>`, `<Dossier>/CHECKPOINT_<P>.md`. ⟨Avec l'extension du miroir : le projet
+> claude.ai en porte un miroir sous le même nom, recopié par le CdP.⟩*
 >
-> *Le checkpoint dit l'état **réel**, mesuré — pas l'état espéré. Il se réécrit en entier à chaque passation. **Il tient
-> en 10 Ko** (10 240 octets) : la ligne fixe, le témoin, l'état, la file, ce qu'il faut pour reprendre ; l'historique part
+> *Le checkpoint dit l'état **réel**, mesuré — pas l'état espéré. **Son §0 se rafraîchit à chaque lot clos** ; la
+> passation ne réécrit plus qu'un état déjà à jour. **Il tient sous le plafond de la méthode §6** : la ligne fixe, le témoin, l'état, la file, ce qu'il faut pour reprendre ; l'historique part
 > à une archive du domaine (`<Dossier>/Archives/CHECKPOINT_<DOMAINE>_ARCHIVE_<date>.md`). Le contrôle 10 du vérificateur
 > le signale.*
 
@@ -25,7 +25,8 @@ derniers caractères de l'identifiant de la session, celui de la ligne d'attribu
 
 - **<Projet> est au `v<X.Y>`.** Empreinte du code `<…>` ; rituel rejoué le <date> : conforme, `<n> passed`.
 - **Le dépôt de code** : `main` au `<sha>` ; l'archive de déploiement est `git archive` de `main`.
-- **Depuis le checkpoint précédent** : <les lots livrés, en une ligne chacun, avec leur version et leur R>.
+- **Depuis le checkpoint précédent** : <les lots clos, cités par leur version (ou leur nom) et leur R ; leur détail est au
+  journal des versions du plan, pas ici>.
 - **La méthode** est en v<n> (<ce qui a changé>).
 - **Le registre** : les numéros se réservent par un push au moment d'écrire (méthode §1 bis) — jamais d'après ce fichier.
 - **Dettes ouvertes** : `<id>` — une demi-ligne chacune (chaque dette a son chantier, cité par son id).
@@ -89,7 +90,7 @@ touche.*
 
 - **Ouverte** le <date heure>, **close** le <date heure>.
 - **Travail réalisé** : <…>.
-- **Contexte** : environ <n> jetons au dernier tour (cible : sous 450 000 ; passation à 550 000 au plus tard).
+- **Contexte** : environ <n> jetons au dernier tour (les seuils sont à la méthode §6).
 - **Signes de saturation vus** : <pertes de fil, contradictions, une décision oubliée — ou « aucun »> (ils servent à
   recalibrer le seuil sur des mesures).
 - **Premiers postes** : <…>.
@@ -99,9 +100,10 @@ touche.*
 ## §6 · Les documents
 
 **Au dépôt `<Projet>`** (source) : <liste, avec leur version>.
-**Le tableau des chantiers** : `chantiers.html` (la page fixe) et `chantiers.json` (ses données), publiés ensemble en
-artefact à <lien> — à republier au même lien, les deux ensemble (méthode §6).
+⟨**Le tableau des chantiers**, avec cette extension : `chantiers.html` (la page fixe) et `chantiers.json` (ses données),
+publiés ensemble en artefact — le lien, un seul, est à la méthode §6 et au README des vivants ; à republier à la
+clôture, au même lien, les deux ensemble.⟩
 **Au dépôt `<Projet>-App`** : le code, `banc/` (v<n>), `PROMPT_DEV_<P>.md` (v<n>), `lots/…`.
-**Au projet, en miroir** : <liste>.
+⟨**Au projet, en miroir**, avec cette extension : <liste>.⟩
 **Au projet, écrits une fois** : <liste>.
 **Rien à téléverser à la session suivante** : elle reprend par la ligne fixe, en tête de ce fichier.

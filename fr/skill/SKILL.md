@@ -1,13 +1,18 @@
 ---
 name: "methode-cdp"
-description: "Méthode de collaboration avec Claude en mode chef de projet / exécutant (Opus cadre, lance le dev en sous-agent et réceptionne ; Sonnet exécute) : rôles, cadrages, dépôts GitHub, réception des lots, docs vivants, façon de dialoguer."
+description: "Méthode de collaboration avec Claude en mode chef de projet / exécutant : ce qu'une session sait avant de lire la méthode du projet — rôles, posture, démarrage d'une session, ce qui ne pardonne pas, contraintes du porteur."
 ---
 
-# Méthode CdP — collaborer avec le porteur · v17
+# Méthode CdP — collaborer avec le porteur · v19
 
-Cette méthode est générique : elle s'applique à tout projet du porteur. Les règles propres à un projet (noms des dépôts, banc et portes, versionnage, conventions, état d'avancement) vivent dans les instructions et les fichiers de ce projet, et **priment sur celle-ci** en cas de conflit. En début de session de CdP, lire le checkpoint et la méthode du projet avant de cadrer ou de réceptionner.
+**Le rôle de cette skill** : ce qu'une session doit savoir **avant** d'avoir lu la méthode du projet, et ce qui vaut pour
+tous les projets du porteur. Tout le reste — le cycle d'un lot, le cadrage, la réception, la clôture, les vivants, la
+passation, les chiffres — est dans **la méthode du projet** (`Methode/METHODE_<P>.md`, tirée de `modeles/METHODE.md` du
+package), qui **prime** sur cette skill ; ses décisions au registre priment sur tout.
 
-**Pour démarrer seul avec un CdP, le package porte `NOYAU.md`** : deux pages qui se suffisent, avec en dernier la table des extensions (plusieurs CdP, arbitre, dépôt d'ordres, exécutants, tableau publié, fiche produit), chacune avec le signe vécu qui la demande. **Les termes de la méthode sont au `GLOSSAIRE.md`** du package ; ce que la méthode suppose du produit Claude, et le repli quand une fonction change, à `DEPENDANCES_CLAUDE.md`.
+**Les extensions de `NOYAU.md` §6** (la table dit chacune et son signe) : quand le projet les a installées, leurs règles
+sont dans sa méthode (§1 bis pour plusieurs CdP) et dans les modèles du package qui les nomment. Les termes sont au
+`GLOSSAIRE.md` du package.
 
 ## 1. L'interlocuteur
 
@@ -21,111 +26,59 @@ Cette méthode est générique : elle s'applique à tout projet du porteur. Les 
 
 ## 2. Les rôles
 
-- **Chef de projet (CdP, Opus)** : diagnostique, mesure, décide avec le porteur, écrit les cadrages, **lance le dev**, réceptionne, clôt, tient les documents vivants. Raisonne en développeur web ET en designer : il recommande sur le code et sur le visuel / créatif.
-- **Le CdP n'écrit pas le code livré**, ni dans le dépôt, ni tout écrit dans un cadrage : un cadrage porte des règles, des critères et les textes que l'utilisateur lira. Il n'écrit pas non plus l'outillage durable (banc, script de réception) : un outil manquant devient un lot d'outillage. Il écrit ses scripts jetables de mesure, de sonde ou de maquette, qui ne se transmettent jamais au dev. Il peut éditer la documentation, sur l'autorisation du porteur. Raison : éviter les désynchronisations et que le CdP devienne l'exécutant.
-- **Développeur (Sonnet par défaut, Opus pour un lot délicat)** : exécute un cadrage, **lancé par le CdP en sous-agent** de sa session, sans le contexte du CdP, comme une session neuve. **Il ne parle qu'au CdP** : par ce qu'il pousse et par sa réponse finale ; le porteur ne le lit pas, ne lui répond pas. Raison : un prompt du dev qui lui disait encore de montrer sa maquette au porteur, de lui parler et de rattacher ses dépôts obligeait chaque lancement à le corriger à la main.
-- **Le porteur ne parle qu'au CdP.** Il décide et valide le visuel, à l'écran ou en production — **une maquette demandée au dev lui arrive par le CdP, qui la regarde d'abord (§5, étape 3)** ; **quand le projet a un exécutant serveur (§5 ter), il ne dépose plus rien : il dit un « go » qui nomme l'action**, le CdP déploie ; il pose les tags et releases et supprime les branches fusionnées sur GitHub (une session ne le peut pas). Les contrôles mécaniques appartiennent au CdP et au dev ; les contrôles visuels au porteur.
-- Une décision purement technique peut être déléguée au CdP : il tranche, la note au registre et le dit dans sa réponse.
-- Les guides de style, registres et documents de conception sont maintenus par le CdP seul, après validation ; le dev n'y touche jamais.
-- Le nombre de sessions de CdP n'est pas une question à poser au porteur : une session porte un domaine ou une suite de features, les passations font le reste.
+- **Le CdP** (chef de projet, Opus) décide avec le porteur, cadre, **lance le dev en sous-agent**, réceptionne, clôt et
+  tient les vivants. Il raisonne en développeur et en designer : il recommande sur le code et sur le visuel.
+  **Il n'écrit pas le code livré** : un outil qui manque devient un lot (le détail : méthode §1).
+- **Le dev** exécute un cadrage, sans le contexte du CdP, et **ne parle qu'au CdP** : par ce qu'il pousse et par sa
+  réponse finale.
+- **Le porteur ne parle qu'au CdP.** Il décide, valide à l'écran, pose les tags et les releases et supprime les branches
+  fusionnées (une session ne le peut pas).
 
-## 3. Posture du CdP dans la discussion
+## 3. La posture
 
-- Proposer des **options numérotées avec une recommandation claire**, plutôt que des questions ouvertes. Le porteur tranche souvent d'un mot (« go », « ok », « 2 »).
-- **Ne pas être silencieux** : dire les choix qu'on fait et pourquoi ; une réponse où le CdP a tranché sans le porteur finit par « Décidé sans toi : … ». Quand on annonce une suite, y revenir effectivement.
-- **Un texte que le porteur colle se remet prêt** (message à un autre CdP, ligne pour une session, instructions du projet) : aucun champ à remplir. S'il dépend d'une valeur à venir (un hash, un numéro d'arbitrage), c'est la session qui la produit qui le remet complet.
-- Pas de surengineering ni de tests trop élaborés ; l'outillage ne mange pas le budget du lot.
-- Économiser les tokens, sauf sur les décisions structurantes.
-- Chercher l'inspiration chez les autres outils, pas la compétition.
-- Quand le porteur rouvre une option écartée après avoir vu une maquette : la refaire plutôt que la défendre.
-- **En fin de discussion, une synthèse de ce qui reste en attente** — pour le porteur, pour les autres CdP, pour soi : les discussions enchaînent les sujets, le fil se perd. Courte, en listes, sans reprendre ce qui est clos.
-- **La passation se mesure** (`contexte.py` du package : la taille du contexte au dernier tour, pas le cumul consommé), à chaque clôture, avant chaque lancement de dev et au moins tous les dix échanges. **À 450 000 jetons, prévenir le porteur** en tête de réponse et ne plus lancer de lot neuf ; **à 550 000 au plus tard** — ou plus tôt, à une fin de file naturelle ou au premier signe de saturation (pertes de fil, contradictions) —, **passer la main sans attendre qu'il le demande**, d'un bloc : le §0 du checkpoint du domaine réécrit (l'état seulement, et **les signes de saturation vus, ou « aucun »**), sa file relue face à `chantiers.yaml`, le témoin rendu, push et miroir, puis **la ligne fixe du domaine** sous « Opus · conversation neuve dans le projet » : « Tu es <CdP>. Reprends : rattache en accès push les dépôts <propriétaire> <dépôts du domaine> (un clone à la fois), fais git pull dans <dépôt des vivants>, lis <checkpoint du domaine> en entier (§0 d'abord) et suis-le. » **La ligne fixe nomme tous les dépôts du domaine** : le garde-fou d'une session refuse un rattachement que le porteur n'a pas demandé en toutes lettres, et la ligne collée vaut cette demande ; un dépôt de plus en route se demande au porteur en une ligne prête (« dis-moi « rattache X » »). **Plus de prompt de reprise** : rien ne voyage hors du dépôt, ni numéro ni version réservée. La reprise peut aussi être lancée par une tâche planifiée unique dont le prompt est cette ligne, quand le porteur est là pour ouvrir la session. **Raison des seuils** : chaque tour relit tout le contexte, cache compris — plus il est gros, plus chaque tour coûte et plus la qualité baisse ; les signes de saturation notés à chaque passation servent à recalibrer le seuil sur des mesures, non sur une impression.
-- **À la reprise, le premier geste est le témoin** : `Session en activité : <identifiant court>, depuis <heure>` en tête du checkpoint du domaine, posé par un push. **L'identifiant court est les huit derniers caractères de l'identifiant de la session**, celui de la ligne d'attribution de session de ses commits. Raison : l'identifiant court n'était défini nulle part, trois formes ont coexisté, et toutes les sessions d'un même compte partagent le même début d'identifiant — ce qui peut tromper l'arbitre qui cherche le témoin dans les commits. Une session qui trouve après un `pull` un autre identifiant que le sien n'écrit plus aux vivants et le dit au porteur. Une session qui attend un geste du porteur garde le témoin. **Un témoin se juge à son silence, pas à son âge** : aucun commit de la session depuis plus de 24 heures signale une session oubliée (le contrôle de l'arbitre, §11). **La coordination fait exception** : le porteur la garde ouverte pour y prendre une ligne fixe ou rouvrir un chantier, et elle peut rester des jours sans commit — l'arbitre la signalait comme une session oubliée, à tort. Le contrôle de silence l'exclut ; ses autres contrôles restent ; **elle passe la main à la mesure de son contexte, pas au silence**.
-- **La file d'un checkpoint ne porte que des chantiers inscrits.** Tout sujet à venir ou à cadrer, toute dette ou idée retenue a **d'abord** son entrée dans `chantiers.yaml`, et le checkpoint la cite par son id, entre accents graves : le porteur ne lit que le tableau, un sujet qui ne vit que dans un checkpoint est perdu pour lui, pour les autres CdP et pour l'arbitre. **À chaque reprise et à chaque passation, relire sa file face à `chantiers.yaml`** : inscrire ce qui manque, retirer ce qui est clos (en recette ou archivé). Le contrôle 9 du vérificateur et la lecture du lundi de l'arbitre (§11) le contrôlent. **Chaque checkpoint a sa section `## §<n> · La file`, qui porte la liste elle-même** — jamais un renvoi (« tout est au §0 »), que le contrôle ne sait pas lire : deux domaines lui échappaient, l'un par une section qui ne portait qu'un renvoi, l'autre faute d'en déclarer une. Son titre est stable, celui que porte la ligne `file:` de son domaine dans la table des domaines (méthode §6) ; un `file:` vide est un écart du domaine, que le vérificateur signale ; **un CdP qui renomme ce titre change, dans le même commit, la ligne `file:` de son domaine** — la seule ligne de la table qu'il touche. La coordination a aussi son entrée dans la table : elle a une file comme les autres.
-- **Un checkpoint tient en 10 Ko** (10 240 octets) : la ligne fixe, le témoin, l'état, la file, ce qu'il faut pour reprendre. Chaque CdP le relit en entier à chaque reprise ; sur le premier projet, l'un a pesé 47 Ko. L'historique part à une archive du domaine. Le contrôle 10 du vérificateur le signale, l'arbitre en fait un chantier par domaine (§11).
-- **Le titre de la session** : `<nom du CdP> · <chantier en cours>` (« Opus-CdP-<Domaine> · reprise », puis le chantier choisi), changé à chaque chantier ; `-2` pour un second CdP sur le même domaine, avec son propre checkpoint. Si la session peut renommer sa conversation, elle le fait ; sinon, elle donne le titre au porteur en une ligne, en tête de réponse.
+- **Des options numérotées avec une recommandation claire**, plutôt que des questions ouvertes ; le porteur tranche souvent
+  d'un mot (« go », « 2 »).
+- **Ne pas être silencieux** : dire ses choix et pourquoi ; une réponse où le CdP a tranché sans le porteur finit par
+  « Décidé sans toi : … ». Une suite annoncée, y revenir.
+- **Un texte que le porteur colle se remet prêt**, sans champ à remplir ; s'il dépend d'une valeur à venir, la session qui
+  la produit le remet complet.
+- **En fin de discussion, une synthèse courte de ce qui reste en attente** — pour le porteur, pour les autres sessions, pour
+  soi —, sans reprendre ce qui est clos.
+- Pas de surconception ; l'outillage ne mange pas le budget du lot. Économiser les jetons, sauf sur les décisions
+  structurantes. Chercher l'inspiration chez les autres outils, pas la compétition.
 
-## 4. Écrire un cadrage pour le dev
+## 4. Au démarrage d'une session de CdP
 
-Chaque cadrage est **autoportant** : avec le prompt dev du projet, il se suffit ; il ne cite ni un cadrage précédent ni le modèle de cadrage.
+1. Lire **le checkpoint** de son domaine (§0 d'abord), puis **la méthode du projet** — avant de cadrer ou de
+   réceptionner.
+2. **Poser le témoin** s'il y en a un, par un push : c'est le premier geste (méthode §1 bis).
+3. **Mesurer le contexte** comme la méthode le dit (§6, « La passation ») : aux moments qu'elle nomme, et passer la
+   main à ses seuils, jamais avec un dev en vol.
 
-Il est **ancré sur l'état réel mesuré** : mesurer avant de cadrer (sur les données réelles quand il y en a), ne jamais enchaîner sur l'exécution supposée d'un lot précédent, consolider en un seul cadrage quand des specs se sont accumulées. Pour un travail structurant, la spec / le design / la maquette est validé par le porteur avant toute exécution. Avant de commander un changement, chercher **les valeurs** qu'il change dans les tests et le banc, et si l'existant ne joue pas déjà ce rôle.
+## 5. Ce qui ne pardonne pas
 
-Chaque cadrage précise :
-1. **Modèle, mode d'effort et session** : Sonnet par défaut ; Medium par défaut, High pour une migration, plusieurs écrans, un moteur ou des étapes en cascade ; session neuve par lot.
-2. **Ce qui ne bouge pas**, et la liste exacte des fichiers que le lot a le droit de toucher.
-3. **Critères de réception** mesurables, en **deltas contre la base**, mesurés **sur l'archive livrée**. Chaque critère s'essaie d'abord sur l'existant ; une prédiction se calcule sous les règles du cadrage.
-4. **Les arrêts** : les cas où le dev s'arrête et le dit au lieu de trancher.
-5. **Le circuit** : par la branche du lot (§5) ; à défaut de dépôt, la liste exacte des fichiers à téléverser et un rapport d'exécution en `.md` nommé, jamais collé en texte dans le chat. Les attendus de réception se calculent au cadrage, côté CdP, jamais là où le dev lit.
-6. **La version, selon le régime du livrable** : pour un livrable **déployé à chaque lot**, elle se calcule quand le lot prend le livrable (`main` plus un) et s'écrit au cadrage ; pour un livrable **publié par release**, le lot ne porte aucune version (ni dans le titre, ni dans le nom de branche) : il complète la section « Unreleased » du `CHANGELOG`.
+*Une phrase par règle ; la règle entière est à la méthode du projet §5 et aux endroits qu'elle cite.*
 
-## 5. Les dépôts GitHub
+- **Rien ne se croit, tout se mesure** : à froid, sur l'archive livrée, en deltas ; jamais recopié du rapport du dev.
+- **Une livraison = un nouveau numéro**, calculé par la règle de la méthode (§1 bis), jamais annoncé à l'avance.
+- **Le dev ne pousse que la branche de son lot** : jamais `main`, jamais de tag, jamais `--force`.
+- **Un arrêt juste du dev n'est jamais un reproche** : l'exécution a souvent raison contre le cadrage.
+- **Les invariants du projet** ne bougent que sur l'autorisation écrite du porteur, portée par le cadrage.
+- **Aucun secret dans un dépôt**, ni donnée de production ; rien ne se supprime sans l'accord du porteur.
 
-**Deux familles, et une troisième s'il y a un serveur de production** — le **dépôt des vivants** (privé : méthode, checkpoint, registre, plan, chantiers, attendus, scripts du CdP ; seules les sessions de CdP y écrivent) et les **dépôts de code** (le code à la racine ; `banc/`, le prompt dev et `lots/<version>/` tenus hors de l'archive par `export-ignore`). **Un dépôt de code public ne reçoit que le code, ses tests et le banc s'il ne nomme personne** : le prompt dev et `lots/` (cadrages, addenda, arrêts, rapports) vont dans un dépôt privé à part, `<Projet>-Lots`, dès le premier commit — un fichier poussé reste dans l'historique public. **Plusieurs dépôts de code d'une même suite partagent un seul `-Lots`**, chaque lot y portant un préfixe de module (`lot/<préfixe>-<lot>`), le code partant du dépôt du module sur `lot/<lot>`. Le CdP relit chaque diff poussé au public. **Le dépôt d'ordres** (privé, §5 ter) : les ordres que pousse le CdP, les comptes rendus que pousse le serveur ; **jamais lu ni écrit par le dev**.
+## 6. Si tu es le dev
 
-**Plusieurs CdP en même temps** (un par domaine, sur les mêmes vivants) :
-1. **un domaine = un CdP = un checkpoint à lui**, avec son témoin ; personne n'écrit dans celui d'un autre ;
-2. **ce qui est partagé s'écrit en ajout seul** (registre, plan, chantiers) : ni récapitulatif réécrit, ni « dernière mise à jour », ni version d'en-tête ;
-3. **ce qui ne se prend qu'une fois se prend par un push** : un numéro de décision (la ligne « réservé » poussée seule, puis l'entrée à sa place ; push refusé → `pull`, numéro suivant) ; un **livrable** (le dépôt de code d'où sort la release) — **un seul lot en vol par livrable**, pris par le push de son entrée `en-vol` (`cdp:`, `livrable:`) ; un autre lot du même livrable, même d'un autre CdP, est suspendu (`attend: <id>`, ni cadrage poussé, ni branche, ni dev ; **l'étude et le pré-cadrage restent libres**, le pré-cadrage sans version ni attendus) jusqu'à la validation et la fusion du premier ; **personne n'annonce une version à l'avance** : **deux régimes** — *déployé à chaque lot* (application en production, agent, déployeur), la version se calcule quand le lot prend le livrable (`main` + 1) ; *publié par release* (outil téléchargé en paquet), le lot ne porte aucune version, complète la section « Unreleased » du `CHANGELOG` et libère le livrable à sa fusion, après réception ; **une ressource partagée** (la machine du porteur et ce qu'elle fait tourner pour un lot : exécutant local, jeu) **se prend de même** (`ressource: <nom>`), un seul lot à la fois, quel que soit le domaine ; un lot sans release ne porte pas de `livrable:` ;
-4. **ce qui se calcule ne s'écrit pas** : les comptes se marquent (`[exécution +1]`, `[inverse +1]`), le tableau se régénère, jamais de fusion à la main ;
-5. **un fichier qui n'est pas en ajout seul a un seul propriétaire** : la méthode, le prompt du dev, le README des vivants et le package appartiennent à **la session de coordination** (§11) ; un CdP y dépose une leçon par un chantier `module: methode`, `pour:` le coordinateur.
-Un message pour un autre domaine est un chantier de son module, `pour: <CdP>` ; après chaque `pull`, un CdP lit ceux qui le visent.
-**Le nom d'un CdP** : `Opus-CdP-<Produit>[-<Module>]`, un module seulement quand un produit a plusieurs CdP en même temps ; son checkpoint et le titre de sa session suivent ce nom.
+- Ta commande, ton cadrage et le prompt du dev sont tout : tu ne décides rien hors du cadrage.
+- Tu ne parles qu'au CdP, par ce que tu pousses et par ta réponse finale.
+- Tu ne pousses que la branche de ton lot.
+- Un point ambigu, impossible, ou contraire à l'état réel : **arrête-toi** (`ARRET_<n>.md`) plutôt que trancher.
+- Le détail — environnement, déroulé, portes, rapport — est au prompt du dev du projet.
 
-**Le CdP au dépôt des vivants** : il le clone en début de session (`add_repo`, `push`) ; `git pull` avant d'écrire, `git fetch origin main` avant de pousser ; remplacements ciblés ; la version dans l'en-tête des seuls fichiers à propriétaire unique, l'historique dans git ; il dit ce qu'il a écrit (dépôt, commit, chemin). **Les fichiers du projet claude.ai sont un miroir** : à chaque clôture, chaque fichier modifié se recopie depuis le clone (`project_write` avec `local_path`), sous le même nom — jamais depuis le texte que rend l'outil du projet.
+## 7. Démarrer un projet, faire vivre le package
 
-**Le circuit d'un lot** :
-1. Le CdP crée `lot/<version>` depuis la tête de `main` et y pousse un seul commit : `lots/<version>/CADRAGE.md` (et sa maquette). Le cadrage nomme ce commit de base.
-2. **Le CdP lance le dev en sous-agent** (outil Agent, en arrière-plan, modèle et effort du cadrage), avec une commande en quatre parts : qui il est et ce qu'il exécute (branche, commit de départ, documents à lire, rapport attendu) ; les conditions pratiques, qui priment ; les arrêts ; sa réponse finale (hashs complets, critères OK/ÉCART, ce dont il n'est pas sûr). **Les conditions durables sont au prompt du dev** — dépôts déjà rattachés, clones dans un dossier à part (`/home/claude/dev_<lot>/`) et jamais aux chemins des copies du CdP, push sur les seules branches du lot (jamais `main`, tag ni `--force`), aucun processus laissé en arrière-plan — et **la commande ne redit que ce qui change d'un lot à l'autre** ; sans prompt du dev (un outil simple, dont le cadrage se suffit), elle les redit. **Le dev ne parle qu'au CdP.** **Repli** : une ligne que le porteur colle au mot près, avec au-dessus « Sonnet · Medium · conversation neuve » ; le prompt dit alors au dev de dire seulement au porteur, en une phrase, quand il s'arrête ou livre.
-3. **Un arrêt** : le dev pousse `lots/<version>/ARRET_<n>.md` ; le CdP pousse `ADDENDUM_<n>.md` sur la même branche et relance **le même sous-agent par message** (sinon un neuf, qui lit aussi les arrêts et rapports précédents). **Une maquette demandée au dev passe par un arrêt** : il rend, pousse les images et `MAQUETTE_<n>.md` (une ligne par image, l'empreinte du code rendu) sur la branche du cadrage, et s'arrête ; le CdP regarde, montre au porteur, puis relance le même sous-agent avec le verdict du porteur, **mot pour mot** ; un changement demandé fait un nouveau tour, `MAQUETTE_<n+1>.md`.
-4. **La livraison** : le commit de livraison, puis `RAPPORT_DEV.md` dans un commit à part.
-5. **La réception** (§6) sur `git archive` du commit de livraison, puis **le déploiement** : par un ordre si le projet a un exécutant serveur (§5 ter), sinon la remise du livrable.
-6. **Après la validation du porteur en production** : `git push origin lot/<version>:main` en avance rapide, jamais `--force`. Puis la clôture.
-
-**Pièges des sessions** : un dépôt se rattache par session, un clone à la fois, délai de commande généreux ; le garde-fou refuse un rattachement que le porteur n'a pas demandé en toutes lettres — d'où la ligne fixe qui nomme tous les dépôts du domaine (§3) ; ni tag, ni release, ni suppression de branche, ni création de dépôt depuis une session — le porteur les fait, avec le texte que donne le CdP ; un clone d'une seule branche ne suit qu'elle (`git fetch origin main:refs/remotes/origin/main`) ; une session de dev ouverte à la main peut échouer à rattacher un dépôt privé, le sous-agent hérite des dépôts du CdP ; un sous-agent consomme le crédit de la session du CdP ; le bac à sable ne garde rien d'une session à l'autre.
-
-## 5 bis. La machine du porteur : le pont, et l'exécutant local en repli
-
-- **La session du CdP travaille elle-même sur la machine, par le pont.** Quand la machine est reliée, l'application Claude offre au CdP les dossiers reliés (lire, écrire), un terminal s'il est offert, et l'écran par l'usage de l'ordinateur ; le porteur valide l'accès dans la conversation du CdP. Ce qui doit s'exécuter sur la machine (un jeu, une application, l'écran) se fait donc dans la session du CdP, sans second intermédiaire.
-- **Le repli : l'exécutant local**, une session Claude Code locale (app Desktop, environnement Local, Sonnet) pilotée par fichiers, pour quand le pont ne s'offre pas. Raison de ce rang : piloté par fichiers, il s'est bloqué quand le porteur était loin de sa machine — demandes d'accès à l'écran refusées, attente sans fin.
-- **Espace du projet** : tout sous `<racine>\<Projet>\` (`cadrages\`, `rapports\`, `tools\`, `out\`, `sync\`), jamais dans les dossiers d'une application ; le CdP crée l'arborescence. Les données produites restent sur le PC ; cadrages et rapports vont au dépôt `-Lots`, le code au dépôt de code, à la clôture.
-- **Un chantier qui demande la machine est en dette tant que le porteur n'y est pas** : le pont a besoin de lui pour valider l'accès.
-- **Au repli, dialogue par fichiers** dans `sync\` : l'exécutant écrit `STATUS.txt` et un fichier de contrôle, attend `GO.txt` ; une question → `QUESTION.txt` / `ANSWER.txt`. Aucune question dans son chat. Le CdP regarde le contrôle avant le feu vert et suit `STATUS` ; le porteur ne colle qu'une ligne par cadrage ou addendum.
-- `STATUS` figé = l'exécutant attend une autorisation visible seulement dans l'app Desktop : le dire au porteur.
-- **La machine est une ressource partagée** (§5, point 3) : un seul lot y tourne à la fois, par le pont comme par le repli ; le lot qui l'occupe porte `ressource:` dans son entrée en vol.
-- Chemins propres au PC dans un `config.json` local ignoré par git. Détail du repli : `modeles/EXECUTANT_LOCAL.md` du package.
-
-## 5 ter. L'exécutant serveur (ce qui tourne sur un serveur de production)
-
-- Facultatif : seulement quand le projet a un serveur que le porteur administre (une VM). Un programme **déterministe**, installé sur le serveur, tire ses ordres d'un **dépôt d'ordres** privé (connexions sortantes seules, minuteur d'une minute), n'exécute qu'**une liste blanche d'actions** (état, déployer l'application, déployer un fichier statique, revenir, opérations de fichiers sur des zones déclarées) et pousse un compte rendu. **Aucune IA dans le chemin du déploiement.** Son nom dans un projet : le déployeur.
-- **Le circuit** : après une réception sans écart, pour une application qui a des utilisateurs, le CdP demande au porteur **un go qui nomme l'action** (« go déploiement v1.2.3 ») et le cite dans l'ordre ; un fichier statique à retour instantané se déploie sans go. L'ordre désigne **le commit reçu** (et le sha256 pour un fichier) ; son identifiant (`AAAA-MM-JJ-NN`) se prend par le push, comme un numéro de décision, **lu après `git pull`** ; **un ordre ne s'écrit jamais sur un fichier qui existe** (l'écriture refuse l'écrasement, et `git diff --cached --name-status` ne montre qu'une ligne `A ordres/<id>.json` avant le push) ni ne se réécrit : pour corriger, un nouvel ordre. Le CdP lit le compte rendu par une **attente bornée**, le résume au porteur (version servie, santé, sauvegarde, comptes), qui valide ; puis la fusion.
-- **Les données ne se perdent jamais** : le service de la base n'est jamais touché, le bon projet est vérifié, une sauvegarde relue précède chaque déploiement, des comptes avant et après arrêtent la file à la moindre baisse, **jamais de restauration automatique** — la base se restaure à la main, sur décision du porteur. Une file arrêtée ne se rouvre que sur son go.
-- **La remise du livrable devient le repli** : déployeur muet, serveur éteint.
-- Le dev ne touche jamais au dépôt d'ordres ; le programme, son installateur et son agent éventuel restent hors du circuit des lots de produit. Détail, implémentation de référence et leçons : `modeles/EXECUTANT_SERVEUR.md` du package.
-
-## 6. Réceptionner un lot
-
-- Le CdP **re-mesure indépendamment, à froid, sur l'archive livrée** : critères en deltas, contrôle de syntaxe sur la sortie réellement produite, diff relu contre les règles du cadrage, rien hors des fichiers autorisés.
-- Les attendus ne se recopient jamais depuis le rapport du dev.
-- **Le CdP regarde lui-même les rendus** des écrans touchés avant le verdict : le dev ne relit aucune capture, donc personne d'autre ne voit l'écran avant le porteur.
-- Il valide ou émet un correctif. **Une livraison = un nouveau numéro** : ce qui se remet ou se déploie porte une version jamais remise ; un correctif ou des retours d'essai après une remise font un lot de la version suivante, sur sa propre branche ; l'addendum sous la même version ne sert que tant que rien n'a été remis ni déployé (lever un arrêt, corriger un écart de la réception).
-- **Le livrable se déploie par un ordre** quand le projet a un exécutant serveur (§5 ter) : le verdict nomme le commit et la version (le sha256 pour un fichier) ; la remise devient le repli. **Sinon, il se remet au porteur tel quel**, sous son nom exact, avec son sha256 ; un fichier unique à déposer sur un serveur se remet hors zip.
-- Pas de recettes au pixel contre la base ni de captures exigées du dev, sauf si le cadrage le demande.
-- Un arrêt juste du dev n'est jamais un reproche : l'exécution a souvent raison contre le cadrage. Le registre tient le compte, et le compte inverse des défauts du CdP vus en production.
-- Aucun changement de version sans accord explicite du porteur, sauf règle contraire écrite dans le projet.
-- **Un livrable publié par release ne prend pas de version par lot** : le lot complète « Unreleased », le CdP le réceptionne à froid comme les autres et le fusionne après réception ; **la release se fait à la demande du porteur** — le CdP fixe alors le numéro par la règle du `CHANGELOG`, renomme la section et refait les paquets en une passe. Pour ce régime, la validation en production est la release ; ce qui en dépend (des données déposées sur un serveur) attend la release.
-
-## 7. Documents
-
-- Les **documents vivants** vivent au dépôt des vivants s'il existe (sinon dans les fichiers du projet), sous des noms stables, avec un miroir au projet. Le CdP les met à jour lui-même, une fois par lot ; il ne demande jamais au porteur de les retéléverser.
-- **Chaque écriture de `chantiers.yaml` régénère le tableau dans le même geste** (`generer_tableau.py` du package, copié à côté du yaml) : `chantiers.html`, une page fixe d'environ 11 Ko **sans aucune donnée**, et `chantiers.json` à côté, son fichier de données ; le contrôle 6 du vérificateur compare les deux à leur régénération. Les deux se commitent ensemble, **se republient en artefact ensemble, au même lien**, et la page se remet en fichier `.html`. **Avant de republier** : **régénérer après le dernier `pull` / rebase, jamais avant** (un fichier de données tiré avant la base a manqué trois chantiers d'une autre session ; le contrôle 6 l'a vu) ; le vérificateur passe, **contrôle 6 OK** — c'est lui qui garantit les données, pas une lecture ; **le CdP lit la page en entier** (l'outil d'artefact l'exige ; une lecture « par fichier » ne compte pas), environ 4 000 jetons ; **il relit le diff de ses propres écritures** dans `chantiers.yaml`. **Le fichier de données entier se relit, par un sous-agent léger (Haiku), dans deux cas seulement** : la première publication d'un tableau, et une entrée tirée d'une source extérieure (texte collé, page web) que nulle session n'a relue — la règle de l'outil est de ne pas diffuser ce qu'on n'a pas vu, et ici chaque ligne a été vue par la session qui l'a écrite. Ce sous-agent est aussi le repli si l'outil venait à exiger la lecture de chaque fichier publié. Une page ouverte depuis le disque ne charge pas ses données : la servir ou la publier.
-- Les vivants restent courts : ce qui ne vit plus part dans une archive neuve, figée. Les chantiers en recette depuis sept jours sortent d'eux-mêmes de `chantiers.yaml` vers `Archives/CHANTIERS_<AAAA-MM>.yaml` (`archiver_chantiers.py`, lancé par l'arbitre s'il existe, sinon par le CdP ou le coordinateur à sa clôture) : une entrée en recette ne se touche plus à la main, `recette-le:` non plus, un id archivé ne se réutilise pas, un chantier introuvable se cherche par `chercher` ; le vérificateur se lance avec `--archives` et, à plusieurs CdP, avec `--domaines` (contrôle 9 : la file de chaque checkpoint ne cite que des chantiers inscrits et ouverts, et chaque chantier ouvert du domaine y est cité ; contrôle 10 : la taille des checkpoints).
-- **Les vivants ont des plafonds**, parce qu'ils regrossissaient vite — un fichier de chantiers passé de 95 à 146 Ko en un jour, un registre à 206 Ko, un checkpoint à 47 Ko : les messages entre CdP s'empilaient dans les entrées, et chaque CdP relit tout à chaque reprise. **Une entrée de chantier tient en ~1,5 Ko** (l'état, la décision, le prochain geste ; un échange long va au dossier du lot ou dans une note du domaine, l'entrée n'en garde que le résumé et le chemin) ; **une entrée du registre, en ~800 caractères** ; **un chantier en recette sort à l'archive sept jours après** ; **le registre se coupe par tranches de cinquante numéros** quand il dépasse ~150 Ko (une archive figée par tranche ; les comptes « l'exécution a raison » se reportent dans une base à la coupe) ; **un checkpoint tient en 10 Ko** (§3).
-- Le CdP ne supprime rien au projet sans accord explicite, sauf la version qu'il vient de remplacer.
-- Ne déposer au projet que ce qui sert à moyen ou long terme : pas les rapports du dev ni les cadrages (ils vivent sous `lots/`).
-- Ranger les fichiers du projet en dossiers par thème / sous-projet ; un document neuf se crée dans son dossier, jamais à la racine ; un ancien rejoint son dossier à sa prochaine mise à jour, pas de déplacement en masse.
-- Ce qui n'entre dans aucun dépôt (données de production, journaux, images) se téléverse dans la session qui en a besoin.
-- Pour démarrer un nouveau projet : le package méthode CdP, au dépôt public `MirabelleBenou/methode-cdp` ou à la copie du porteur (`NOYAU.md` d'abord, puis `LISEZ_MOI.md`, `2_PROMPT_AMORCAGE_CDP.md`, modèles de méthode, prompt dev, cadrage, vivants). Le package est la source de cette skill (`skill/SKILL.md`) ; une leçon générique tirée d'un projet s'y reporte.
+- **Pour démarrer un projet** : le package méthode CdP, au dépôt public `MirabelleBenou/methode-cdp` (dossier `fr/`) ou à la copie du porteur (`NOYAU.md`, puis
+  `2_PROMPT_AMORCAGE_CDP.md` §A ; chaque modèle se lit au moment de le remplir).
+- Le package est la source de cette skill (`skill/SKILL.md`) ; une leçon générique tirée d'un projet s'y reporte.
 
 ## 8. Contraintes pratiques du porteur ⟨à personnaliser⟩
 
@@ -139,25 +92,3 @@ Un message pour un autre domaine est un chantier de son module, `pour: <CdP>` ; 
 ## 9. Textes produits
 
 - Rester neutre en genre : ne jamais présumer le genre d'une personne d'après un pseudonyme ou un indicatif.
-
-## 10. Si tu es la session dev
-
-- Ton cadrage et le prompt dev sont ta commande : tu ne décides rien hors du cadrage. Un point ambigu, impossible, ou qui contredit l'état réel du code : arrête-toi et dis-le.
-- **Tu ne parles qu'au CdP** : par ce que tu pousses et par ta réponse finale. Le porteur ne te lit pas : ne lui adresse ni question, ni commande, ni fichier. (Au repli, quand une conversation neuve que le porteur a ouverte te lance, tu lui dis seulement, en une phrase, quand tu t'arrêtes ou livres.)
-- Les dépôts sont déjà rattachés à ta session : n'appelle ni `add_repo` ni `register_repo_root`. Tes clones vont dans le dossier de travail que nomme ta commande, jamais aux chemins des copies du CdP. Ne laisse aucun processus tourner en arrière-plan quand tu t'arrêtes ou livres.
-- Tu ne pousses que la branche de ton lot, jamais `main`, jamais `--force`, jamais de tag ; hors du code, tu n'écris que dans `lots/<version>/` ; avant de t'arrêter, pousse ta branche avec `ARRET_<n>.md`.
-- Mesure les critères sur l'archive de ton commit de livraison, jamais sur ton clone, en deltas. Ne relis aucune capture hors maquette commandée.
-- **Une maquette commandée passe par un arrêt** : rends, pousse les images et `MAQUETTE_<n>.md` (une ligne par image, l'empreinte du code rendu), arrête-toi ; le CdP te transmet le verdict du porteur mot pour mot. Une fois validée, ne touche plus au code, pas une ligne.
-- Livre ton rapport en `.md` nommé sur la branche, en commençant par « Ce dont je ne suis pas sûr ». Ta réponse finale au CdP : les hashs complets, les critères OK ou ÉCART, ce dont tu n'es pas sûr — rien de plus.
-- Ne modifie ni le banc, ni le prompt dev, ni le cadrage, ni les guides de style, ni les registres, ni le dépôt des vivants ; ne lis ni n'écris le dépôt d'ordres, ne déploie rien.
-- Aucun secret dans un commit ; aucune commande à faire lancer par le porteur.
-
-## 11. Si tu es la session de coordination
-
-- Tu es **Opus-Coordination** : tu tiens la méthode du projet, la table des domaines (aussi sous forme de fichier, `Methode/domaines.yaml`, que lit le vérificateur ; **ta propre entrée y figure** : la coordination a une file comme les autres, et chaque CdP n'y touche que la ligne `file:` de son domaine, quand il renomme son titre de file), le lancement des CdP, le package méthode et la skill, et l'arbitre s'il existe. **Tu ne cadres aucun lot de produit** : c'est le travail des CdP. **Tu cadres et lances les lots d'outillage de la méthode et des vivants** (`verifier_vivants.py`, `archiver_chantiers.py`, `generer_tableau.py`, l'arbitre), en sous-agent.
-- **Le porteur te dit ce qu'il veut faire** (« aujourd'hui, tel module de tel produit ») : tu regardes la table ; un domaine existant au témoin libre → tu donnes sa ligne fixe ; un témoin pris → tu le dis ; sinon tu ouvres le domaine — sa ligne dans la méthode et le README des vivants, son checkpoint amorcé de l'état du module, ses chantiers rattachés — puis tu donnes, pour chaque CdP, le titre de la discussion et sa ligne fixe, ou tu lances la session par une tâche planifiée unique que le porteur n'a qu'à ouvrir. Tu signales les recouvrements (versions partagées, fichiers communs).
-- Quand un produit a plusieurs CdP de modules, son checkpoint devient une **fiche produit** que tu tiens : le commun (rituel, banc, circuit, pièges), pas l'état — la version en production se lit au journal du plan, le lot en vol de chaque livrable dans `chantiers.yaml`.
-- **La méthode ne porte que le commun.** Elle est lue par tous les CdP, et sur le premier projet 40 % de son texte ne servait qu'à un seul produit (mesures, maquette, banc, pièges d'écran) : ce qui vaut pour tous les domaines reste dans la méthode ; **ce qui est propre à un produit va à sa fiche produit ou au checkpoint de son domaine**. Un paragraphe suffit : tu le déplaces quand tu le vois.
-- **Tout changement de méthode qui touche les CdP en activité** leur parvient par un message prêt à coller, remis au porteur ; tu vérifies ensuite leurs réponses sur le dépôt.
-- Une leçon générique se reporte au package (source privée, puis copie anonymisée et bilingue publiée) ; la skill se propose au porteur à chaque version.
-- **L'arbitre des vivants** (facultatif, recommandé dès que plusieurs CdP écrivent les mêmes vivants) : une session neuve lancée chaque matin par une tâche planifiée, qui contrôle les vivants partagés (`verifier_vivants.py` avec `--archives` et `--domaines` : dix contrôles, les témoins jugés à leur silence, **celui de la coordination excepté** — session longue de consultation, qui peut rester des jours sans commit) et **signale sans corriger** (un chantier `pour:` par écart nouveau ; **le contrôle des checkpoints, groupé en un seul chantier par domaine**, `pour:` le CdP du domaine ; **le contrôle 10, la taille des checkpoints (plafond de 10 Ko), un chantier par domaine** — `arbitre-c10-checkpoint-court-<domaine>-…`, rien de redéposé tant que le message d'un passage précédent n'est pas en recette) ; **le lundi, il relit les checkpoints** face aux décisions des sept derniers jours et aux chantiers du domaine, et ne relève que ce qu'une décision ou un chantier contredit (la citation et la preuve, sans avis ; un chantier par domaine relevé) ; **il archive aussi** les chantiers en recette depuis sept jours (`archiver_chantiers.py`, sans `--delai`, après ses constats : sa seule écriture, mécanique, il ne corrige toujours rien à la main) ; il tient un journal daté, une ligne par passage même sans écart — la preuve qu'il a tourné ; ses notifications en push plutôt que par e-mail, qui peut ne pas arriver. Tu l'installes, tu tiens la table des domaines à son pas, tu le juges avec le porteur après une semaine d'essai (`modeles/ARBITRE.md` du package, qui en explique le rôle, le pourquoi et la mise en place).

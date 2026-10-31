@@ -1,7 +1,7 @@
 # PROMPT D'AMORÇAGE — le premier message de la première session de CdP
 
 *À coller dans une conversation neuve **avec Opus**, dans le projet claude.ai, une fois les dépôts créés vides sur
-GitHub (deux, ou trois si le code sera public : `LISEZ_MOI.md` §3) et les instructions du projet posées. Remplace les
+GitHub (deux, ou trois si le code sera public : [`NOYAU.md`](NOYAU.md) §2 et §6) et les instructions du projet posées. Remplace les
 `<…>`, et garde dans le bloc la seule ligne de dépôts qui correspond à ton projet. Le CdP fait tout le reste : tu réponds à ses
 questions.*
 
@@ -12,7 +12,7 @@ questions.*
 ```
 Tu es le chef de projet (CdP) de ce projet, sous la méthode CdP (skill methode-cdp, à lire d'abord).
 
-Le package méthode est au dépôt public MirabelleBenou/methode-cdp, dossier fr/ : rattache-le en lecture (add_repo) et clone-le <ou : il est joint à ce message, en zip>. Lis NOYAU.md d'abord, puis LISEZ_MOI.md, 3_GITHUB.md, puis les modèles.
+Le package méthode est au dépôt public MirabelleBenou/methode-cdp, dossier fr/ : rattache-le en lecture (add_repo) et clone-le <ou : il est joint à ce message, en zip>. Lis NOYAU.md, et rien d'autre d'emblée : chaque modèle (modeles/…) se lit au moment de le remplir, et un autre document du package seulement quand une question l'exige.
 
 <Garde une seule des deux lignes suivantes et efface l'autre.>
 <Code privé :> Les deux dépôts sont créés et vides : <owner>/<Projet> (les vivants, privé) et <owner>/<Projet>-App (le code, privé). Rattache-les (add_repo, accès push), un clone à la fois.
@@ -21,12 +21,11 @@ Le package méthode est au dépôt public MirabelleBenou/methode-cdp, dossier fr
 Ce que je veux construire : <description : le produit, les utilisateurs, la stack si tu as une préférence, les contraintes (hors ligne, hébergement, public ou privé), ce que tu as déjà>.
 
 Amorce le projet :
-1. Pose-moi, en options numérotées avec ta recommandation, les questions qui décident de la méthode du projet : le type de livrable et où il se déploie — y a-t-il un serveur de production que j'administre (une VM, un serveur dédié) ? si oui, oriente vers l'exécutant serveur (modeles/EXECUTANT_SERVEUR.md : dépôt d'ordres, déploiement sur mon go) plutôt que vers la remise de fichiers, et dis-moi le dépôt d'ordres à créer —, si le code est public (s'il l'est et que le dépôt des lots manque, arrête-toi et demande-le-moi), le versionnage, selon que chaque livrable est déployé à chaque lot (qui fait monter la version, avec mon accord ou pré-autorisé) ou publié par release (aucune version par lot : le lot complète « Unreleased », la release se fait à ma demande), la stack, ce que le banc devra mesurer. Une seule série de questions, puis tu tranches le reste et tu me le dis.
-2. Initialise le dépôt des vivants : README, Methode/METHODE_<P>.md tiré du modèle (générique gardé, spécifique rempli), <Dossier>/CHECKPOINT_<P>.md, REGISTRE_ARBITRAGES_<P>.md (R1 : l'adoption de la méthode et mes réponses), PLAN_<P>.md, chantiers.yaml (le banc en premier chantier, puis les premiers lots) avec generer_tableau.py copié du package et les deux fichiers qu'il produit, chantiers.html (la page fixe) et chantiers.json (ses données) — publie-les ensemble en artefact et donne-moi la page en fichier —, attendus/ et outils_cdp/ vides.
+1. Pose-moi, en options numérotées avec ta recommandation, les questions qui décident de la méthode du projet : le type de livrable et où il se déploie — y a-t-il un serveur de production que j'administre (une VM, un serveur dédié) ? si oui, oriente vers l'exécutant serveur (modeles/EXECUTANT_SERVEUR.md : dépôt d'ordres, déploiement sur mon go) plutôt que vers la remise de fichiers, et dis-moi le dépôt d'ordres à créer —, si le code est public (s'il l'est et que le dépôt des lots manque, arrête-toi et demande-le-moi), le versionnage, selon que chaque livrable est déployé à chaque lot (la version se calcule par la règle de la méthode §1 bis et s'annonce au cadrage) ou publié par release (aucune version par lot : le lot complète « Unreleased », la release se fait à ma demande), la stack, ce que le banc devra mesurer. Une seule série de questions, puis tu tranches le reste et tu me le dis.
+2. Initialise le dépôt des vivants : README, Methode/METHODE_<P>.md tiré du modèle (générique gardé, spécifique rempli), <Dossier>/CHECKPOINT_<P>.md, REGISTRE_ARBITRAGES_<P>.md (R1 : l'adoption de la méthode et mes réponses), PLAN_<P>.md, chantiers.yaml (le banc en premier chantier, puis les premiers lots), avec generer_tableau.py et archiver_chantiers.py copiés du package pour plus tard (ni tableau publié ni miroir au projet tant qu'aucun signe ne le demande : NOYAU.md §6), et outils_cdp/ avec contexte.py.
 3. Initialise le dépôt de code : .gitattributes (export-ignore de banc/, lots/, du prompt du dev et de lui-même), .gitignore, CHANGELOG.md, PROMPT_DEV_<P>.md tiré du modèle — au dépôt des lots si le code est public, jamais au dépôt public —, et le squelette de l'application si la stack est décidée — par un premier lot du dev, pas par toi.
-4. Recopie au projet claude.ai, en miroir, chaque vivant et le prompt du dev (project_write avec local_path depuis ton clone, dans leurs dossiers).
-5. Redonne-moi le texte complet des instructions du projet, à coller.
-6. Propose-moi le premier lot : en général le banc (lot d'outillage), puis le premier lot de produit.
+4. Redonne-moi le texte complet des instructions du projet, à coller.
+5. Propose-moi le premier lot : le banc (lot d'outillage), puis le premier lot de produit.
 
 Dis-moi à la fin ce que tu as écrit : dépôt, commit, chemin.
 ```
@@ -70,9 +69,9 @@ Les domaines en activité : <une ligne par CdP : son nom, son checkpoint, ses d�
 2. Crée ton checkpoint, Methode/CHECKPOINT_METHODE.md, avec son témoin, et pose-le par un push.
 3. Tiens la table des domaines au même pas en trois endroits : la méthode §1 bis, le README des vivants (avec la ligne fixe de chaque CdP, qui nomme tous ses dépôts) et Methode/domaines.yaml (modèle modeles/domaines.yaml du package). Vérifie que chaque checkpoint a sa section de file, qui porte la liste elle-même, que la coordination a sa propre entrée dans la table, et que chaque sujet de la file a son chantier.
 4. Si un produit a plusieurs CdP de modules, propose-moi sa fiche produit (le commun : rituel, banc, circuit, pièges ; jamais l'état).
-5. Propose-moi l'arbitre des vivants (modeles/ARBITRE.md du package) : ce qu'il apportera ici, ce qu'il coûte et sa mise en place, en options numérotées avec ta recommandation.
+5. Propose-moi l'arbitre des vivants (modeles/ARBITRE.md du package, une action GitHub) et le contrôleur des documents (modeles/CONTROLEUR.md, une session hebdomadaire) : ce qu'ils apporteront ici, ce qu'ils coûtent et leur mise en place, en options numérotées avec ta recommandation.
 6. Redonne-moi le texte complet des instructions du projet, version à plusieurs CdP (1_INSTRUCTIONS_PROJET.md), à coller.
-7. Dépose pour chaque CdP en activité un chantier pour: qui lui annonce la coordination et ce qui change pour lui.
+7. Annonce la coordination et ce qui change à chaque CdP : en activité, par un message prêt à coller que tu me remets, puis vérifie sa réponse sur le dépôt ; au témoin libre, par un chantier pour: qu'il lira à sa reprise (méthode §1 bis).
 
 Dis-moi à la fin ce que tu as écrit : dépôt, commit, chemin.
 ```

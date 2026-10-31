@@ -1,4 +1,4 @@
-"""Tests de verifier_vivants.py : chacun des dix contrôles, une fois OK et une fois en écart ; les appels invalides.
+"""Tests de verifier_vivants.py : chacun des onze contrôles, une fois OK et une fois en écart ; les appels invalides.
 
 Chaque test bâtit ses fixtures dans un dossier temporaire (voir outils_tests.py) et appelle le script en
 ligne de commande ; quelques tests appellent ses fonctions quand c'est plus net.
@@ -6,21 +6,21 @@ ligne de commande ; quelques tests appellent ses fonctions quand c'est plus net.
 import re
 import unittest
 
-from .outils_tests import (AVERTISSEMENT, ECART, GENERER, NON_DEMANDE, VERIFIER, CasTemporaire,
-                           bloc, charger, registre, yaml)
+from .outils_tests import (AVERTISSEMENT, ECART, GENERER, NON_DEMANDE, SANS_PYYAML, VERIFIER, CasTemporaire,
+                           bloc, charger, lecture_pyyaml, registre, sans_position, yaml)
 
 TABLE_DEUX_DOMAINES = """# Domaines
 - domaine: alpha
   cdp: Opus-CdP-Alpha
   checkpoint: CHECKPOINT_ALPHA.md
-  file: ## La file
+  file: "## La file"
   modules: module-a
   prefixes: alpha-
 
 - domaine: beta
   cdp: Opus-CdP-Beta
   checkpoint: CHECKPOINT_BETA.md
-  file: ## La file
+  file: "## La file"
   modules: module-b
 """
 
@@ -70,19 +70,21 @@ class TestAppelDeBase(CasVerifier):
         self.assertEqual(sortie.compte(4), "1 versions")
         self.assertEqual(sortie.compte(5), "0 en vol")
         self.assertEqual(sortie.compte(8), "0 livrables, 0 ressources, 0 en vol, 0 en attente")
+        self.assertEqual(sortie.verdict(11), "OK", "le contrôle 11 tourne toujours")
+        self.assertEqual(sortie.compte(11), "1 fichiers, 12 lignes lues")
 
     def test_non_demande_quand_une_option_manque(self):
         sortie = self.verifier()
         for rang in (6, 7, 9, 10):
             self.assertEqual(sortie.verdict(rang), NON_DEMANDE, f"contrôle {rang}")
-        self.assertEqual(len(sortie.controles) - 1, 10, "dix lignes de contrôle, plus le bilan")
+        self.assertEqual(len(sortie.controles) - 1, 11, "onze lignes de contrôle, plus le bilan")
 
-    def test_dix_controles_dans_l_ordre(self):
+    def test_onze_controles_dans_l_ordre(self):
         libelles = re.findall(r"^\d+\s+(\S.*?)\s+(?:OK|ÉCART|avertissement|—)(?:\s|$)", self.verifier().stdout, flags=re.M)
         self.assertEqual(libelles, [
             "numéros du registre", "réservations", "identifiants de chantier", "versions des lots",
             "chantiers en vol", "tableau", "journal", "livrables et ressources", "checkpoints",
-            "taille des checkpoints"])
+            "taille des checkpoints", "format YAML"])
 
     def test_un_ecart_donne_le_code_1(self):
         self.registre = self.ecrire("registre.md", registre(1, 3))
@@ -335,6 +337,86 @@ class TestControle4Versions(CasVerifier):
         self.assertEqual(sortie.verdict(4), ECART)
         self.assertEqual(sortie.compte(4), "1 versions")
         self.assertEqual(sortie.details(4), ["version v1.0.0 portée par alpha-1 et alpha-2"])
+
+    # (b) le lot en vol porte une version plus haute que toute autre du même livrable (le numéro d'un correctif)
+    def test_en_vol_au_dessus_ok(self):
+        self.avec_chantiers(bloc("alpha-1", statut="recette", livrable="App", version="v1.0009"),
+                            bloc("alpha-2", statut="en-vol", cdp="Opus-CdP-Alpha", livrable="App", version="v1.0010"))
+        sortie = self.verifier()
+        self.assertEqual((sortie.verdict(4), sortie.compte(4)), ("OK", "2 versions"))
+
+    def test_ecart_en_vol_egal_par_ses_nombres(self):
+        self.avec_chantiers(bloc("alpha-1", statut="recette", livrable="App", version="v1.0065"),
+                            bloc("alpha-2", statut="en-vol", cdp="Opus-CdP-Alpha", livrable="App", version="v1.65"))
+        sortie = self.verifier()
+        self.assertEqual(sortie.verdict(4), ECART)
+        self.assertEqual(sortie.details(4), ["alpha-2 : v1.65 n'est pas au-dessus de v1.0065 (alpha-1)"])
+
+    def test_ecart_en_vol_en_dessous_nomme_la_plus_haute(self):
+        self.avec_chantiers(bloc("alpha-1", statut="recette", livrable="App", version="v1.9.0"),
+                            bloc("alpha-2", statut="a-cadrer", livrable="App", version="v1.10.0"),
+                            bloc("alpha-3", statut="en-vol", cdp="Opus-CdP-Alpha", livrable="App", version="v1.2.0"))
+        sortie = self.verifier()
+        self.assertEqual(sortie.verdict(4), ECART)
+        self.assertEqual(sortie.details(4), ["alpha-3 : v1.2.0 n'est pas au-dessus de v1.10.0 (alpha-2)"])
+
+    def test_un_autre_livrable_est_ignore(self):
+        self.avec_chantiers(bloc("alpha-1", statut="recette", livrable="Agent", version="agent-v2.0.0"),
+                            bloc("alpha-2", statut="en-vol", cdp="Opus-CdP-Alpha", livrable="App", version="v1.0.0"))
+        self.assertEqual(self.verifier().verdict(4), "OK")
+
+    def test_sans_livrable_ignore(self):
+        self.avec_chantiers(bloc("alpha-1", statut="recette", version="v2.0.0"),
+                            bloc("alpha-2", statut="en-vol", cdp="Opus-CdP-Alpha", version="v1.0.0"),
+                            bloc("alpha-3", statut="recette", livrable="App", version="v3.0.0"),
+                            bloc("alpha-4", statut="en-vol", cdp="Opus-CdP-Alpha", livrable="App", version="sans-numero"))
+        self.assertEqual(self.verifier().verdict(4), "OK")
+
+    def test_ecart_trouve_dans_une_archive(self):
+        self.avec_chantiers(bloc("alpha-2", statut="en-vol", cdp="Opus-CdP-Alpha", livrable="App", version="v1.1.0"))
+        dossier = self.archives(**{"CHANTIERS_2026-03": [bloc("alpha-1", statut="recette", livrable="App",
+                                                              version="v1.1.0")]})
+        self.assertEqual(self.verifier().verdict(4), "OK", "sans --archives, l'archive n'est pas lue")
+        sortie = self.verifier("--archives", dossier)
+        self.assertEqual(sortie.verdict(4), ECART)
+        self.assertEqual(sortie.compte(4), "1 versions")
+        self.assertEqual(sortie.details(4), ["alpha-2 : v1.1.0 n'est pas au-dessus de v1.1.0 (alpha-1)"])
+
+    # (b) seul le jeton de version se compare (la première occurrence de [vV]?n.n[.n…] ou de [vV]n)
+    def test_une_valeur_a_hash_et_numero_de_decision_ne_se_compare_pas(self):
+        self.avec_chantiers(bloc("alpha-1", statut="recette", livrable="App",
+                                 version="outil au main public 18a2957, sans release (R188)"),
+                            bloc("alpha-2", statut="en-vol", cdp="Opus-CdP-Alpha", livrable="App", version="v1.0.0"))
+        self.assertEqual(self.verifier().verdict(4), "OK")
+
+    def test_le_jeton_de_version_d_une_valeur(self):
+        v = charger(VERIFIER, "verifier_vivants_jeton")
+        self.assertEqual(v.nombres("outil au main public 18a2957, sans release (R188)"), ())
+        self.assertEqual(v.nombres("v1.10 (R205)"), (1, 10))
+        self.assertEqual(v.nombres("AC-V1.5.1"), (1, 5, 1))
+        self.assertEqual(v.nombres("agent-v0.1.1"), (0, 1, 1))
+        self.assertEqual(v.nombres("v19"), (19,))
+        self.assertEqual(v.nombres("sans-numero"), ())
+
+    def test_le_numero_de_decision_d_une_valeur_ne_compte_pas(self):
+        # lu (1, 10) et non (1, 10, 205) : au-dessus de v1.9, sous v1.11
+        self.avec_chantiers(bloc("alpha-1", statut="recette", livrable="App", version="v1.9"),
+                            bloc("alpha-2", statut="en-vol", cdp="Opus-CdP-Alpha", livrable="App", version="v1.10 (R205)"))
+        self.assertEqual(self.verifier().verdict(4), "OK")
+        self.avec_chantiers(bloc("alpha-1", statut="recette", livrable="App", version="v1.10.0"),
+                            bloc("alpha-2", statut="en-vol", cdp="Opus-CdP-Alpha", livrable="App", version="v1.10 (R205)"))
+        sortie = self.verifier()
+        self.assertEqual(sortie.details(4), ["alpha-2 : v1.10 (R205) n'est pas au-dessus de v1.10.0 (alpha-1)"])
+
+    def test_un_jeton_prefixe_en_majuscule(self):
+        self.avec_chantiers(bloc("alpha-1", statut="recette", livrable="App", version="AC-V1.5.1"),
+                            bloc("alpha-2", statut="en-vol", cdp="Opus-CdP-Alpha", livrable="App", version="AC-V1.5.0"))
+        self.assertEqual(self.verifier().details(4), ["alpha-2 : AC-V1.5.0 n'est pas au-dessus de AC-V1.5.1 (alpha-1)"])
+
+    def test_un_jeton_sans_point(self):
+        self.avec_chantiers(bloc("alpha-1", statut="recette", livrable="App", version="v19"),
+                            bloc("alpha-2", statut="en-vol", cdp="Opus-CdP-Alpha", livrable="App", version="v20"))
+        self.assertEqual(self.verifier().verdict(4), "OK")
 
 
 class TestControle5EnVol(CasVerifier):
@@ -607,6 +689,9 @@ class TestControle8Livrables(CasVerifier):
         self.assertEqual(sortie.verdict(8), ECART)
 
 
+TEXTE_CITE_EN_ZERO = "# Checkpoint\n## §0 · État\nOn travaille sur `alpha-1`.\n## La file\n- rien\n"
+
+
 class CasCheckpoints(CasVerifier):
     """Deux domaines (alpha, beta), leurs checkpoints et quelques chantiers ; chaque test en change une pièce."""
 
@@ -669,7 +754,7 @@ class TestControle9Checkpoints(CasCheckpoints):
         self.assertEqual(self.verifier_domaines().verdict(9), "OK")
 
     def test_le_titre_de_file_est_un_debut_de_ligne(self):
-        table = TABLE_DEUX_DOMAINES.replace("file: ## La file\n  modules: module-a", "file: ## §3 · La file\n  modules: module-a")
+        table = TABLE_DEUX_DOMAINES.replace('file: "## La file"\n  modules: module-a', 'file: "## §3 · La file"\n  modules: module-a')
         self.table = self.ecrire("domaines.yaml", table)
         self.ecrire("CHECKPOINT_ALPHA.md", "# Checkpoint\n## §3 · La file (ce qui vient)\n- `alpha-1`\n")
         self.assertEqual(self.verifier_domaines().verdict(9), "OK")
@@ -693,9 +778,34 @@ class TestControle9Checkpoints(CasCheckpoints):
             "alpha : alpha-3 (dette) n'est pas cité au checkpoint",
             "alpha : alpha-4 (en-vol) n'est pas cité au checkpoint"])
 
-    def test_un_ouvert_cite_ailleurs_dans_le_checkpoint_est_cite(self):
+    def test_ecart_un_ouvert_cite_seulement_hors_de_la_file(self):
+        """9c : la citation se cherche dans la section de la file, pas dans tout le checkpoint."""
+        self.ecrire("CHECKPOINT_ALPHA.md", TEXTE_CITE_EN_ZERO)
+        sortie = self.verifier_domaines()
+        self.assertEqual(sortie.verdict(9), ECART, sortie.stdout)
+        self.assertEqual(sortie.details(9), ["alpha : alpha-1 (a-venir) n'est pas cité au checkpoint"])
+        self.assertEqual(sortie.compte(9), "2 domaines, 0 cités clos, 1 non cités, 0 sans section de file")
+
+    def test_ecart_un_ouvert_cite_seulement_dans_l_historique(self):
         self.ecrire("CHECKPOINT_ALPHA.md", checkpoint(historique=("alpha-1",)))
+        sortie = self.verifier_domaines()
+        self.assertEqual(sortie.verdict(9), ECART)
+        self.assertEqual(sortie.details(9), ["alpha : alpha-1 (a-venir) n'est pas cité au checkpoint"])
+
+    def test_un_ouvert_cite_dans_la_file_est_cite_meme_s_il_l_est_aussi_en_zero(self):
+        self.ecrire("CHECKPOINT_ALPHA.md", TEXTE_CITE_EN_ZERO.replace("- rien", "- `alpha-1` à faire"))
         self.assertEqual(self.verifier_domaines().verdict(9), "OK")
+        self.ecrire("CHECKPOINT_ALPHA.md", checkpoint("alpha-1"))
+        self.assertEqual(self.verifier_domaines().verdict(9), "OK")
+
+    def test_sans_section_de_file_declaree_la_citation_se_cherche_dans_tout_le_checkpoint(self):
+        """Le comportement d'avant ne change pas quand la table ne déclare aucune section de file."""
+        self.table = self.ecrire("domaines.yaml", TABLE_DEUX_DOMAINES.replace('file: "## La file"\n  modules: module-a',
+                                                                              'file:\n  modules: module-a'))
+        self.ecrire("CHECKPOINT_ALPHA.md", TEXTE_CITE_EN_ZERO)
+        sortie = self.verifier_domaines()
+        self.assertEqual(sortie.details(9), ["alpha : aucune section de file déclarée (file: vide)"])
+        self.assertEqual(sortie.compte(9), "2 domaines, 0 cités clos, 0 non cités, 1 sans section de file")
 
     def test_la_citation_se_fait_entre_accents_graves(self):
         self.ecrire("CHECKPOINT_ALPHA.md", "# Checkpoint\n## La file\n- alpha-1 sans accents graves\n")
@@ -710,7 +820,7 @@ class TestControle9Checkpoints(CasCheckpoints):
         self.assertEqual(self.verifier_domaines().verdict(9), "OK")
 
     def test_ecart_file_vide_dans_la_table(self):
-        table = TABLE_DEUX_DOMAINES.replace("file: ## La file\n  modules: module-a", "file:\n  modules: module-a")
+        table = TABLE_DEUX_DOMAINES.replace('file: "## La file"\n  modules: module-a', "file:\n  modules: module-a")
         self.table = self.ecrire("domaines.yaml", table)
         sortie = self.verifier_domaines()
         self.assertEqual(sortie.verdict(9), ECART)
@@ -718,7 +828,7 @@ class TestControle9Checkpoints(CasCheckpoints):
         self.assertEqual(sortie.compte(9), "2 domaines, 0 cités clos, 0 non cités, 1 sans section de file")
 
     def test_file_vide_la_ligne_precede_les_non_cites_et_9b_ne_s_applique_pas(self):
-        table = TABLE_DEUX_DOMAINES.replace("file: ## La file\n  modules: module-a", "file:\n  modules: module-a")
+        table = TABLE_DEUX_DOMAINES.replace('file: "## La file"\n  modules: module-a', "file:\n  modules: module-a")
         self.table = self.ecrire("domaines.yaml", table)
         self.avec_chantiers(bloc("alpha-1", statut="a-venir", module="module-a"),
                             bloc("alpha-0", statut="recette", module="module-a"),
@@ -890,6 +1000,96 @@ class TestControle10Taille(CasCheckpoints):
         self.assertTrue(sortie.details(10)[0].startswith("alpha : sous/CHECKPOINT_ALPHA.md pèse "), sortie.details(10))
 
 
+class TestControle11Format(CasCheckpoints):
+    """Le contrôle 11 : chaque valeur est un scalaire YAML sûr (nue et sûre, ou entre guillemets doubles)."""
+
+    def ligne_de(self, chemin, fragment: str) -> int:
+        lignes = chemin.read_text(encoding="utf-8").split("\n")
+        return next(i for i, ligne in enumerate(lignes, start=1) if fragment in ligne)
+
+    def lignes(self, *chemins) -> int:
+        return sum(len(c.read_text(encoding="utf-8").split("\n")) - 1 for c in chemins)
+
+    def test_ok_sur_un_fichier_conforme(self):
+        self.avec_chantiers(bloc("alpha-1", titre="Un titre", statut="a-venir", rang="5", recette_le="2026-10-30",
+                                 mesure='"texte : suite, avec \\" et \\\\"', cout=""),
+                            bloc("alpha-2", statut="recette", refs="R12 · cadrage - rapport"))
+        sortie = self.verifier()
+        self.assertEqual(sortie.verdict(11), "OK", sortie.stdout)
+        self.assertEqual(sortie.compte(11), f"1 fichiers, {self.lignes(self.chantiers)} lignes lues")
+        self.assertEqual(sortie.details(11), [])
+
+    def test_ecart_sur_une_valeur_qui_commence_par_diese(self):
+        """Le cas de la table des domaines : « file: ## §1 · La file »."""
+        table = TABLE_DEUX_DOMAINES.replace('file: "## La file"\n  modules: module-a', "file: ## §1 · La file\n  modules: module-a")
+        self.table = self.ecrire("domaines.yaml", table)
+        self.ecrire("CHECKPOINT_ALPHA.md", checkpoint("alpha-1").replace("## La file", "## §1 · La file"))
+        sortie = self.verifier_domaines()
+        self.assertEqual(sortie.verdict(9), "OK")
+        self.assertEqual(sortie.verdict(11), ECART, sortie.stdout)
+        self.assertEqual(sortie.details(11)[0], f"{self.table}:{self.ligne_de(self.table, '§1')} : clé file")
+        self.assertEqual(sortie.compte(11), "1 valeur(s) non conforme(s), 2 fichiers, "
+                                            f"{self.lignes(self.chantiers, self.table)} lignes lues")
+
+    def test_ecart_sur_deux_points_suivis_d_une_espace(self):
+        self.avec_chantiers(bloc("alpha-1", statut="a-venir", mesure="texte : suite"))
+        sortie = self.verifier()
+        self.assertEqual(sortie.verdict(11), ECART)
+        self.assertEqual(sortie.details(11)[0], f"{self.chantiers}:{self.ligne_de(self.chantiers, 'texte : suite')} : clé mesure")
+
+    def test_ecart_sur_une_valeur_qui_finit_par_deux_points(self):
+        self.avec_chantiers(bloc("alpha-1", statut="a-venir"), bloc("alpha-2", statut="a-venir", titre="Attention:"))
+        sortie = self.verifier()
+        self.assertEqual(sortie.verdict(11), ECART)
+        self.assertEqual(sortie.details(11)[0], f"{self.chantiers}:{self.ligne_de(self.chantiers, 'Attention:')} : clé titre")
+        self.assertEqual(sortie.code, 1)
+        self.assertEqual(sortie.bilan, "VIVANTS · 1 écart(s)")
+
+    def test_le_detail_donne_la_commande_qui_normalise(self):
+        self.avec_chantiers(bloc("alpha-1", statut="a-venir", mesure="a : b"))
+        sortie = self.verifier()
+        self.assertEqual(sortie.details(11)[-1],
+                         f"pour normaliser : python3 -B archiver_chantiers.py normaliser --chantiers {self.chantiers}")
+
+    def test_les_cinq_premieres_valeurs_non_conformes_sont_donnees_et_toutes_comptees(self):
+        self.avec_chantiers(*(bloc(f"alpha-{n}", statut="a-venir", mesure=f"mesure {n} : suite") for n in range(1, 8)))
+        sortie = self.verifier()
+        self.assertTrue(sortie.compte(11).startswith("7 valeur(s) non conforme(s), 1 fichiers, "), sortie.compte(11))
+        self.assertEqual(len(sortie.details(11)), 5 + 1, "cinq valeurs, puis la commande")
+        lignes = [self.ligne_de(self.chantiers, f"mesure {n} :") for n in range(1, 6)]
+        self.assertEqual([d.split(" : ")[0] for d in sortie.details(11)[:5]], [f"{self.chantiers}:{n}" for n in lignes])
+
+    def test_les_archives_sont_lues_avec_leur_option_seulement(self):
+        dossier = self.archives(**{"CHANTIERS_2026-03": [bloc("old-1", statut="recette", titre="Fini : presque")],
+                                   "CHANTIERS_2026-04": [bloc("old-2", statut="recette")]})
+        sans = self.verifier()
+        self.assertEqual(sans.verdict(11), "OK")
+        self.assertTrue(sans.compte(11).startswith("1 fichiers, "), sans.compte(11))
+        avec = self.verifier("--archives", dossier)
+        self.assertEqual(avec.verdict(11), ECART, avec.stdout)
+        self.assertTrue(avec.compte(11).startswith("1 valeur(s) non conforme(s), 3 fichiers, "), avec.compte(11))
+        archive = self.dossier / "archives" / "CHANTIERS_2026-03.yaml"
+        self.assertEqual(avec.details(11)[0], f"{archive}:{self.ligne_de(archive, 'Fini')} : clé titre")
+        self.assertEqual(avec.details(11)[-1], "pour normaliser : python3 -B archiver_chantiers.py normaliser "
+                                               f"--chantiers {self.chantiers} --archives {dossier}")
+
+    def test_la_table_est_lue_avec_son_option_seulement(self):
+        self.table = self.ecrire("domaines.yaml", TABLE_DEUX_DOMAINES.replace("modules: module-b", "modules: module-b : x"))
+        self.assertEqual(self.verifier().verdict(11), "OK")
+        avec = self.verifier("--domaines", self.table, "--racine", self.dossier)
+        self.assertEqual(avec.verdict(11), ECART, avec.stdout)
+        self.assertEqual(avec.details(11)[0], f"{self.table}:{self.ligne_de(self.table, 'module-b : x')} : clé modules")
+        self.assertEqual(avec.details(11)[-1], "pour normaliser : python3 -B archiver_chantiers.py normaliser "
+                                               f"--chantiers {self.chantiers} --domaines {self.table}")
+
+    def test_le_controle_ne_change_pas_les_autres(self):
+        self.avec_chantiers(bloc("alpha-1", statut="a-venir", module="module-a", mesure="a : b"),
+                            bloc("beta-1", statut="a-cadrer", module="module-b"))
+        sortie = self.verifier_domaines()
+        self.assertEqual([sortie.verdict(r) for r in range(1, 11)],
+                         ["OK", "OK", "OK", "OK", "OK", NON_DEMANDE, NON_DEMANDE, "OK", "OK", "OK"])
+
+
 class TestFonctions(CasTemporaire):
     """Des appels directs aux fonctions du script, quand c'est plus net que la ligne de commande."""
 
@@ -898,7 +1098,7 @@ class TestFonctions(CasTemporaire):
         cls.v = charger(VERIFIER, "verifier_vivants_sous_test")
 
     def test_plages(self):
-        self.assertEqual(self.v.plages([320, 325, 326, 327]), ["R320", "R325 à R327 (3 numéros)"])
+        self.assertEqual(self.v.plages([20, 25, 26, 27]), ["R20", "R25 à R27 (3 numéros)"])
         self.assertEqual(self.v.plages([]), [])
         self.assertEqual(self.v.plages([1, 2]), ["R1 à R2 (2 numéros)"])
 
@@ -911,9 +1111,44 @@ class TestFonctions(CasTemporaire):
         self.assertEqual(entrees[0]["_fichier"], "chantiers.yaml")
         self.assertEqual(entrees[0]["titre"], "Un titre: avec deux-points")
 
+    def test_lire_chantiers_rend_une_valeur_entre_guillemets_sans_guillemets_ni_echappements(self):
+        chemin = self.ecrire("chantiers.yaml", '- id: a\n  titre: "Un \\"titre\\" avec \\\\ et : deux-points"\n  vide: ""\n')
+        entree = self.v.lire_chantiers(chemin)[0]
+        self.assertEqual(entree["titre"], 'Un "titre" avec \\ et : deux-points')
+        self.assertEqual(entree["vide"], "")
+
+    def test_lire_chantiers_lit_une_valeur_nue_non_conforme_comme_avant(self):
+        chemin = self.ecrire("chantiers.yaml", '- id: a\n  titre: texte : suite\n  ouvert: "sans fin\n  mi: "a" b\n'
+                                                '  fin: "a\\"\n  autre: "a\\n"\n  diese: ## titre\n')
+        entree = self.v.lire_chantiers(chemin)[0]
+        self.assertEqual((entree["titre"], entree["ouvert"], entree["mi"]), ("texte : suite", '"sans fin', '"a" b'))
+        self.assertEqual((entree["fin"], entree["autre"], entree["diese"]), ('"a\\"', '"a\\n"', "## titre"))
+
+    def test_lire_chantiers_lit_la_table_des_domaines_entre_guillemets(self):
+        chemin = self.ecrire("domaines.yaml", '- domaine: alpha\n  file: "## §1 · La file"\n')
+        self.assertEqual(self.v.lire_chantiers(chemin)[0]["file"], "## §1 · La file")
+
+    def test_valeur_conforme(self):
+        conformes = ["", "texte", "a:b", "a#b", "5", "2026-10-30", "R12 · cadrage", "x - y", "texte avec `code`", "à é · —", 'x"y"', "it's",
+                     '"x : y"', '"## titre"', '"a \\" b \\\\ c"', '""', "http://exemple.fr/a"]
+        for valeur in conformes:
+            self.assertTrue(self.v.valeur_conforme(valeur), f"conforme : {valeur!r}")
+        non_conformes = ["a: b", "a :", "fin:", "x # y", "## titre", "- item", "? q", ": x", ",x", "[x]", "]x", "{x}", "}x",
+                         "&x", "*x", "!x", "|x", ">x", "'x'", '"x', '"a" b', '"a\\n"', "%x", "@x", "`x`",
+                         "a\tb", "a\x01b", "a\x85b", "a\u2028b"]
+        for valeur in non_conformes:
+            self.assertFalse(self.v.valeur_conforme(valeur), f"non conforme : {valeur!r}")
+
     def test_lire_chantiers_ignore_ce_qui_precede_la_premiere_entree(self):
         chemin = self.ecrire("chantiers.yaml", "orphelin: valeur\n- id: a\n")
         self.assertEqual([e["id"] for e in self.v.lire_chantiers(chemin)], ["a"])
+
+    @SANS_PYYAML
+    def test_un_fichier_conforme_se_lit_comme_par_pyyaml(self):
+        texte = yaml(bloc("alpha-1", titre='"Un \\"titre\\" : suite"', rang="5", recette_le="2026-10-30", mesure="", refs="R1 · R2"),
+                     bloc("alpha-2", titre="Attention:oui", file='"## §1 · La file"'))
+        chemin = self.ecrire("chantiers.yaml", texte)
+        self.assertEqual(sans_position(self.v.lire_chantiers(chemin)), lecture_pyyaml(texte))
 
     def test_section_de_file(self):
         texte = "# T\n## La file\nun\ndeux\n## Suite\ntrois\n"

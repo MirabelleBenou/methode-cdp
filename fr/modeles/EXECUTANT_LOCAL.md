@@ -1,9 +1,9 @@
 # L'exécutant local, le repli — Claude Code sur le PC, piloté par fichiers · v2
-### 25 octobre 2026 · éprouvé sur un projet réel (captures d'écran d'un jeu installé sur le PC)
+### 31 octobre 2026 (v2) · éprouvé sur un projet réel (captures d'écran d'un jeu installé sur le PC)
 
 > **Le pont d'abord.** Depuis que l'application Claude offre un **pont** quand la machine du porteur est reliée — dossiers
 > reliés (lire, écrire), terminal s'il est offert, écran par l'usage de l'ordinateur, le porteur validant l'accès dans la
-> conversation du CdP —, **la session du CdP travaille elle-même sur la machine** (méthode §1, skill §5 bis). **Ce
+> conversation du CdP —, **la session du CdP travaille elle-même sur la machine** (méthode §1). **Ce
 > document décrit désormais le repli**, pour quand le pont ne s'offre pas. Raison de ce rang : piloté par fichiers,
 > l'exécutant s'est bloqué quand le porteur était loin de sa machine — demandes d'accès à l'écran refusées, attente sans fin.
 
@@ -76,7 +76,7 @@ Règles :
 
 ## 5. Le déroulé type
 
-1. Le CdP dépose `cadrages\CADRAGE_<lot>.md` (forme du `modeles/CADRAGE.md`, plus le §4 ci-dessus ou un renvoi à un
+1. Le CdP dépose `cadrages\CADRAGE_<lot>.md` (forme du [`modeles/CADRAGE.md`](CADRAGE.md), plus le §4 ci-dessus ou un renvoi à un
    addendum de synchronisation).
 2. Le porteur ouvre une session Claude Code locale **sur `<racine>\<Projet>`**, Sonnet, effort du cadrage, session neuve,
    et colle :

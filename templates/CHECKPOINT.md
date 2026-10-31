@@ -11,11 +11,11 @@ session's identifier, the one in the session attribution line of its commits)*
 > asked for in so many words, and the pasted line stands for that request.*
 ### <date, time> · <PL session> · entry point of the next session · replaces the checkpoint of <date>
 
-> *Source: private repository `<owner>/<Project>`, `<Folder>/CHECKPOINT_<P>.md`. The claude.ai project holds a mirror of
-> it under the same name, copied over by the PL.*
+> *Source: private repository `<owner>/<Project>`, `<Folder>/CHECKPOINT_<P>.md`. ⟨With the mirror extension: the
+> claude.ai project holds a mirror of it under the same name, copied over by the PL.⟩*
 >
-> *The checkpoint states the **real** state, measured — not the hoped-for state. It is rewritten in full at each handover.
-> **It fits in 10 KB** (10,240 bytes): the fixed line, the baton, the state, the queue, what is needed to resume; the
+> *The checkpoint states the **real** state, measured — not the hoped-for state. **Its §0 is refreshed at each closed batch**; the handover only rewrites a state that is already up to date.
+> **It fits under the cap of the method §6**: the fixed line, the baton, the state, the queue, what is needed to resume; the
 > history goes to a domain archive (`<Folder>/Archives/CHECKPOINT_<DOMAIN>_ARCHIVE_<date>.md`). Check 10 of the checker
 > flags it.*
 
@@ -25,7 +25,8 @@ session's identifier, the one in the session attribution line of its commits)*
 
 - **<Project> is at `v<X.Y>`.** Code fingerprint `<…>`; ritual replayed on <date>: compliant, `<n> passed`.
 - **The code repository**: `main` at `<sha>`; the deployment archive is `git archive` of `main`.
-- **Since the previous checkpoint**: <the batches delivered, one line each, with their version and their D>.
+- **Since the previous checkpoint**: <the closed batches, cited by their version (or their name) and their D; their
+  detail is in the plan's version log, not here>.
 - **The method** is at v<n> (<what changed>).
 - **The decision log**: numbers are reserved by a push at the moment of writing (method §1a) — never from this file.
 - **Open debts**: `<id>` — half a line each (every debt has its workstream, cited by its id).
@@ -89,7 +90,7 @@ the table a PL touches.*
 
 - **Opened** on <date time>, **closed** on <date time>.
 - **Work done**: <…>.
-- **Context**: about <n> tokens at the last turn (target: under 450,000; handover at 550,000 at the latest).
+- **Context**: about <n> tokens at the last turn (the thresholds are in method §6).
 - **Saturation signs seen**: <losing the thread, contradictions, a forgotten decision — or “none”> (they serve to
   recalibrate the threshold on measurements).
 - **Main items**: <…>.
@@ -99,9 +100,10 @@ the table a PL touches.*
 ## §6 · The documents
 
 **In the `<Project>` repository** (source): <list, with their version>.
-**The workstreams board**: `workstreams.html` (the fixed page) and `workstreams.json` (its data), published together as
-an artifact at <link> — to republish at the same link, both together (method §6).
+⟨**The workstreams board**, with this extension: `workstreams.html` (the fixed page) and `workstreams.json` (its data),
+published together as an artifact — the link, a single one, is in method §6 and in the living-docs README; to republish
+at close, at the same link, both together.⟩
 **In the `<Project>-App` repository**: the code, `bench/` (v<n>), `DEV_PROMPT_<P>.md` (v<n>), `batches/…`.
-**In the project, as a mirror**: <list>.
+⟨**In the project, as a mirror**, with this extension: <list>.⟩
 **In the project, written once**: <list>.
 **Nothing to upload to the next session**: it resumes with the fixed line at the top of this file.

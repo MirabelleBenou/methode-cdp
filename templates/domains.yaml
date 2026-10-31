@@ -11,9 +11,12 @@
 # that lags makes a gap in check 9.
 # THE COORDINATION HAS ITS ENTRY, like a domain: it has a queue like the others.
 #
-# The same poor form as workstreams.yaml (not standard YAML): an entry starts with “- domain:”, each key fits on ONE
-# line “key: value”, blank lines and those that start with “#” are ignored. No comment at the end of a line: it would be
-# read as part of the value. Paths relative to the root of the living-docs repository (or to the folder of --root).
+# The same poor form as workstreams.yaml, and valid YAML like it (check 11 of the checker): an entry starts with
+# “- domain:”, each key fits on ONE line “key: value”, blank lines and those that start with “#” are ignored. No comment
+# at the end of a line: it would be read as part of the value. A value that contains “:” followed by a space, or that
+# starts with a special character (that is the case of “queue:”: it starts with “#”), is written in double quotes —
+# “archive_workstreams.py normalize --workstreams <workstreams.yaml> --domains <this file>” puts the table in format.
+# Paths relative to the root of the living-docs repository (or to the folder of --root).
 #
 #   domain    : the short name of the domain (required)
 #   pl        : the name of the domain's PL; an entry of workstreams.yaml that carries this `pl:` is its own
@@ -33,18 +36,18 @@
 - domain: <domain-1>
   pl: Opus-PL-<Domain-1>
   checkpoint: <Folder>/CHECKPOINT_<DOMAIN-1>.md
-  queue: ## §3 · The queue
+  queue: "## §3 · The queue"
   modules: <module-1>
 
 - domain: <domain-2>
   pl: Opus-PL-<Domain-2>
   checkpoint: <Folder>/CHECKPOINT_<DOMAIN-2>.md
-  queue: ## §3 · The queue
+  queue: "## §3 · The queue"
   modules: <module-2> <module-3>
   prefixes: <prefix->
 
 - domain: coordination
   pl: Opus-Coordination
   checkpoint: Method/CHECKPOINT_METHOD.md
-  queue: ## §3 · The queue
+  queue: "## §3 · The queue"
   modules: method

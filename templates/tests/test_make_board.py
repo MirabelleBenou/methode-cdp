@@ -10,11 +10,12 @@ import re
 import unittest
 from datetime import date
 
-from .test_tools import GENERATOR, TempCase, block, yaml
+from .test_tools import GENERATOR, TempCase, block, load, yaml
 
 STATUSES = [("upcoming", "Upcoming"), ("to-brief", "To brief"), ("in-flight", "In flight"),
             ("debt", "Debt"), ("accepted", "Accepted")]
 RE_DATE = re.compile(r"\d{2}/\d{2}/\d{4}")
+PAGE_KEYS = ["id", "title", "module", "category", "status", "priority", "complexity", "rank", "basis", "cost", "refs"]
 DEFAULT_LABELS = {"screen": "Screen", "data": "Data", "doc": "Documentation", "tooling": "Tooling",
                   "engine": "Engine", "operations": "Operations", "core": "Core"}
 
@@ -197,21 +198,87 @@ class TestGeneration(GeneratorCase):
                         for n, (i, s) in enumerate(zip(ids, statuses), start=1)))
         self.assertEqual([w["id"] for w in self.workstreams()], ids)
 
-    def test_every_entry_keeps_all_its_keys_as_read(self):
+    def test_every_entry_keeps_only_the_keys_of_the_page_in_the_order_of_the_page(self):
         self.generate(block("alpha-1", title="First", status="in-flight", pl="Opus-PL-Alpha", module="module-a",
                             category="doc", priority="high", complexity="high", rank="2", basis="A basis",
-                            cost="2 days", refs="R1 R2", version="v1.0.0", deliverable="repo", waits="alpha-2"),
+                            cost="2 days", refs="R1 R2", version="v1.0.0", deliverable="repo", waits="alpha-2",
+                            touches="a file", resource="machine", accepted_on="2026-10-30", **{"for": "Opus-PL-Beta"}),
                       block("alpha-2", status="upcoming", unknown_key="value"))
         first, second = self.workstreams()
-        self.assertEqual(first, {"id": "alpha-1", "title": "First", "status": "in-flight", "pl": "Opus-PL-Alpha",
-                                 "module": "module-a", "category": "doc", "priority": "high", "complexity": "high",
-                                 "rank": "2", "basis": "A basis", "cost": "2 days", "refs": "R1 R2",
-                                 "version": "v1.0.0", "deliverable": "repo", "waits": "alpha-2"})
-        self.assertEqual(list(first), ["id", "title", "status", "pl", "module", "category", "priority", "complexity",
-                                       "rank", "basis", "cost", "refs", "version", "deliverable", "waits"])
-        self.assertEqual(second, {"id": "alpha-2", "status": "upcoming", "unknown-key": "value"})
+        self.assertEqual(first, {"id": "alpha-1", "title": "First", "module": "module-a", "category": "doc",
+                                 "status": "in-flight", "priority": "high", "complexity": "high", "rank": "2",
+                                 "basis": "A basis", "cost": "2 days", "refs": "R1 R2"})
+        self.assertEqual(list(first), PAGE_KEYS)
+        self.assertEqual(second, {"id": "alpha-2", "status": "upcoming"}, "the id and the status, never a key that is not on the page")
         for entry in (first, second):
             self.assertTrue(all(isinstance(v, str) for v in entry.values()), entry)
+
+    def test_the_keys_of_the_data_file_are_the_ones_the_page_uses(self):
+        self.generate(block("alpha-1", status="upcoming"))
+        page = self.page()
+        for key in PAGE_KEYS:
+            self.assertRegex(page, rf'\b[wx]\.{key}\b|"{key}"', f"the page does not use the key {key}")
+        for key in ("pl", "version", "deliverable", "waits", "touches", "for", "resource", "accepted-on"):
+            self.assertNotIn(f"w.{key}", page, f"the page does not use the key {key}")
+            self.assertNotIn(f'"{key}"', page)
+        module = load(GENERATOR, "make_board_keys")
+        self.assertEqual(list(module.PAGE_KEYS), PAGE_KEYS)
+
+    def test_the_long_values_of_the_cards_are_truncated_on_a_space_with_an_ellipsis(self):
+        module = load(GENERATOR, "make_board_truncation")
+        maximum = module.MAX_LENGTH
+        long = " ".join(f"word{n}" for n in range(1, 200))
+        self.generate(block("alpha-1", status="upcoming", basis=long, cost=long))
+        entry = self.workstreams()[0]
+        for key in ("basis", "cost"):
+            value = entry[key]
+            self.assertTrue(value.endswith("…"), value)
+            self.assertLessEqual(len(value), maximum)
+            cut = value[:-1]
+            self.assertTrue(long.startswith(cut) and long[len(cut)] == " ", f"cut on a space: {value!r}")
+            self.assertGreater(len(value), maximum - 10, "the cut keeps almost all the permitted length")
+
+    def test_a_value_that_fits_is_not_truncated_and_the_other_keys_never_are(self):
+        module = load(GENERATOR, "make_board_exact")
+        exact = "x" * module.MAX_LENGTH
+        long = "word " * 100
+        self.generate(block("alpha-1", title=long.strip(), status="upcoming", basis=exact, cost="short", refs=long.strip()))
+        entry = self.workstreams()[0]
+        self.assertEqual((entry["basis"], entry["cost"]), (exact, "short"))
+        self.assertEqual((entry["title"], entry["refs"]), (long.strip(), long.strip()))
+
+    def test_a_value_without_a_space_is_cut_at_the_permitted_length(self):
+        module = load(GENERATOR, "make_board_no_space")
+        self.generate(block("alpha-1", status="upcoming", basis="y" * (module.MAX_LENGTH + 50)))
+        self.assertEqual(self.workstreams()[0]["basis"], "y" * (module.MAX_LENGTH - 1) + "…")
+
+    def test_the_truncation_is_deterministic(self):
+        long = "text " * 80
+        self.generate(block("alpha-1", status="upcoming", basis=long, cost=long), block("alpha-2", status="debt", basis=long))
+        first = RE_DATE.sub("<date>", self.data_text())
+        self.generate(block("alpha-1", status="upcoming", basis=long, cost=long), block("alpha-2", status="debt", basis=long))
+        self.assertEqual(RE_DATE.sub("<date>", self.data_text()), first)
+
+    def test_the_data_file_is_a_light_excerpt(self):
+        """Many entries with long values and keys of every kind: the JSON stays small."""
+        long = "a sentence long enough to weigh in the file " * 20
+        blocks = [block(f"alpha-{n}", title=f"Title {n}", status="upcoming", module="module-a", basis=long, cost=long,
+                        refs="R1", pl="Opus-PL-Alpha", touches=long, version=f"v{n}", deliverable="repo") for n in range(100)]
+        self.generate(*blocks)
+        self.assertLess(self.json.stat().st_size, 90000)
+        self.assertLess(self.json.stat().st_size, self.source.stat().st_size // 4)
+
+    def test_a_quoted_value_is_read_without_quotes_or_escapes(self):
+        self.generate(block("alpha-1", title='"A \\"title\\" : continued"', status="upcoming", basis='"a \\\\ b"', refs='""'))
+        entry = self.workstreams()[0]
+        self.assertEqual(entry["title"], 'A "title" : continued')
+        self.assertEqual(entry["basis"], "a \\ b")
+        self.assertEqual(entry["refs"], "")
+
+    def test_a_non_conforming_bare_value_is_read_as_it_is(self):
+        self.generate(block("alpha-1", title="A title : continued", status="upcoming", basis='"no end', refs='"a" b'))
+        entry = self.workstreams()[0]
+        self.assertEqual((entry["title"], entry["basis"], entry["refs"]), ("A title : continued", '"no end', '"a" b'))
 
     def test_the_default_labels_are_in_the_data(self):
         self.generate(block("alpha-1", status="upcoming"))

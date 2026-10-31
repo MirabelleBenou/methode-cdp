@@ -39,8 +39,16 @@
 
 ## §11 · The version log
 
-*Append only. One line per batch that takes a version.*
+*Append only. One line per closed batch, at its close. **It is the only source of a batch's facts**: the decision log,
+`workstreams.yaml` and the checkpoint cite it (the version or the batch's name), they do not repeat it (method §6). This
+log does not say that a version was handed over then refused — the number rule reads the batch branches and
+`workstreams.yaml` (the method, §1a; open and archived).*
 
-| version | date | batch | dev | acceptance | refs |
-|---|---|---|---|---|---|
-| `v<X.Y>` | <date> | <title> | <model, effort, duration, stops> | <compliant / fix> | D<n> |
+*The form of a line: the version (a deliverable deployed per batch) or the batch's name (released, with no version);
+the date; the title; the dev (model, effort); the duration; the stops (their number, “none”); the acceptance
+(compliant, addendum); the fingerprint of the delivered code; the validation (in production, by the owner, the date — or
+“merged after acceptance” for a released deliverable); the D numbers.*
+
+| version or batch | date | batch | dev | duration | stops | acceptance | fingerprint | validation | refs |
+|---|---|---|---|---|---|---|---|---|---|
+| `v<X.Y>` | <date> | <title> | <model, effort> | <duration> | <n, or none> | <compliant / addendum <n>> | `<fingerprint>` | <in production, <date>> | D<n> |

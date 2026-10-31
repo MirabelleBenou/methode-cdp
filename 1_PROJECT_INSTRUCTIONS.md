@@ -2,7 +2,7 @@
 
 *To paste into the claude.ai project instructions, after replacing the `<…>`. The text stays short: it says who
 you are, what you expect, and **where** the rules are — never the rules themselves, which live in the skill and in the
-project's method. A rule copied here would drift from its source. **Read `CORE.md` first** (two pages): it says what
+project's method. A rule copied here would drift from its source. **Read [`CORE.md`](CORE.md) first**: it says what
 the words of this text — PL, batch, living docs, checkpoint — cover. The blocks below are in English; you can paste them
 in your own language.*
 
@@ -17,8 +17,8 @@ Project: <one to three sentences: what you want to build, for whom, in what cont
 
 I expect the Opus AIs to help me as project lead, with recommendations not only on the code approach but also on the visual / creative side. We apply the PL method (skill methode-cdp), refined by the project's method, which prevails: the PL decides with me, writes the briefs, launches the dev itself as a sub-agent and accepts; I talk only to the PL.
 
-Current state: <Folder>/CHECKPOINT_<P>.md. Decisions: <Folder>/DECISION_LOG_<P>.md. Workstreams: <Folder>/workstreams.yaml. Plan: <Folder>/PLAN_<P>.md. Method: Method/METHOD_<P>.md; dev prompt: Method/DEV_PROMPT_<P>.md.
-These files are the mirror of the private repository <owner>/<Project>, copied over by the PL at every close-out. The code is on GitHub: <owner>/<Project>-App (private)<, and <public repository> (public)>.
+Current state: <Folder>/CHECKPOINT_<P>.md. Decisions: <Folder>/DECISION_LOG_<P>.md. Workstreams: <Folder>/workstreams.yaml. Plan: <Folder>/PLAN_<P>.md. Method: Method/METHOD_<P>.md.
+These files are in the private repository <owner>/<Project><, and mirrored in this project, copied over by the PL at every close-out — only with the mirror extension>. The code is on GitHub: <owner>/<Project>-App (private)<, and <public repository> (public)>. The dev prompt lives at the root of the code repository <Project>-App (of <Project>-Batches when the code is public).
 
 <If the project drives your machine (a game, an application, the screen): On my PC, all of a project's work lives under <root>\<Project>\ (never in an application's folders). Whatever runs on the PC goes through the PL's own session, through the Claude app's bridge (linked folders, a terminal if one is offered, the screen, which I validate); a local Claude Code session driven by files is only a fallback.>
 
@@ -45,7 +45,7 @@ I expect the Opus AIs to help me as project lead (code and visual / creative sid
 
 ## The text (several-PL version, with a coordination)
 
-*When the project moves to mode B or C (`GUIDE.md` §2a and §3a). The coordination — or the PL that opens a domain —
+*When the project moves to mode B or C ([`GUIDE.md`](GUIDE.md) §2a and §3a). The coordination — or the PL that opens a domain —
 gives it back to you filled in; this template serves to check that nothing is missing.*
 
 ```
@@ -59,7 +59,7 @@ Several PLs work at the same time, one per domain, each with its checkpoint: <Do
 
 The coordination, Opus-Coordination, holds the method, the domain table, the launching of the PLs and the method package: Method/CHECKPOINT_METHOD.md. It is the one I address to open a domain, resume a PL or ask a method question.
 
-Decisions: <Folder>/DECISION_LOG_<P>.md. Workstreams: <Folder>/workstreams.yaml. These files are the mirror of the private repository <owner>/<Project>, copied over at every close-out. The code is on GitHub: <the code repositories, private or public>; <if some code is public: the batches of all modules (briefs, reports, dev prompt) in <owner>/<Project>-Batches (private)>.
+Decisions: <Folder>/DECISION_LOG_<P>.md. Workstreams: <Folder>/workstreams.yaml. These files are in the private repository <owner>/<Project><, and mirrored in this project, copied over at every close-out — only with the mirror extension>. The code is on GitHub: <the code repositories, private or public>; <if some code is public: the batches of all modules (briefs, reports, dev prompt) in <owner>/<Project>-Batches (private)>.
 
 <If the project drives your machine (a game, an application, the screen): On my PC, all of a project's work lives under <root>\<Project>\ (never in an application's folders). Whatever runs on the PC goes through the PL's own session, through the Claude app's bridge (linked folders, a terminal if one is offered, the screen, which I validate); a local Claude Code session driven by files is only a fallback.>
 

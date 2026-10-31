@@ -1,4 +1,4 @@
-"""Tests of check_living_docs.py: each of the ten checks, once OK and once in gap; the invalid calls.
+"""Tests of check_living_docs.py: each of the eleven checks, once OK and once in gap; the invalid calls.
 
 Every test builds its fixtures in a temporary folder (see test_tools.py) and calls the script on the
 command line; a few tests call its functions when that is clearer.
@@ -6,21 +6,21 @@ command line; a few tests call its functions when that is clearer.
 import re
 import unittest
 
-from .test_tools import (CHECKER, GAP, GENERATOR, NOT_REQUESTED, WARNING, TempCase,
-                         block, decision_log, load, yaml)
+from .test_tools import (CHECKER, GAP, GENERATOR, NOT_REQUESTED, NO_PYYAML, WARNING, TempCase,
+                         block, decision_log, load, pyyaml_reading, without_position, yaml)
 
 TWO_DOMAINS_TABLE = """# Domains
 - domain: alpha
   pl: Opus-PL-Alpha
   checkpoint: CHECKPOINT_ALPHA.md
-  queue: ## The queue
+  queue: "## The queue"
   modules: module-a
   prefixes: alpha-
 
 - domain: beta
   pl: Opus-PL-Beta
   checkpoint: CHECKPOINT_BETA.md
-  queue: ## The queue
+  queue: "## The queue"
   modules: module-b
 """
 
@@ -70,19 +70,21 @@ class TestBasicCall(CheckerCase):
         self.assertEqual(output.count(4), "1 versions")
         self.assertEqual(output.count(5), "0 in flight")
         self.assertEqual(output.count(8), "0 deliverables, 0 resources, 0 in flight, 0 waiting")
+        self.assertEqual(output.verdict(11), "OK", "check 11 always runs")
+        self.assertEqual(output.count(11), "1 files, 12 lines read")
 
     def test_not_requested_when_an_option_is_missing(self):
         output = self.check()
         for rank in (6, 7, 9, 10):
             self.assertEqual(output.verdict(rank), NOT_REQUESTED, f"check {rank}")
-        self.assertEqual(len(output.checks) - 1, 10, "ten check lines, plus the summary")
+        self.assertEqual(len(output.checks) - 1, 11, "eleven check lines, plus the summary")
 
-    def test_ten_checks_in_order(self):
+    def test_eleven_checks_in_order(self):
         labels = re.findall(r"^\d+\s+(\S.*?)\s+(?:OK|GAP|warning|—)(?:\s|$)", self.check().stdout, flags=re.M)
         self.assertEqual(labels, [
             "decision numbers", "reservations", "workstream ids", "batch versions",
             "workstreams in flight", "board", "version log", "deliverables and resources", "checkpoints",
-            "checkpoint size"])
+            "checkpoint size", "YAML format"])
 
     def test_a_gap_gives_code_1(self):
         self.log = self.write("decision_log.md", decision_log(1, 3))
@@ -335,6 +337,86 @@ class TestCheck4Versions(CheckerCase):
         self.assertEqual(output.verdict(4), GAP)
         self.assertEqual(output.count(4), "1 versions")
         self.assertEqual(output.details(4), ["version v1.0.0 carried by alpha-1 and alpha-2"])
+
+    # (b) the batch in flight carries a version higher than every other one of the same deliverable (the number of a fix)
+    def test_in_flight_above_ok(self):
+        self.with_workstreams(block("alpha-1", status="accepted", deliverable="App", version="v1.0009"),
+                              block("alpha-2", status="in-flight", pl="Opus-PL-Alpha", deliverable="App", version="v1.0010"))
+        output = self.check()
+        self.assertEqual((output.verdict(4), output.count(4)), ("OK", "2 versions"))
+
+    def test_gap_in_flight_equal_by_its_numbers(self):
+        self.with_workstreams(block("alpha-1", status="accepted", deliverable="App", version="v1.0065"),
+                              block("alpha-2", status="in-flight", pl="Opus-PL-Alpha", deliverable="App", version="v1.65"))
+        output = self.check()
+        self.assertEqual(output.verdict(4), GAP)
+        self.assertEqual(output.details(4), ["alpha-2: v1.65 is not above v1.0065 (alpha-1)"])
+
+    def test_gap_in_flight_below_names_the_highest(self):
+        self.with_workstreams(block("alpha-1", status="accepted", deliverable="App", version="v1.9.0"),
+                              block("alpha-2", status="to-brief", deliverable="App", version="v1.10.0"),
+                              block("alpha-3", status="in-flight", pl="Opus-PL-Alpha", deliverable="App", version="v1.2.0"))
+        output = self.check()
+        self.assertEqual(output.verdict(4), GAP)
+        self.assertEqual(output.details(4), ["alpha-3: v1.2.0 is not above v1.10.0 (alpha-2)"])
+
+    def test_another_deliverable_is_ignored(self):
+        self.with_workstreams(block("alpha-1", status="accepted", deliverable="Agent", version="agent-v2.0.0"),
+                              block("alpha-2", status="in-flight", pl="Opus-PL-Alpha", deliverable="App", version="v1.0.0"))
+        self.assertEqual(self.check().verdict(4), "OK")
+
+    def test_without_deliverable_ignored(self):
+        self.with_workstreams(block("alpha-1", status="accepted", version="v2.0.0"),
+                              block("alpha-2", status="in-flight", pl="Opus-PL-Alpha", version="v1.0.0"),
+                              block("alpha-3", status="accepted", deliverable="App", version="v3.0.0"),
+                              block("alpha-4", status="in-flight", pl="Opus-PL-Alpha", deliverable="App", version="no-number"))
+        self.assertEqual(self.check().verdict(4), "OK")
+
+    def test_gap_found_in_an_archive(self):
+        self.with_workstreams(block("alpha-2", status="in-flight", pl="Opus-PL-Alpha", deliverable="App", version="v1.1.0"))
+        folder = self.archives(**{"WORKSTREAMS_2026-03": [block("alpha-1", status="accepted", deliverable="App",
+                                                                version="v1.1.0")]})
+        self.assertEqual(self.check().verdict(4), "OK", "without --archives, the archive is not read")
+        output = self.check("--archives", folder)
+        self.assertEqual(output.verdict(4), GAP)
+        self.assertEqual(output.count(4), "1 versions")
+        self.assertEqual(output.details(4), ["alpha-2: v1.1.0 is not above v1.1.0 (alpha-1)"])
+
+    # (b) only the version token is compared (the first occurrence of [vV]?n.n[.n…] or of [vV]n)
+    def test_a_value_with_a_hash_and_a_decision_number_is_not_compared(self):
+        self.with_workstreams(block("alpha-1", status="accepted", deliverable="App",
+                                    version="tool at public main 18a2957, no release (D188)"),
+                              block("alpha-2", status="in-flight", pl="Opus-PL-Alpha", deliverable="App", version="v1.0.0"))
+        self.assertEqual(self.check().verdict(4), "OK")
+
+    def test_the_version_token_of_a_value(self):
+        c = load(CHECKER, "check_living_docs_token")
+        self.assertEqual(c.numbers("tool at public main 18a2957, no release (D188)"), ())
+        self.assertEqual(c.numbers("v1.10 (D205)"), (1, 10))
+        self.assertEqual(c.numbers("AC-V1.5.1"), (1, 5, 1))
+        self.assertEqual(c.numbers("agent-v0.1.1"), (0, 1, 1))
+        self.assertEqual(c.numbers("v19"), (19,))
+        self.assertEqual(c.numbers("no-number"), ())
+
+    def test_the_decision_number_of_a_value_does_not_count(self):
+        # read (1, 10), not (1, 10, 205): above v1.9, below v1.11
+        self.with_workstreams(block("alpha-1", status="accepted", deliverable="App", version="v1.9"),
+                              block("alpha-2", status="in-flight", pl="Opus-PL-Alpha", deliverable="App", version="v1.10 (D205)"))
+        self.assertEqual(self.check().verdict(4), "OK")
+        self.with_workstreams(block("alpha-1", status="accepted", deliverable="App", version="v1.10.0"),
+                              block("alpha-2", status="in-flight", pl="Opus-PL-Alpha", deliverable="App", version="v1.10 (D205)"))
+        output = self.check()
+        self.assertEqual(output.details(4), ["alpha-2: v1.10 (D205) is not above v1.10.0 (alpha-1)"])
+
+    def test_a_token_with_an_upper_case_prefix(self):
+        self.with_workstreams(block("alpha-1", status="accepted", deliverable="App", version="AC-V1.5.1"),
+                              block("alpha-2", status="in-flight", pl="Opus-PL-Alpha", deliverable="App", version="AC-V1.5.0"))
+        self.assertEqual(self.check().details(4), ["alpha-2: AC-V1.5.0 is not above AC-V1.5.1 (alpha-1)"])
+
+    def test_a_token_without_a_dot(self):
+        self.with_workstreams(block("alpha-1", status="accepted", deliverable="App", version="v19"),
+                              block("alpha-2", status="in-flight", pl="Opus-PL-Alpha", deliverable="App", version="v20"))
+        self.assertEqual(self.check().verdict(4), "OK")
 
 
 class TestCheck5InFlight(CheckerCase):
@@ -607,6 +689,9 @@ class TestCheck8Deliverables(CheckerCase):
         self.assertEqual(output.verdict(8), GAP)
 
 
+TEXT_CITED_IN_ZERO = "# Checkpoint\n## §0 · State\nWe are working on `alpha-1`.\n## The queue\n- nothing\n"
+
+
 class CheckpointsCase(CheckerCase):
     """Two domains (alpha, beta), their checkpoints and a few workstreams; each test changes one piece."""
 
@@ -669,7 +754,7 @@ class TestCheck9Checkpoints(CheckpointsCase):
         self.assertEqual(self.check_domains().verdict(9), "OK")
 
     def test_the_queue_title_is_a_line_start(self):
-        table = TWO_DOMAINS_TABLE.replace("queue: ## The queue\n  modules: module-a", "queue: ## §3 · The queue\n  modules: module-a")
+        table = TWO_DOMAINS_TABLE.replace('queue: "## The queue"\n  modules: module-a', 'queue: "## §3 · The queue"\n  modules: module-a')
         self.table = self.write("domains.yaml", table)
         self.write("CHECKPOINT_ALPHA.md", "# Checkpoint\n## §3 · The queue (what comes next)\n- `alpha-1`\n")
         self.assertEqual(self.check_domains().verdict(9), "OK")
@@ -693,9 +778,34 @@ class TestCheck9Checkpoints(CheckpointsCase):
             "alpha: alpha-3 (debt) is not cited in the checkpoint",
             "alpha: alpha-4 (in-flight) is not cited in the checkpoint"])
 
-    def test_an_open_one_cited_elsewhere_in_the_checkpoint_is_cited(self):
+    def test_gap_an_open_one_cited_only_outside_the_queue(self):
+        """9c: the citation is looked for in the queue section, not in the whole checkpoint."""
+        self.write("CHECKPOINT_ALPHA.md", TEXT_CITED_IN_ZERO)
+        output = self.check_domains()
+        self.assertEqual(output.verdict(9), GAP, output.stdout)
+        self.assertEqual(output.details(9), ["alpha: alpha-1 (upcoming) is not cited in the checkpoint"])
+        self.assertEqual(output.count(9), "2 domains, 0 cited closed, 1 not cited, 0 without a queue section")
+
+    def test_gap_an_open_one_cited_only_in_the_history(self):
         self.write("CHECKPOINT_ALPHA.md", checkpoint(history=("alpha-1",)))
+        output = self.check_domains()
+        self.assertEqual(output.verdict(9), GAP)
+        self.assertEqual(output.details(9), ["alpha: alpha-1 (upcoming) is not cited in the checkpoint"])
+
+    def test_an_open_one_cited_in_the_queue_is_cited_even_if_it_is_also_cited_in_zero(self):
+        self.write("CHECKPOINT_ALPHA.md", TEXT_CITED_IN_ZERO.replace("- nothing", "- `alpha-1` to do"))
         self.assertEqual(self.check_domains().verdict(9), "OK")
+        self.write("CHECKPOINT_ALPHA.md", checkpoint("alpha-1"))
+        self.assertEqual(self.check_domains().verdict(9), "OK")
+
+    def test_without_a_declared_queue_section_the_citation_is_looked_for_in_the_whole_checkpoint(self):
+        """The behaviour of before does not change when the table declares no queue section."""
+        self.table = self.write("domains.yaml", TWO_DOMAINS_TABLE.replace('queue: "## The queue"\n  modules: module-a',
+                                                                            'queue:\n  modules: module-a'))
+        self.write("CHECKPOINT_ALPHA.md", TEXT_CITED_IN_ZERO)
+        output = self.check_domains()
+        self.assertEqual(output.details(9), ["alpha: no queue section declared (queue: empty)"])
+        self.assertEqual(output.count(9), "2 domains, 0 cited closed, 0 not cited, 1 without a queue section")
 
     def test_the_citation_is_made_between_backticks(self):
         self.write("CHECKPOINT_ALPHA.md", "# Checkpoint\n## The queue\n- alpha-1 without backticks\n")
@@ -710,7 +820,7 @@ class TestCheck9Checkpoints(CheckpointsCase):
         self.assertEqual(self.check_domains().verdict(9), "OK")
 
     def test_gap_empty_queue_in_the_table(self):
-        table = TWO_DOMAINS_TABLE.replace("queue: ## The queue\n  modules: module-a", "queue:\n  modules: module-a")
+        table = TWO_DOMAINS_TABLE.replace('queue: "## The queue"\n  modules: module-a', "queue:\n  modules: module-a")
         self.table = self.write("domains.yaml", table)
         output = self.check_domains()
         self.assertEqual(output.verdict(9), GAP)
@@ -718,7 +828,7 @@ class TestCheck9Checkpoints(CheckpointsCase):
         self.assertEqual(output.count(9), "2 domains, 0 cited closed, 0 not cited, 1 without a queue section")
 
     def test_empty_queue_the_line_comes_before_the_not_cited_and_9b_does_not_apply(self):
-        table = TWO_DOMAINS_TABLE.replace("queue: ## The queue\n  modules: module-a", "queue:\n  modules: module-a")
+        table = TWO_DOMAINS_TABLE.replace('queue: "## The queue"\n  modules: module-a', "queue:\n  modules: module-a")
         self.table = self.write("domains.yaml", table)
         self.with_workstreams(block("alpha-1", status="upcoming", module="module-a"),
                               block("alpha-0", status="accepted", module="module-a"),
@@ -890,6 +1000,96 @@ class TestCheck10Size(CheckpointsCase):
         self.assertTrue(output.details(10)[0].startswith("alpha: sub/CHECKPOINT_ALPHA.md weighs "), output.details(10))
 
 
+class TestCheck11Format(CheckpointsCase):
+    """Check 11: every value is a safe YAML scalar (bare and safe, or between double quotes)."""
+
+    def line_of(self, path, fragment: str) -> int:
+        lines = path.read_text(encoding="utf-8").split("\n")
+        return next(i for i, line in enumerate(lines, start=1) if fragment in line)
+
+    def lines(self, *paths) -> int:
+        return sum(len(p.read_text(encoding="utf-8").split("\n")) - 1 for p in paths)
+
+    def test_ok_on_a_conforming_file(self):
+        self.with_workstreams(block("alpha-1", title="A title", status="upcoming", rank="5", accepted_on="2026-10-30",
+                                    basis='"text : continued, with \\" and \\\\"', cost=""),
+                              block("alpha-2", status="accepted", refs="D12 · briefing - report"))
+        output = self.check()
+        self.assertEqual(output.verdict(11), "OK", output.stdout)
+        self.assertEqual(output.count(11), f"1 files, {self.lines(self.workstreams)} lines read")
+        self.assertEqual(output.details(11), [])
+
+    def test_gap_on_a_value_that_starts_with_a_hash(self):
+        """The case of the domain table: "queue: ## §1 · The queue"."""
+        table = TWO_DOMAINS_TABLE.replace('queue: "## The queue"\n  modules: module-a', "queue: ## §1 · The queue\n  modules: module-a")
+        self.table = self.write("domains.yaml", table)
+        self.write("CHECKPOINT_ALPHA.md", checkpoint("alpha-1").replace("## The queue", "## §1 · The queue"))
+        output = self.check_domains()
+        self.assertEqual(output.verdict(9), "OK")
+        self.assertEqual(output.verdict(11), GAP, output.stdout)
+        self.assertEqual(output.details(11)[0], f"{self.table}:{self.line_of(self.table, '§1')} : key queue")
+        self.assertEqual(output.count(11), "1 non-conforming value(s), 2 files, "
+                                           f"{self.lines(self.workstreams, self.table)} lines read")
+
+    def test_gap_on_a_colon_followed_by_a_space(self):
+        self.with_workstreams(block("alpha-1", status="upcoming", basis="text : continued"))
+        output = self.check()
+        self.assertEqual(output.verdict(11), GAP)
+        self.assertEqual(output.details(11)[0], f"{self.workstreams}:{self.line_of(self.workstreams, 'text : continued')} : key basis")
+
+    def test_gap_on_a_value_that_ends_with_a_colon(self):
+        self.with_workstreams(block("alpha-1", status="upcoming"), block("alpha-2", status="upcoming", title="Careful:"))
+        output = self.check()
+        self.assertEqual(output.verdict(11), GAP)
+        self.assertEqual(output.details(11)[0], f"{self.workstreams}:{self.line_of(self.workstreams, 'Careful:')} : key title")
+        self.assertEqual(output.code, 1)
+        self.assertEqual(output.summary, "LIVING DOCS · 1 gap(s)")
+
+    def test_the_detail_gives_the_command_that_normalizes(self):
+        self.with_workstreams(block("alpha-1", status="upcoming", basis="a : b"))
+        output = self.check()
+        self.assertEqual(output.details(11)[-1],
+                         f"to normalize: python3 -B archive_workstreams.py normalize --workstreams {self.workstreams}")
+
+    def test_the_first_five_non_conforming_values_are_given_and_all_counted(self):
+        self.with_workstreams(*(block(f"alpha-{n}", status="upcoming", basis=f"basis {n} : continued") for n in range(1, 8)))
+        output = self.check()
+        self.assertTrue(output.count(11).startswith("7 non-conforming value(s), 1 files, "), output.count(11))
+        self.assertEqual(len(output.details(11)), 5 + 1, "five values, then the command")
+        lines = [self.line_of(self.workstreams, f"basis {n} :") for n in range(1, 6)]
+        self.assertEqual([d.split(" : ")[0] for d in output.details(11)[:5]], [f"{self.workstreams}:{n}" for n in lines])
+
+    def test_the_archives_are_read_with_their_option_only(self):
+        folder = self.archives(**{"WORKSTREAMS_2026-03": [block("old-1", status="accepted", title="Done : almost")],
+                                  "WORKSTREAMS_2026-04": [block("old-2", status="accepted")]})
+        without = self.check()
+        self.assertEqual(without.verdict(11), "OK")
+        self.assertTrue(without.count(11).startswith("1 files, "), without.count(11))
+        with_ = self.check("--archives", folder)
+        self.assertEqual(with_.verdict(11), GAP, with_.stdout)
+        self.assertTrue(with_.count(11).startswith("1 non-conforming value(s), 3 files, "), with_.count(11))
+        archive = self.folder / "archives" / "WORKSTREAMS_2026-03.yaml"
+        self.assertEqual(with_.details(11)[0], f"{archive}:{self.line_of(archive, 'Done')} : key title")
+        self.assertEqual(with_.details(11)[-1], "to normalize: python3 -B archive_workstreams.py normalize "
+                                                f"--workstreams {self.workstreams} --archives {folder}")
+
+    def test_the_table_is_read_with_its_option_only(self):
+        self.table = self.write("domains.yaml", TWO_DOMAINS_TABLE.replace("modules: module-b", "modules: module-b : x"))
+        self.assertEqual(self.check().verdict(11), "OK")
+        with_ = self.check("--domains", self.table, "--root", self.folder)
+        self.assertEqual(with_.verdict(11), GAP, with_.stdout)
+        self.assertEqual(with_.details(11)[0], f"{self.table}:{self.line_of(self.table, 'module-b : x')} : key modules")
+        self.assertEqual(with_.details(11)[-1], "to normalize: python3 -B archive_workstreams.py normalize "
+                                                f"--workstreams {self.workstreams} --domains {self.table}")
+
+    def test_the_check_does_not_change_the_others(self):
+        self.with_workstreams(block("alpha-1", status="upcoming", module="module-a", basis="a : b"),
+                              block("beta-1", status="to-brief", module="module-b"))
+        output = self.check_domains()
+        self.assertEqual([output.verdict(r) for r in range(1, 11)],
+                         ["OK", "OK", "OK", "OK", "OK", NOT_REQUESTED, NOT_REQUESTED, "OK", "OK", "OK"])
+
+
 class TestFunctions(TempCase):
     """Direct calls to the script's functions, when that is clearer than the command line."""
 
@@ -898,7 +1098,7 @@ class TestFunctions(TempCase):
         cls.c = load(CHECKER, "check_living_docs_under_test")
 
     def test_ranges(self):
-        self.assertEqual(self.c.ranges([320, 325, 326, 327]), ["D320", "D325 to D327 (3 numbers)"])
+        self.assertEqual(self.c.ranges([20, 25, 26, 27]), ["D20", "D25 to D27 (3 numbers)"])
         self.assertEqual(self.c.ranges([]), [])
         self.assertEqual(self.c.ranges([1, 2]), ["D1 to D2 (2 numbers)"])
 
@@ -910,6 +1110,42 @@ class TestFunctions(TempCase):
         self.assertEqual(entries[0]["_line"], 3)
         self.assertEqual(entries[0]["_file"], "workstreams.yaml")
         self.assertEqual(entries[0]["title"], "A title: with colons")
+
+    def test_read_workstreams_returns_a_quoted_value_without_quotes_or_escapes(self):
+        path = self.write("workstreams.yaml", '- id: a\n  title: "A \\"title\\" with \\\\ and : colons"\n  empty: ""\n')
+        entry = self.c.read_workstreams(path)[0]
+        self.assertEqual(entry["title"], 'A "title" with \\ and : colons')
+        self.assertEqual(entry["empty"], "")
+
+    def test_read_workstreams_reads_a_non_conforming_bare_value_as_before(self):
+        path = self.write("workstreams.yaml", '- id: a\n  title: text : continued\n  open: "no end\n  mid: "a" b\n'
+                                                '  end: "a\\"\n  other: "a\\n"\n  hash: ## title\n')
+        entry = self.c.read_workstreams(path)[0]
+        self.assertEqual((entry["title"], entry["open"], entry["mid"]), ("text : continued", '"no end', '"a" b'))
+        self.assertEqual((entry["end"], entry["other"], entry["hash"]), ('"a\\"', '"a\\n"', "## title"))
+
+    def test_read_workstreams_reads_the_domain_table_between_quotes(self):
+        path = self.write("domains.yaml", '- domain: alpha\n  queue: "## §1 · The queue"\n')
+        self.assertEqual(self.c.read_workstreams(path)[0]["queue"], "## §1 · The queue")
+
+    def test_value_conforms(self):
+        conforming = ["", "text", "a:b", "a#b", "5", "2026-10-30", "D12 · briefing", "x - y", "text with `code`", "à é · —",
+                      'x"y"', "it's", '"x : y"', '"## title"', '"a \\" b \\\\ c"', '""', "http://example.com/a"]
+        for value in conforming:
+            self.assertTrue(self.c.value_conforms(value), f"conforming: {value!r}")
+        non_conforming = ["a: b", "a :", "end:", "x # y", "## title", "- item", "? q", ": x", ",x", "[x]", "]x", "{x}", "}x",
+                          "&x", "*x", "!x", "|x", ">x", "'x'", '"x', '"a" b', '"a\\n"', "%x", "@x", "`x`",
+                          "a\tb", "a\x01b", "a\x85b", "a\u2028b"]
+        for value in non_conforming:
+            self.assertFalse(self.c.value_conforms(value), f"non-conforming: {value!r}")
+
+    @NO_PYYAML
+    def test_a_conforming_file_is_read_as_by_pyyaml(self):
+        text = yaml(block("alpha-1", title='"A \\"title\\" : continued"', rank="5", accepted_on="2026-10-30", basis="",
+                          refs="D1 · D2"),
+                    block("alpha-2", title="Careful:oh", queue='"## §1 · The queue"'))
+        path = self.write("workstreams.yaml", text)
+        self.assertEqual(without_position(self.c.read_workstreams(path)), pyyaml_reading(text))
 
     def test_read_workstreams_ignores_what_precedes_the_first_entry(self):
         path = self.write("workstreams.yaml", "orphan: value\n- id: a\n")

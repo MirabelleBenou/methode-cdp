@@ -10,12 +10,16 @@ month), and makes it possible to find an archived workstream.
         [--delay <days, 7 by default>] [--date YYYY-MM-DD] [--dry-run]
     python3 -B archive_workstreams.py search <pattern> --workstreams <workstreams.yaml> \\
         --archives <folder> [--everywhere]
+    python3 -B archive_workstreams.py normalize --workstreams <workstreams.yaml> \\
+        [--archives <folder>] [--domains <file>]
 
-The shape of the file: workstreams.yaml is NOT standard YAML and is read without a
-library. An entry starts with "- id: <id>" in column 0; its other keys follow, one per
-line, as "<two spaces><key>: <value>". The block of an entry is that line and the key
-lines that follow it, up to the first line that does not have that shape. The empty lines
-and the comments between blocks are never touched.
+The shape of the file: workstreams.yaml is read without a library. An entry starts with
+"- id: <id>" in column 0; its other keys follow, one per line, as
+"<two spaces><key>: <value>". The block of an entry is that line and the key lines that follow
+it, up to the first line that does not have that shape. The empty lines and the comments
+between blocks are never touched. A value that contains ": " or " #", or that starts with a
+special character, is written between double quotes (only \\" and \\\\ are escapes there);
+"normalize" does it. So any conforming file is also read by a standard YAML parser.
 
 "archive" applies these rules, in order:
   1. date: an entry in "status: accepted" without "accepted-on:" gets the line
@@ -45,10 +49,22 @@ the pattern is looked for, case-insensitively, in the id and the title (in all t
 "--everywhere"). One line per entry: "<path>:<line> · <id> · <status> · <title>";
 if there is only one, its complete block follows.
 
+"normalize" puts the files in the strict YAML format (check 11 of the checker): it rewrites only
+the non-conforming values of --workstreams, of each <folder>/WORKSTREAMS_*.yaml (with
+--archives) and of the domain table (with --domains), putting them between double quotes with
+the escapes. Everything else stays identical to the byte: order, empty lines, comments, line
+endings, lines that conform as they are. A second run changes nothing. Each file is written
+through a temporary file then os.replace, and only if a value changes; before writing, it
+checks that the reading gives the same values as before. It says, per file, the number of
+values rewritten. A value that carries a control character cannot be written in YAML with
+these escapes alone: it is not touched, the script reports it and ends with code 1.
+
 Exit code of "archive": 0 done (with or without change), 1 done with at least one
 warning, 2 invalid call, file or folder not found, or check 7 failing
 (nothing is written). Exit code of "search": 0 at least one found, 1 none, 2 invalid call
-or file not found.
+or file not found. Exit code of "normalize": 0 done (with or without rewriting), 1 with a value
+that cannot be normalized, 2 invalid call, file or folder not found, or reading changed
+(nothing is written).
 
 Python 3.11 and later, standard library only.
 """
@@ -66,6 +82,13 @@ from pathlib import Path
 RE_ENTRY = re.compile(r"^- id:(.*)$")
 RE_KEY = re.compile(r"^  ([a-z][a-z0-9-]*):(.*)$")
 RE_DATE = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
+# The strict YAML format of the values: see the docstring; same definitions as check_living_docs.py.
+RE_QUOTED = re.compile(r'"((?:[^"\\]|\\["\\])*)"')
+RE_ESCAPE = re.compile(r'\\(["\\])')
+RE_COLON = re.compile(r":(?:\s|$)")
+RE_COMMENT = re.compile(r"\s#")
+RE_NON_PRINTABLE = re.compile(r"[\x00-\x08\x0b-\x1f\x7f-\x9f\u2028\u2029]")
+FORBIDDEN_STARTS = "-?:,[]{}#&*!|>'\"%@`"
 
 MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August",
           "September", "October", "November", "December"]
@@ -89,6 +112,13 @@ class Block:
         return self.keys[key][1] if key in self.keys else ""
 
 
+def read_value(raw: str) -> str:
+    """The value of a line: without the double quotes and the escapes (\\" and \\\\) if it is between quotes, otherwise as it is."""
+    value = raw.strip()
+    quoted = RE_QUOTED.fullmatch(value)
+    return RE_ESCAPE.sub(r"\1", quoted.group(1)) if quoted else value
+
+
 def read_lines(path: Path) -> tuple[list[str], bool]:
     """The lines of the file (without their ending) and: does the file end with a line ending?"""
     text = path.read_bytes().decode("utf-8")
@@ -108,12 +138,12 @@ def find_blocks(lines: list[str]) -> list[Block]:
     for i, line in enumerate(lines):
         m = RE_ENTRY.match(line)
         if m:
-            blocks.append(Block(i, i + 1, m.group(1).strip(), {"id": (i, m.group(1).strip())}))
+            blocks.append(Block(i, i + 1, read_value(m.group(1)), {"id": (i, read_value(m.group(1)))}))
             continue
         m = RE_KEY.match(line)
         if m and blocks and blocks[-1].end == i:
             blocks[-1].end = i + 1
-            blocks[-1].keys.setdefault(m.group(1), (i, m.group(2).strip()))
+            blocks[-1].keys.setdefault(m.group(1), (i, read_value(m.group(2))))
     return blocks
 
 
@@ -226,7 +256,8 @@ def archive_header(today: date, delay: int) -> str:
     return (f"# Archived workstreams — {month}\n"
             "#\n"
             "# Moved automatically out of workstreams.yaml by archive_workstreams.py: workstreams accepted for\n"
-            f"# at least {delay} days (key accepted-on). Same form as workstreams.yaml (not standard YAML).\n"
+            f"# at least {delay} days (key accepted-on). Same form as workstreams.yaml: a value that contains \": \" or \" #\",\n"
+            "# or that starts with a special character, is written between double quotes; normalize does it.\n"
             "# Things are only appended to it; frozen at the end of the month. Search: archive_workstreams.py search <word>\n"
             "\n")
 
@@ -337,8 +368,105 @@ def command_search(a) -> int:
     return 0 if found else 1
 
 
+def analyse(text: str):
+    """The useful lines of the text: (number, entry start, key, raw value); without ":", key and value are None.
+
+    The same reader as check_living_docs.py: check 11 and "normalize" see the same values."""
+    started = False
+    for number, line in enumerate(text.split("\n"), start=1):
+        bare = line.strip()
+        if not bare or bare.startswith("#"):
+            continue
+        start = bare.startswith("- ")
+        if start:
+            started, bare = True, bare[2:]
+        if ":" not in bare or not started:
+            yield number, start, None, None
+            continue
+        key, _, raw = bare.partition(":")
+        yield number, start, key.strip(), raw
+
+
+def value_conforms(raw: str) -> bool:
+    """A safe YAML scalar: empty, between double quotes, or bare and with nothing YAML would read otherwise."""
+    value = raw.strip()
+    if RE_NON_PRINTABLE.search(value):
+        return False
+    if not value or RE_QUOTED.fullmatch(value):
+        return True
+    return not (value[0] in FORBIDDEN_STARTS or "\t" in value
+                or RE_COLON.search(value) or RE_COMMENT.search(value))
+
+
+def quoted(value: str) -> str:
+    return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def values_read(lines: list[str]) -> list[tuple[int, str, str]]:
+    """(number, key, value read) of each value line, in file order."""
+    return [(number, key, read_value(raw)) for number, _, key, raw in analyse("\n".join(lines))
+            if key is not None]
+
+
+def normalize_lines(lines: list[str]) -> tuple[list[str], int, list[str]]:
+    """The lines with every non-conforming value between double quotes; nothing else changes.
+
+    Returns (new lines, number of values rewritten, "<number> : key <key>" of those that cannot be normalized)."""
+    new, rewritten, impossible = list(lines), 0, []
+    for number, _, key, raw in analyse("\n".join(lines)):
+        if key is None or value_conforms(raw):
+            continue
+        value = raw.strip()
+        if RE_NON_PRINTABLE.search(value):
+            impossible.append(f"{number} : key {key}")
+            continue
+        line = lines[number - 1]
+        ending = "\r" if line.endswith("\r") else ""
+        body = line[:len(line) - len(ending)]
+        colon = body.index(":")
+        after = body[colon + 1:]
+        lead, trail = after[:len(after) - len(after.lstrip())], after[len(after.rstrip()):]
+        new[number - 1] = body[:colon + 1] + lead + quoted(value) + trail + ending
+        rewritten += 1
+    return new, rewritten, impossible
+
+
+def command_normalize(a) -> int:
+    workstreams = Path(a.workstreams)
+    if not workstreams.is_file():
+        raise ValueError(f"file not found: --workstreams {workstreams}")
+    files = [workstreams]
+    if a.archives is not None:
+        folder = Path(a.archives)
+        if not folder.is_dir():
+            raise ValueError(f"folder not found: --archives {folder}")
+        files += sorted(p for p in folder.glob("WORKSTREAMS_*.yaml") if p.is_file())
+    if a.domains is not None:
+        domains = Path(a.domains)
+        if not domains.is_file():
+            raise ValueError(f"file not found: --domains {domains}")
+        files.append(domains)
+    jobs, total, warnings = [], 0, []
+    for file in files:  # everything is computed and checked before anything is written
+        lines, final = read_lines(file)
+        new, rewritten, impossible = normalize_lines(lines)
+        if [(k, v) for _, k, v in values_read(new)] != [(k, v) for _, k, v in values_read(lines)]:
+            raise FailedCheck(f"reading check failed ({file}): nothing is written")
+        jobs.append((file, new, final, rewritten))
+        total += rewritten
+        warnings += [f"{file}:{i} : value cannot be normalized (control character)" for i in impossible]
+    for file, new, final, rewritten in jobs:
+        if rewritten:
+            write(file, assemble(new, final))
+        print(f"{file} : {rewritten} value(s) rewritten")
+    print(f"normalize · {total} value(s) rewritten in {sum(1 for j in jobs if j[3])} file(s) out of {len(jobs)}")
+    for warning in warnings:
+        print(warning)
+    return 1 if warnings else 0
+
+
 class FailedCheck(Exception):
-    """The "lossless" check (rule 7) failed."""
+    """A check before writing failed: "lossless" (rule 7) or unchanged reading (normalize)."""
 
 
 class Parser(argparse.ArgumentParser):
@@ -353,7 +481,7 @@ def reworded(message: str) -> str:
         (r"unrecognized arguments: (\S*).*", r"unknown argument: \1"),
         (r"argument (\S+): expected one argument", r"\1: missing value"),
         (r"argument (\S+): invalid int value: (.*)", r"\1: an integer is expected, got \2"),
-        (r"argument command: invalid choice: (\S+).*", r"unknown command: \1 (archive or search)"),
+        (r"argument command: invalid choice: (\S+).*", r"unknown command: \1 (archive, search or normalize)"),
     ]
     for pattern, replacement in rewordings:
         if re.fullmatch(pattern, message):
@@ -366,6 +494,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="command", required=True)
     arch = sub.add_parser("archive", allow_abbrev=False, add_help=False)
     find = sub.add_parser("search", allow_abbrev=False, add_help=False)
+    norm = sub.add_parser("normalize", allow_abbrev=False, add_help=False)
     for s in (arch, find):
         s.add_argument("--workstreams", required=True)
         s.add_argument("--archives", required=True)
@@ -374,6 +503,9 @@ def build_parser() -> argparse.ArgumentParser:
     arch.add_argument("--dry-run", dest="dry_run", action="store_true")
     find.add_argument("pattern")
     find.add_argument("--everywhere", action="store_true")
+    norm.add_argument("--workstreams", required=True)
+    norm.add_argument("--archives")
+    norm.add_argument("--domains")
     return p
 
 
@@ -393,7 +525,8 @@ def read_arguments(argv: list[str]):
 def main(argv: list[str]) -> int:
     try:
         a = read_arguments(argv)
-        return command_archive(a) if a.command == "archive" else command_search(a)
+        commands = {"archive": command_archive, "search": command_search, "normalize": command_normalize}
+        return commands[a.command](a)
     except (ValueError, FailedCheck, OSError, UnicodeDecodeError) as error:
         print(f"archive_workstreams: {' '.join(str(error).split())}", file=sys.stderr)
         return 2

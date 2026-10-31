@@ -1,5 +1,5 @@
-# The server runner — a deterministic program on the production server, driven by an orders repository · v2
-### 28 October 2026 · v2 on 30 October: the orders repository, file-exchange bridge · proven on a real project (a web application under Docker Compose and two self-contained HTML pages)
+# The server runner — a deterministic program on the production server, driven by an orders repository · v3
+### 28 October 2026 · v2 on 30 October: the orders repository, file-exchange bridge · v3 on 31 October: the orders repository cloned only after acceptance · proven on a real project (a web application under Docker Compose and two self-contained HTML pages)
 
 *For a project whose deliverable runs **on a server the owner administers**. The PL deploys there themselves, on the
 owner's “go”, without anyone dropping a file or running a command. The rest of the method does not change: the PL
@@ -34,7 +34,7 @@ where an accepted deliverable must today be dropped then launched by hand.
 | **PL** (cloud) | accepts, asks for the “go”, pushes the order, reads the report, tells the owner, merges after validation | never connects to the server; never restores a database |
 | **Server runner** (the program; in a project, often “the deployer”) | pulls the orders, runs only its whitelist, checks health, rolls back when it is safe, pushes its report | decides nothing; never runs a command written in an order |
 | **Owner** | installs once; says “go” naming the action; validates on screen; decides after a failure that touches the data | no longer drops anything, no longer runs anything, except as a fallback |
-| **Dev** | builds the deliverable, as always | **never reads or writes the orders repository** |
+| **Dev** | builds the deliverable, as always | **never reads or writes the orders repository** (the PL's clone: method §4a) |
 
 **The rule: no AI in the deployment path.** Deployment is a deterministic program: same inputs, same result. **An agent
 on a production server, if there is one, is bounded** — no secrets, no database writes, no root: a dedicated account
@@ -88,25 +88,20 @@ merge into main
    **zones declared on the server side**, without go — except emptying the trash, the only real deletion, on go.
 8. **Before a brief that touches production**, the PL runs `etat`: version served, containers, disk space, backups,
    counts. That is the probe, with no action from the owner.
-9. **Data produced in a session** (a package of rendered pages, tomorrow tiles or maps) **to be served**: it goes through
-   **the orders repository, which also serves as the file-exchange bridge** — never through the history of a public code
-   repository (§5). The PL who produces it (never the dev):
-   1. pushes it to the orders repository under `transfers/<domain>/<edition>/` — **a file of 95 MiB at most** —, after a
-      `git pull`, and reads the full hash of the commit that carries it;
-   2. **tells the owner what is going to be replaced** on the server, before the order that contains `basculer`;
-   3. pushes a `fichiers` order (§7): `telecharger` **from the orders repository, at the 40-hex commit, sha256
-      mandatory**, `decompresser` into a new folder, `basculer`;
-   4. reads the report (bounded wait, point 3), tells the owner, who validates on screen;
-   5. **removes the folder from the tree** by a commit once the report has succeeded: the history keeps the file, a partial
-      copy at the commit reads only what is needed.
+9. **Data produced in a session** (a package of rendered pages, tomorrow tiles or maps) **to be served**: **coming.** The
+   route — the orders repository also serves as the file-exchange bridge, `transfers/<domain>/<edition>/` (§5), then a
+   `fichiers` order whose `telecharger` reads the orders repository at the commit — **does not run yet**: the reference
+   implementation does not have the private source it requires (§7, §13). Never the history of a public code repository
+   (§5).
 
    Data produced **on the owner's PC** (captures, large backgrounds): `rsync` into `entree/` (§4), then a `fichiers` order.
    Data **published elsewhere** (a release, a known public repository, an authorized host): `telecharger` as for any file,
-   without going through the bridge. *On the why — the options ruled out — and the step by step explained to the owner:
-   `GUIDE.md` §2c.*
+   without going through the bridge. *On the why and the options ruled out: [`GUIDE.md`](../GUIDE.md) §2c.*
 
-**Each PL who deploys attaches the orders repository with write access** at the start of the session. **The dev neither
-reads nor writes it**: it is not in their command, and the dev prompt forbids it.
+**The PL who deploys attaches the orders repository with write access**; when its clone is made follows method §4a
+([`CLAUDE_DEPENDENCIES.md`](../CLAUDE_DEPENDENCIES.md) says why). **The dev neither reads nor writes it**: it is not in their command, and the dev prompt
+forbids it. **A push from a shallow clone that has not run `git fetch` sends the whole tree, which the proxy refuses for
+its size (413): `git fetch origin main` before `git push`.**
 
 **The fallback**: when the server runner is down (or uninstalled), the deliverable is handed over to the owner as is,
 under its exact name with its sha256, and the manual procedure of the code repository applies. Acceptance keeps
@@ -147,7 +142,7 @@ convention of the method, not read by the program (see below). Written by the PL
 server (the reports), **never by the dev**. No secret, no production data in an order or in a report (the server filters
 its logs before pushing them, §7).
 
-**The file-exchange bridge — `transfers/`.** Data **produced in a cloud session** and to be served arrives through the
+**The file-exchange bridge — `transfers/`** *(the route does not run yet: §3 point 9).* Data **produced in a cloud session** and to be served arrives through the
 orders repository, under `transfers/<domain>/<edition>/` (`transfers/` and not `data/`: the server's zones often already
 carry that name; the name is a convention of the method, the program only reads the path given by the order).
 - **Who pushes there**: the PL who produces the data, never the dev. An edition has a new name, never rewritten.
@@ -307,7 +302,7 @@ target: refusal, unless `"si_existe": "remplacer"`, which moves the old one to t
    {"operation": "basculer", "zone": "donnees", "prepare": "cartes/fond-v2", "servi": "cartes/fond"}]}
 ```
 
-**A package produced in a session, pushed to the orders repository** (§3 point 9) — `telecharger` from the orders
+**A package produced in a session, pushed to the orders repository** (§3 point 9, coming) — `telecharger` from the orders
 repository, **at the 40-hex commit, with the sha256** (mandatory for this source), then `decompresser` into a new folder and
 `basculer`:
 
@@ -326,7 +321,8 @@ repository, **at the 40-hex commit, with the sha256** (mandatory for this source
 > releases and authorized hosts (`docs/ORDRES.md`). It arrives in its next version, in the form a first project built:
 > the source `github-prive:<owner>/<repo>@<commit>:<path>`, sha256 mandatory, 95 MiB at most, for a repository declared
 > in a `depots_prives` list of the configuration with its key — the orders repository is listed there with the key the
-> runner already has for it. Until then, the PC route (`entree/`) or a source published elsewhere.
+> runner already has for it. **Until then, the PC route (`entree/`) or a source published elsewhere.** The bridge's
+> “session” route therefore has no step by step here: it will be written with its implementation.
 
 ```json
 {"id": "2026-10-27-09", "action": "fichiers", "demande_par": "chef de projet",
@@ -470,6 +466,11 @@ the fallback.
 - **a bad but accepted commit**: the identity is the commit, and the gate is the acceptance, then the go;
 - **the program itself**: it runs as root (Docker amounts to root). Hence a short program, read in full at acceptance,
   and its updates accepted like a batch;
+- **the “go” being checkable by the program**: the runner does not check that an order's `go` field quotes a real
+  validation by the owner; the PL writes it, and it is the method's rule — not the code — that enforces it (**known
+  limit**);
+- **the orders repository against a sub-agent** — **known limit**: a sub-agent inherits the session's attachments;
+  deleting the orders-repository clone before the dev is only a barrier of practice, not an access control;
 - **an authorized external source** whose content changes: the sha256 only protects if it is given in the order;
 - **disk or server failure**: the full server backup remains the last net;
 - **filling up** `entree/` through the transfer key: the space thresholds refuse the following writes, they do not

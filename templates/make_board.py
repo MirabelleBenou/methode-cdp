@@ -11,6 +11,12 @@ byte; only the data changes, so only the data is republished when a workstream m
 file is deterministic (two generations of the same source are byte-identical, except for the
 "generated on" date).
 
+The data file is an EXCERPT of workstreams.yaml, not a copy: for each entry it holds only the
+keys the page displays or uses (PAGE_KEYS, the id always), in that order, and the long values
+of the cards (TRUNCATED_KEYS) are cut there at MAX_LENGTH characters, on a space, ended with
+"…". The source is authoritative: the full text is in workstreams.yaml. This light weight makes
+it possible to read the whole file before publishing it.
+
 The two files are published together, side by side. The page opened from the disk ("file://")
 does not load its data: this is a browser limit, and the page says so ("Cannot load
 workstreams.json (…)"). Open it served ("python3 -m http.server" in the folder) or published.
@@ -18,7 +24,8 @@ workstreams.json (…)"). Open it served ("python3 -m http.server" in the folder
 The PL's tool (not part of the deliverable), copied as is from the method package
 into the living-docs repository, next to workstreams.yaml. No dependency, no
 network when the generator runs. The reader covers ONLY the file's shape (“- id:” then
-“key: value” on one line): this is intended, the source stays readable by eye.
+“key: value” on one line): this is intended, the source stays readable by eye. A value between
+double quotes is read without the quotes and the escapes (\\" and \\\\); a bare value is read as it is.
 
 What is specific to the project is read from the header of workstreams.yaml,
 nothing to change here:
@@ -39,8 +46,19 @@ STATUSES = [("upcoming", "Upcoming"), ("to-brief", "To brief"), ("in-flight", "I
             ("debt", "Debt"), ("accepted", "Accepted")]
 PRIORITIES = [("high", "High"), ("medium", "Medium"), ("low", "Low")]
 COMPLEXITIES = [("high", "High"), ("medium", "Medium"), ("low", "Low")]
+# The keys the page displays or uses (see its script): only they go into the data file.
+PAGE_KEYS = ("id", "title", "module", "category", "status", "priority", "complexity", "rank", "basis", "cost", "refs")
+TRUNCATED_KEYS = ("basis", "cost")  # the long values displayed on the cards
+MAX_LENGTH = 180  # characters, "…" included: a data file small enough to be read in full before it is published (method §6)
 DEFAULT_LABELS = {"screen": "Screen", "data": "Data", "doc": "Documentation", "tooling": "Tooling",
                   "engine": "Engine", "operations": "Operations", "core": "Core"}
+
+
+def read_value(raw: str) -> str:
+    """The value of a line: without the double quotes and the escapes (\\" and \\\\) if it is between quotes, otherwise as it is."""
+    value = raw.strip()
+    quoted = re.fullmatch(r'"((?:[^"\\]|\\["\\])*)"', value)
+    return re.sub(r'\\(["\\])', r"\1", quoted.group(1)) if quoted else value
 
 
 def read(path: pathlib.Path):
@@ -64,7 +82,7 @@ def read(path: pathlib.Path):
         if ":" not in bare or not workstreams:
             continue
         key, _, value = bare.partition(":")
-        workstreams[-1][key.strip()] = value.strip()
+        workstreams[-1][key.strip()] = read_value(value)
     missing = [w for w in workstreams if not w.get("id") or not w.get("status")]
     if missing:
         sys.exit(f"STOP: {len(missing)} entry(ies) without id or without status.")
@@ -85,10 +103,26 @@ def data_path(output: pathlib.Path) -> pathlib.Path:
     return output.with_suffix(".json")
 
 
+def truncate(value: str) -> str:
+    """The value as it is if it fits in MAX_LENGTH characters; otherwise cut on a space, ended with "…"."""
+    if len(value) <= MAX_LENGTH:
+        return value
+    head = value[:MAX_LENGTH - 1]
+    if value[MAX_LENGTH - 1] != " " and " " in head:  # cut between two words, not in the middle of one
+        head = head.rsplit(" ", 1)[0]
+    return head.rstrip() + "…"
+
+
+def excerpt(workstream: dict) -> dict:
+    """The entry reduced to the page's keys (PAGE_KEYS, in that order), long values truncated."""
+    return {key: truncate(workstream[key]) if key in TRUNCATED_KEYS else workstream[key]
+            for key in PAGE_KEYS if key in workstream}
+
+
 def data(project, labels, workstreams: list[dict]) -> dict:
-    """Everything the page shows: the entries in the order of the file, with all their keys."""
+    """What the page shows: the entries in the order of the file, reduced to the page's keys (an excerpt)."""
     return {"project": project, "generated": date.today().strftime("%d/%m/%Y"),
-            "labels": labels, "workstreams": workstreams}
+            "labels": labels, "workstreams": [excerpt(w) for w in workstreams]}
 
 
 def data_text(project, labels, workstreams: list[dict]) -> str:

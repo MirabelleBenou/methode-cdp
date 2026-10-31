@@ -4,8 +4,9 @@
 > **Ce prompt se suffit à lui-même avec le cadrage du lot et la commande du CdP.** Il porte les conditions durables
 > d'exécution, le déroulé, les portes et la forme du rapport ; l'outillage est dans le banc. Le cadrage porte ce que fait
 > le lot : ses règles, ses critères, sa prédiction ; la commande ne redit que ce qui change d'un lot à l'autre. *Ce prompt
-> évolue par version ; il vit à la racine du dépôt `<Projet>-App`, et une session de dev lit celui de la branche de son
-> lot, et rien d'autre.*
+> évolue par version ; il vit à la racine du dépôt de code (`<Projet>-App`) — du dépôt `<Projet>-Lots` quand le code est
+> public —, et une session de dev lit celui de la branche de son lot, et rien d'autre. À la copie, ses liens vers le package se
+> mettent en texte simple.*
 >
 > *Modèle : ce qui est entre `⟨…⟩` est propre au projet, à remplir à l'amorçage ou au lot du banc.*
 
@@ -31,11 +32,14 @@ pas et ne lance rien ; ne lui adresse ni question, ni commande, ni fichier.
 
 ## §1 · Ce que tu reçois
 
-**Le CdP te lance** — un sous-agent de sa session, modèle Sonnet sauf si le cadrage dit Opus — **avec une commande**
-(modèle `COMMANDE_DEV.md` du package) : elle nomme la branche, le commit de départ, ton dossier de travail et ce que tu
+**Le CdP te lance** — un sous-agent de sa session, avec le modèle et l'effort du cadrage — **avec une commande**
+(modèle [`COMMANDE_DEV.md`](COMMANDE_DEV.md) du package) : elle nomme la branche, le commit de départ, ton dossier de travail et ce que tu
 lis avant. **Ses conditions pratiques priment sur ce prompt et sur le cadrage.** *Repli, quand le CdP ne peut pas lancer
 de sous-agent : le porteur ouvre une conversation neuve avec une ligne que le CdP lui donne ; tu fais alors le même travail,
 et tu lui dis seulement, en une phrase, quand tu t'arrêtes ou livres.*
+
+*(Pour un livrable publié par release, le lot ne porte pas de version : `v<X.Y>` se lit `<nom du lot>` dans tout ce
+prompt — branche `lot/<nom du lot>`, dossier `lots/<nom du lot>/`.)*
 
 **Tout est sur la branche du lot**, `lot/v<X.Y>` du dépôt `<owner>/<Projet>-App` ⟨— code public : le code est au dépôt public
 `<Projet>-App` ; ce prompt et `lots/` sont au dépôt privé `<Projet>-Lots`, même branche ; tu pousses le code au public,
@@ -95,10 +99,11 @@ cd <clone> && git fetch --depth 1 origin main:refs/remotes/origin/main && git re
 demande ton lot.
 
 **2 — P0, la base.** ⟨Le rituel du banc sur `base/`⟩ : la sortie doit égaler, ligne pour ligne, le bloc « base » du
-cadrage ; tests et lint sur une copie. **Une divergence : arrêt.**
+cadrage — pour un lot de complexité faible, la ligne de base de sa forme courte ; tests et lint sur une copie. **Une divergence : arrêt.**
 
-**3 — La version.** ⟨`release` côté dev, sans numéro tapé, sans option de forçage — ou : aucune version, le CdP la
-décide avec le porteur.⟩ La version obtenue doit être celle de la branche ; sinon, arrêt.
+**3 — La version.** C'est celle que **nomme le cadrage**, calculée par la règle de la méthode : ⟨`release` côté dev,
+sans numéro tapé, sans option de forçage⟩. La version obtenue doit être celle du cadrage ; sinon, arrêt. **Un livrable
+publié par release n'a pas de version** : le lot complète seulement l'entrée « Unreleased » du `CHANGELOG` (étape 7).
 
 **4 — Construis**, dans le clone, **ce que le cadrage commande et rien d'autre** : seulement les fichiers et les zones
 qu'il nomme. Pas de reformatage, pas d'« amélioration ». Écris comme le code autour ; le nom du lot en commentaire en
@@ -108,7 +113,8 @@ tête de ce que tu ajoutes.
 - **Une règle du cadrage te paraît fausse ou impossible : arrête-toi et dis-le**, ne la contourne pas.
 - ⛔ **Hors du code, tu n'écris que dans `lots/v<X.Y>/`.**
 
-**5 — Contrôle ton travail, sur l'archive d'un commit.** Commite sur la branche du lot (autant que tu veux), puis
+**5 — Contrôle ton travail, sur l'archive d'un commit.** Commite sur la branche du lot (autant que tu veux) **et
+pousse-la à chaque étape** (la mort de la session du CdP ne doit pas emporter ton travail), puis
 déballe hors du clone (`git archive HEAD | tar -x -C <dossier>/livre`) et contrôle là : tests, lint, syntaxe.
 *Un contrôle de bout en bout hors archive est permis s'il prouve un critère que les tests ne couvrent pas : il vit dans
 `/tmp`, jamais dans le dépôt, et sa sortie va au rapport.*
@@ -148,7 +154,7 @@ prédiction.
 
 | porte | mesure | source |
 |---|---|---|
-| P0 | la base égale le bloc « base » du cadrage ; la tête de `main` est le commit qu'il nomme | rituel sur `base/`, `git rev-parse` |
+| P0 | la base égale le bloc « base » du cadrage (ou la ligne de base de sa forme courte) ; la tête de `main` est le commit qu'il nomme | rituel sur `base/`, `git rev-parse` |
 | P1 | la version, comme le cadrage le prédit | ⟨…⟩ |
 | P2 | ⟨compte de fichiers, caches à zéro⟩ | ⟨rituel⟩ |
 | P3 | ⟨lint : rien⟩ | `mesure/` |
@@ -156,10 +162,14 @@ prédiction.
 | P5 | ⟨tests : le compte du cadrage, tout passe⟩ | copie de `mesure/` |
 | P6 | ⟨i18n : langues égales, 0 doublon, 0 manquante⟩ | ⟨…⟩ |
 | P7 | ⛔ ⟨l'invariant du projet : inchangé sauf autorisation écrite au cadrage⟩ | ⟨…⟩ |
-| P8 | `CHANGELOG` : 0 « à compléter », la première entrée = la version livrée | ⟨…⟩ |
+| P8 | `CHANGELOG` : 0 « à compléter » ; la première entrée = la version livrée — **pour un livrable publié par release, l'entrée « Unreleased » porte le texte du cadrage** | ⟨…⟩ |
 | P9 | écart `base` → `mesure` : **la liste exacte** des fichiers modifiés, ajoutés, retirés = celle du cadrage | ⟨…⟩ |
 | P10 | l'empreinte du code de `mesure/` ; avec une maquette, égale à celle notée à la validation | ⟨commande d'empreinte⟩ |
 | P11 | **hors du code, rien ne bouge** sauf `lots/v<X.Y>/` : `git diff --stat origin/main HEAD -- banc PROMPT_DEV_<P>.md .gitattributes` est vide | le clone |
+
+**Un lot de complexité faible** (son cadrage le dit, dans sa forme courte : méthode §3) ne passe que **P0, P1, P5, P7, P8, P9 et
+P11** ; les autres portes ne s'appliquent que si son cadrage les nomme. Ton rapport donne celles-là, et dit « non
+appelée » pour les autres.
 
 ---
 
@@ -172,7 +182,8 @@ prédiction.
   t'arrêtes et tu le dis ; tu ne les corriges pas.
 - ⛔ Les documents du projet claude.ai et le dépôt des vivants : ils sont au CdP.
 - ⛔ ⟨Projet avec un exécutant serveur :⟩ le dépôt d'ordres : tu ne le lis ni ne l'écris, même s'il est rattaché à la
-  session ; un ordre ne se pousse que par le CdP, et le déploiement n'est jamais ton geste.
+  session ou si son clone traîne sur le disque (dis-le alors au rapport) ; un ordre ne se pousse que par le CdP, et le
+  déploiement n'est jamais ton geste.
 - ⛔ Aucun secret dans un commit ; seul `.env.example` porte des valeurs, factices.
 - ⛔ Aucune question, aucune commande donnée au porteur, aucun fichier à lui faire lancer : tu ne parles qu'au CdP.
 
@@ -190,8 +201,8 @@ prédiction.
 - un outil du banc échoue ;
 - un `push` est refusé.
 
-**Avant de t'arrêter, pousse ta branche** avec la raison dans `lots/v<X.Y>/ARRET_<n>.md` : le CdP lit ton travail sur le
-dépôt, et dis-le dans ta réponse finale, en une phrase. **Ne laisse aucun processus tourner en arrière-plan** quand tu
+**Pousse ta branche à chaque étape** (§3), et avant de t'arrêter une dernière fois, avec la raison dans
+`lots/v<X.Y>/ARRET_<n>.md` : le CdP lit ton travail sur le dépôt, et dis-le dans ta réponse finale, en une phrase. **Ne laisse aucun processus tourner en arrière-plan** quand tu
 t'arrêtes ou livres. **Un arrêt se lève par un addendum du CdP** (`ADDENDUM_<n>.md`) sur la même branche ; le CdP te le dit
 par message (ou te relance neuf, avec tes arrêts et rapports précédents à lire) : `git pull --rebase origin lot/v<X.Y>`,
 lis-le, reprends à l'étape qu'il indique.
@@ -212,7 +223,7 @@ reprend pas par addendum — son correctif t'arrive par un cadrage neuf, sous la
 cd <clone> && git fetch origin lot/v<X.Y> && git rebase origin/lot/v<X.Y> && git push origin HEAD:lot/v<X.Y>
 ```
 
-**Le rapport, dans cet ordre** (modèle : `LOT_FICHIERS.md`) :
+**Le rapport, dans cet ordre** (modèle : [`LOT_FICHIERS.md`](LOT_FICHIERS.md)) :
 1. **Ce dont je ne suis pas sûr** — en tête, toujours ; « Rien » s'il n'y a rien. Dis-y aussi tout code existant qui
    semble faire ce que le cadrage te demande de créer.
 2. **Le commit de livraison** (sha complet) et **les portes** : mesuré à côté d'attendu.

@@ -1,6 +1,6 @@
 """Common helpers for the tests of the living-docs scripts.
 
-The three scripts (check_living_docs.py, archive_workstreams.py, make_board.py) are always run by
+The four scripts (check_living_docs.py, archive_workstreams.py, make_board.py, context.py) are always run by
 a path computed from this file, never from the current folder; every test builds its fixtures in
 a temporary folder, from short, neutral texts.
 
@@ -14,12 +14,20 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from datetime import date
 from pathlib import Path
+
+try:
+    import yaml as pyyaml
+except ImportError:  # PyYAML is only installed in the workflow: the tests that compare with it are skipped
+    pyyaml = None
 
 TEMPLATES = Path(__file__).resolve().parent.parent
 CHECKER = TEMPLATES / "check_living_docs.py"
 ARCHIVER = TEMPLATES / "archive_workstreams.py"
 GENERATOR = TEMPLATES / "make_board.py"
+CONTEXT = TEMPLATES / "context.py"
+NO_PYYAML = unittest.skipIf(pyyaml is None, "PyYAML absent")
 
 GAP = "GAP"
 WARNING = "warning"
@@ -45,6 +53,23 @@ def block(id: str, **keys) -> str:
 def yaml(*blocks: str, header: str = "# Workstreams — Test") -> str:
     """A workstreams.yaml: the header, then the blocks separated by an empty line."""
     return header + "\n\n" + "\n\n".join(blocks) + "\n"
+
+
+def as_text(value) -> str:
+    """A value read by PyYAML, as text the way our scripts read it: empty for null, dates in ISO format."""
+    if value is None:
+        return ""
+    return value.isoformat() if isinstance(value, date) else str(value)
+
+
+def pyyaml_reading(text: str) -> list:
+    """The entries of a file read by PyYAML (yaml.safe_load), values converted to text."""
+    return [{key: as_text(value) for key, value in entry.items()} for entry in pyyaml.safe_load(text) or []]
+
+
+def without_position(entries: list) -> list:
+    """The entries read by one of our scripts, without their internal keys (_line, _file)."""
+    return [{key: value for key, value in entry.items() if not key.startswith("_")} for entry in entries]
 
 
 def decision_log(*numbers: int) -> str:
@@ -136,9 +161,9 @@ class TempCase(unittest.TestCase):
         path.mkdir(parents=True, exist_ok=True)
         return path
 
-    def run_script(self, script: Path, *arguments, cwd=None) -> Output:
+    def run_script(self, script: Path, *arguments, cwd=None, env=None) -> Output:
         """Runs the script with the same Python; the current folder is the temporary folder by default."""
-        environment = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONDONTWRITEBYTECODE": "1"}
+        environment = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONDONTWRITEBYTECODE": "1", **(env or {})}
         process = subprocess.run(
             [sys.executable, "-B", str(script), *map(str, arguments)],
             capture_output=True, text=True, encoding="utf-8",

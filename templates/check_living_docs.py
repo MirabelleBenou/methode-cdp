@@ -15,15 +15,17 @@ version log.
 next to it, same name in ".json"; "--plan" is optional.
 "--archives" gives the folder of the workstream archives (the WORKSTREAMS_*.yaml files, same
 form as workstreams.yaml, which archive_workstreams.py makes); it must exist. Without this
-option, nothing changes. With it, two checks extend to the archives: 3 and 7.
-"--domains" gives the domain table (see check 9) and triggers that check;
+option, nothing changes. With it, four checks extend to the archives: 3, 4 (its rule for the
+batches in flight), 7 and 11.
+"--domains" gives the domain table (see check 9) and triggers that check, then
+extends 11 to the table;
 "--root" is the folder the paths of that table are read from (the current folder
 by default); it is only used with "--domains". "--checkpoint-cap" gives the size cap of a
 checkpoint, in bytes (a positive integer, 10240 by default): a checkpoint is re-read in full at
 every resumption, so it must stay short (see check 10); it too is only used with "--domains".
 A check whose files are not given shows "not requested".
 
-The ten checks, in this order:
+The eleven checks, in this order:
   1. decision numbers: the lines "| **D<n>** |" have no duplicated number and
      no gap between the smallest and the largest;
   2. reservations: a line "| **D<n>** | *reserved …" still present is a
@@ -31,7 +33,18 @@ The ten checks, in this order:
   3. workstream ids: no duplicated "id:" in workstreams.yaml; with "--archives", also: no id
      of workstreams.yaml that appears in an archive, no id present twice in the archives, and
      the count becomes "<n> workstreams, <a> archived";
-  4. batch versions: no "version:" value carried by two entries;
+  4. batch versions: (a) no "version:" value carried by two entries of workstreams.yaml;
+     (b) an entry in "status: in-flight" that carries "version:" and "deliverable:" carries a
+     version strictly higher than every other "version:" of the same "deliverable:", in
+     workstreams.yaml and, with "--archives", in the archives: this is the rule of the number
+     of a batch (method §1 bis). A version is compared by the sequence of numbers of its
+     version token: the first occurrence, bounded by a non-alphanumeric character or the edge,
+     of "[vV]?<n>.<n>[.<n>…]" or of "[vV]<n>" ("v1.0065" -> (1, 65); "agent-v0.1.1" ->
+     (0, 1, 1); "AC-V1.5.1" -> (1, 5, 1); "v1.10 (D205)" -> (1, 10); "v19" -> (19,)); a value
+     without a token is not compared ("18a2957, no release (D188)": neither the hash nor the
+     decision number is a version). One gap line per entry in flight at fault, which names
+     the highest of the other versions: "<id>: <version> is not above <other version>
+     (<other id>)". The count stays "<n> versions" (distinct values of workstreams.yaml);
   5. workstreams in flight: every "status: in-flight" entry carries a non-empty "pl:";
   6. board: the fixed page and its data file (the one next to "--board", same name
      in ".json") are byte-identical to the regeneration of workstreams.yaml by the
@@ -44,7 +57,8 @@ The ten checks, in this order:
   7. version log: the last version of the log (the last line of the plan that
      starts with "| `v…` |") has a workstreams.yaml entry in "status: accepted"
      whose id or version contains it; with "--archives", this entry is also looked for in
-     the archives (an archived entry was accepted);
+     the archives (an archived entry was accepted). It checks that the log and the
+     workstreams agree, not the number of a fix: that is rule (b) of check 4;
   8. deliverables and resources: a deliverable ("deliverable:", the code
      repository the release comes out of) and a shared resource ("resource:", a
      machine or a piece of software two batches cannot occupy at the same time)
@@ -62,7 +76,7 @@ The ten checks, in this order:
   9. checkpoints: every domain (a project lead, a scope) has a checkpoint, a free
      document one section of which carries its queue (what comes next). The check
      cross-checks that queue and the document with workstreams.yaml. It needs "--domains"; it
-     reads the domain table in the same poor form as workstreams.yaml: an entry
+     reads the domain table in the same form as workstreams.yaml: an entry
      starts with "- domain:", one key per line, blank lines and "#" ignored.
      The keys: "domain" (short name), "pl" (the domain's project lead),
      "checkpoint" (path of the checkpoint, relative to "--root"), "queue" (the exact
@@ -77,9 +91,12 @@ The ten checks, in this order:
      with "## ", or to the end of the file. Two rules: (b) the queue cites no closed
      workstream, that is one in "status: accepted" or only archived (the archives come
      from "--archives"); (c) every entry of the domain in "status" upcoming, to-brief,
-     debt or in-flight, with no "for:" key (a message, not a subject), is cited by the
-     checkpoint. An empty "queue:" makes one gap line of the domain ("no queue section
-     declared"), placed before its (c) lines; (b) does not apply to it, (c) does. A faulty
+     debt or in-flight, with no "for:" key (a message, not a subject), is cited IN THE
+     QUEUE SECTION of the checkpoint (the same one rule (b) reads): an entry cited only
+     elsewhere in the checkpoint is a gap. An empty "queue:" makes one gap line of the
+     domain ("no queue section declared"); without a queue section, rule (c) looks for the
+     citation in the whole checkpoint. That gap line is placed before the (c) lines; (b)
+     does not apply to it, (c) does. A faulty
      table (checkpoint not found, queue section not found, entry with no "domain" or no
      "checkpoint") is a gap, and the domain is not checked any further. The count is
      "<n> domains, <b> cited closed, <c> not cited, <v> without a queue section";
@@ -91,7 +108,17 @@ The ten checks, in this order:
      "<domain>: <path> weighs <n> bytes, cap <p>" (the path as written in the table). A
      checkpoint not found, or an entry with no "domain" or no "checkpoint", is ignored here:
      check 9 already reports it. The count is "<n> domains, <k> above <p> bytes", <n> being
-     the entries that have a domain and a checkpoint.
+     the entries that have a domain and a checkpoint;
+ 11. YAML format: every value of workstreams.yaml ("--workstreams"), of the archives (if
+     "--archives" is given) and of the domain table (if "--domains" is given) is a safe YAML
+     scalar, so that a standard YAML parser reads the same values as this script. A value
+     conforms if it is empty; or bare and safe (no ":" followed by a space or the end of the
+     line, no "#" preceded by a space, no tab or control character, and not starting with any
+     of - ? : , [ ] { } # & * ! | > ' " % @ ` ); or between double quotes, where only \\" and
+     \\\\ are escapes. The check always runs. OK: "<n> files, <m> lines read"; GAP: "<k>
+     non-conforming value(s), <n> files, <m> lines read", the first five non-conforming
+     values ("file:line : key <key>"), then the command that normalizes
+     ("archive_workstreams.py normalize", which rewrites only those values).
 
 Output: one line per check (OK, GAP or warning, with a count), the details of
 the gaps indented below, then a last line "LIVING DOCS · …".
@@ -99,8 +126,10 @@ Exit code: 0 with no gap, 1 with at least one gap, 2 for an invalid call
 (missing argument, file or folder not found, "--root" or "--checkpoint-cap" without
 "--domains", a cap that is not a positive integer).
 
-Python 3, standard library only. The YAML reader is deliberately poor, like
-the generator's: "- id:" then "key: value" on a single line.
+Python 3.11 and later, standard library only. The YAML reader is deliberately poor, like
+the generator's: "- id:" then "key: value" on a single line; a value between double quotes
+is read without the quotes and the escapes (\\" and \\\\), a bare value is read as it is,
+conforming or not.
 """
 import argparse
 import re
@@ -112,7 +141,17 @@ from pathlib import Path
 RE_NUMBER = re.compile(r"^\|\s*\*\*D(\d+)\*\*\s*\|")
 RE_RESERVATION = re.compile(r"^\|\s*\*\*D(\d+)\*\*\s*\|\s*\*reserved")
 RE_LOG = re.compile(r"^\|\s*`(v[^`]*)`\s*\|")
+# the version token (check 4): the first occurrence, bounded by a non-alphanumeric character or the edge, of
+# "[vV]?<n>.<n>[.<n>…]" or of "[vV]<n>"; "(?!\.?[^\W_])" prevents reading "1.2" in "1.2.3a"
+RE_VERSION_TOKEN = re.compile(r"(?<![^\W_])(?:[vV]?[0-9]+(?:\.[0-9]+)+|[vV][0-9]+)(?!\.?[^\W_])")
 RE_DATE = re.compile(rb"\d{2}/\d{2}/\d{4}")
+# The strict YAML format of the values (check 11): see the docstring.
+RE_QUOTED = re.compile(r'"((?:[^"\\]|\\["\\])*)"')
+RE_ESCAPE = re.compile(r'\\(["\\])')
+RE_COLON = re.compile(r":(?:\s|$)")
+RE_COMMENT = re.compile(r"\s#")
+RE_NON_PRINTABLE = re.compile(r"[\x00-\x08\x0b-\x1f\x7f-\x9f\u2028\u2029]")
+FORBIDDEN_STARTS = "-?:,[]{}#&*!|>'\"%@`"
 
 NOT_REQUESTED = "—  not requested"
 OPEN_STATUSES = ("upcoming", "to-brief", "debt", "in-flight")
@@ -123,20 +162,38 @@ def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
-def read_workstreams(path: Path) -> list[dict]:
-    """The same reader as the generator; each entry keeps its source line (and its file)."""
-    workstreams: list[dict] = []
-    for number, line in enumerate(read_text(path).split("\n"), start=1):
+def analyse(text: str):
+    """The useful lines of the text: (number, entry start, key, raw value); without ":", key and value are None."""
+    started = False
+    for number, line in enumerate(text.split("\n"), start=1):
         bare = line.strip()
         if not bare or bare.startswith("#"):
             continue
-        if bare.startswith("- "):
-            workstreams.append({"_line": number, "_file": path.name})
-            bare = bare[2:]
-        if ":" not in bare or not workstreams:
+        start = bare.startswith("- ")
+        if start:
+            started, bare = True, bare[2:]
+        if ":" not in bare or not started:
+            yield number, start, None, None
             continue
-        key, _, value = bare.partition(":")
-        workstreams[-1][key.strip()] = value.strip()
+        key, _, raw = bare.partition(":")
+        yield number, start, key.strip(), raw
+
+
+def read_value(raw: str) -> str:
+    """The value of a line: without the double quotes and the escapes (\\" and \\\\) if it is between quotes, otherwise as it is."""
+    value = raw.strip()
+    quoted = RE_QUOTED.fullmatch(value)
+    return RE_ESCAPE.sub(r"\1", quoted.group(1)) if quoted else value
+
+
+def read_workstreams(path: Path) -> list[dict]:
+    """The same reader as the generator; each entry keeps its source line (and its file)."""
+    workstreams: list[dict] = []
+    for number, start, key, raw in analyse(read_text(path)):
+        if start:
+            workstreams.append({"_line": number, "_file": path.name})
+        if key is not None:
+            workstreams[-1][key] = read_value(raw)
     return workstreams
 
 
@@ -216,13 +273,33 @@ def archive_gaps(living: dict[str, list[int]], archives: list[dict]) -> list[str
     return details
 
 
-def check_versions(workstreams: list[dict]):
+def numbers(version: str) -> tuple[int, ...]:
+    """The sequence of numbers of the version token of a value: "v1.0065" -> (1, 65); "AC-V1.5.1" -> (1, 5, 1);
+    "v1.10 (D205)" -> (1, 10); empty if the value carries none ("… 18a2957, no release (D188)")."""
+    m = RE_VERSION_TOKEN.search(version)
+    return tuple(int(n) for n in re.findall(r"[0-9]+", m.group(0))) if m else ()
+
+
+def check_versions(workstreams: list[dict], archives: list[dict] | None = None):
     carried: dict[str, list[str]] = {}
     for c in workstreams:
         if c.get("version"):
             carried.setdefault(c["version"], []).append(name(c))
     details = [f"version {v} carried by {' and '.join(ids)}"
                for v, ids in carried.items() if len(ids) > 1]
+    # (b) an entry in flight carries a version higher than every other one of the same deliverable
+    everything = workstreams + (archives or [])
+    for c in workstreams:
+        if (c.get("status") != "in-flight" or not c.get("version") or not c.get("deliverable")
+                or not numbers(c["version"])):
+            continue
+        others = [a for a in everything if a is not c and a.get("deliverable") == c["deliverable"]
+                  and a.get("version") and numbers(a["version"])]
+        if not others:
+            continue
+        highest = max(others, key=lambda a: numbers(a["version"]))
+        if numbers(highest["version"]) >= numbers(c["version"]):
+            details.append(f"{name(c)}: {c['version']} is not above {highest['version']} ({name(highest)})")
     return ("GAP" if details else "OK"), f"{len(carried)} versions", details
 
 
@@ -364,7 +441,7 @@ def citation(i: str) -> str:
 
 def check_domain(d: dict, workstreams: list[dict], closed: dict[str, str],
                  domains: list[dict], root: Path):
-    """The table's faults, or: undeclared queue, queue that cites closed ones (9b), open ones not cited (9c)."""
+    """The table's faults, or: undeclared queue, queue that cites closed ones (9b), open ones not cited in the queue (9c)."""
     domain_name, path = d["domain"], root / d["checkpoint"]
     if not path.is_file():
         return [f"{domain_name}: checkpoint not found {d['checkpoint']}"], [], [], []
@@ -377,12 +454,13 @@ def check_domain(d: dict, workstreams: list[dict], closed: dict[str, str],
     if title and section is None:
         return [f"{domain_name}: queue section not found “{title}”"], [], [], []
     no_queue = [] if title else [f"{domain_name}: no queue section declared (queue: empty)"]
+    zone = section if section is not None else text  # the citation is looked for in the queue; without one, in the whole checkpoint
     positions = sorted((section.find(citation(i)), i) for i in closed if citation(i) in section) if section else []
     cited = [f"{domain_name}: the queue cites {i}, closed ({closed[i]})" for _, i in positions]
     not_cited = [f"{domain_name}: {c['id']} ({c['status']}) is not cited in the checkpoint"
                  for c in workstreams
                  if c.get("id") and c.get("status") in OPEN_STATUSES and "for" not in c
-                 and domain_of(c, domains) == domain_name and citation(c["id"]) not in text]
+                 and domain_of(c, domains) == domain_name and citation(c["id"]) not in zone]
     return [], no_queue, cited, not_cited
 
 
@@ -424,15 +502,57 @@ def check_size(table: list[dict], root: Path, cap: int):
     return ("GAP" if details else "OK"), count, details
 
 
+def value_conforms(raw: str) -> bool:
+    """A safe YAML scalar: empty, between double quotes, or bare and with nothing YAML would read otherwise."""
+    value = raw.strip()
+    if RE_NON_PRINTABLE.search(value):
+        return False
+    if not value or RE_QUOTED.fullmatch(value):
+        return True
+    return not (value[0] in FORBIDDEN_STARTS or "\t" in value
+                or RE_COLON.search(value) or RE_COMMENT.search(value))
+
+
+def line_count(text: str) -> int:
+    return text.count("\n") + (0 if not text or text.endswith("\n") else 1)
+
+
+def normalize_command(files: dict) -> str:
+    """The command that normalizes the checked files, with the paths as given."""
+    options = [f"--workstreams {files['workstreams']}"]
+    options += [f"--{option} {files[option]}" for option in ("archives", "domains") if option in files]
+    return "python3 -B archive_workstreams.py normalize " + " ".join(options)
+
+
+def check_format(files: list[Path], command: str):
+    """Every value of every file is a safe YAML scalar (see the docstring); the number of files and lines read."""
+    lines, non_conforming = 0, []
+    for path in files:
+        text = read_text(path)
+        lines += line_count(text)
+        non_conforming += [f"{path}:{number} : key {key}" for number, _, key, raw in analyse(text)
+                           if key is not None and not value_conforms(raw)]
+    count = f"{len(files)} files, {lines} lines read"
+    if not non_conforming:
+        return "OK", count, []
+    count = f"{len(non_conforming)} non-conforming value(s), {count}"
+    return "GAP", count, non_conforming[:5] + [f"to normalize: {command}"]
+
+
 class Parser(argparse.ArgumentParser):
     def error(self, message):
         raise ValueError(message.replace("expected one argument", "missing value"))
 
 
+def archive_files(folder: Path) -> list[Path]:
+    """The archives of the folder, in file-name order."""
+    return sorted(p for p in folder.glob("WORKSTREAMS_*.yaml") if p.is_file())
+
+
 def read_archives(folder: Path) -> list[dict]:
     """The entries of every archive in the folder, in file-name order."""
     archives: list[dict] = []
-    for file in sorted(p for p in folder.glob("WORKSTREAMS_*.yaml") if p.is_file()):
+    for file in archive_files(folder):
         archives += read_workstreams(file)
     return archives
 
@@ -484,7 +604,7 @@ def main(argv: list[str]) -> int:
         ("decision numbers", lambda: check_numbers(f["log"])),
         ("reservations", lambda: check_reservations(f["log"])),
         ("workstream ids", lambda: check_ids(workstreams, archives)),
-        ("batch versions", lambda: check_versions(workstreams)),
+        ("batch versions", lambda: check_versions(workstreams, archives)),
         ("workstreams in flight", lambda: check_in_flight(workstreams)),
         ("board", (lambda: check_board(workstreams, f["workstreams"], f["board"], f["generator"]))
          if "board" in f else None),
@@ -494,6 +614,9 @@ def main(argv: list[str]) -> int:
          if table is not None else None),
         ("checkpoint size", (lambda: check_size(table, f.get("root", Path(".")), cap))
          if table is not None else None),
+        ("YAML format", lambda: check_format(
+            [f["workstreams"]] + (archive_files(f["archives"]) if "archives" in f else [])
+            + ([f["domains"]] if "domains" in f else []), normalize_command(f))),
     ]
     gaps = 0
     for rank, (label, check) in enumerate(checks, start=1):

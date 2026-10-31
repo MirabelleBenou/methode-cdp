@@ -15,8 +15,10 @@ et le journal des lots du plan.
 de données est celui qui est à côté, même nom en « .json » ; « --journal » est facultatif.
 « --archives » donne le dossier des archives de chantiers (les fichiers CHANTIERS_*.yaml,
 même forme que chantiers.yaml, que fait archiver_chantiers.py) ; il doit exister. Sans cette
-option, rien ne change. Avec elle, deux contrôles s'étendent aux archives : le 3 et le 7.
-« --domaines » donne la table des domaines (voir le contrôle 9) et déclenche ce contrôle ;
+option, rien ne change. Avec elle, quatre contrôles s'étendent aux archives : le 3, le 4 (sa
+règle des lots en vol), le 7 et le 11.
+« --domaines » donne la table des domaines (voir le contrôle 9) et déclenche ce contrôle, puis
+étend le 11 à la table ;
 « --racine » est le dossier d'où se lisent les chemins de cette table (le dossier courant
 par défaut) ; il ne s'emploie qu'avec « --domaines ». « --plafond-checkpoint » donne le
 plafond de taille d'un checkpoint, en octets (un entier positif, 10240 par défaut) : un
@@ -24,7 +26,7 @@ checkpoint se relit en entier à chaque reprise, il doit rester court (voir le c
 il ne s'emploie, lui aussi, qu'avec « --domaines ». Un contrôle dont les fichiers ne sont
 pas donnés s'affiche « non demandé ».
 
-Les dix contrôles, dans cet ordre :
+Les onze contrôles, dans cet ordre :
   1. numéros du registre : les lignes « | **R<n>** | » n'ont aucun numéro en
      double et aucun trou entre le plus petit et le plus grand ;
   2. réservations : une ligne « | **R<n>** | *réservé … » encore présente est un
@@ -32,7 +34,19 @@ Les dix contrôles, dans cet ordre :
   3. identifiants de chantier : aucune « id: » en double dans chantiers.yaml ; avec
      « --archives », aussi : aucun id de chantiers.yaml qui figure dans une archive, aucun id
      présent deux fois dans les archives, et le compte devient « <n> chantiers, <a> archivés » ;
-  4. versions des lots : aucune valeur de « version: » portée par deux entrées ;
+  4. versions des lots : (a) aucune valeur de « version: » portée par deux entrées de
+     chantiers.yaml ; (b) une entrée « statut: en-vol » qui porte « version: » et « livrable: »
+     porte une version strictement plus haute que toute autre « version: » du même
+     « livrable: », dans chantiers.yaml et, avec « --archives », dans les archives : c'est la
+     règle du numéro d'un lot (méthode §1 bis). Une version se compare par la suite des
+     nombres de son jeton de version : la première occurrence, bornée par un caractère non
+     alphanumérique ou le bord, de « [vV]?<n>.<n>[.<n>…] » ou de « [vV]<n> » (« v1.0065 » →
+     (1, 65) ; « agent-v0.1.1 » → (0, 1, 1) ; « AC-V1.5.1 » → (1, 5, 1) ; « v1.10 (R205) » →
+     (1, 10) ; « v19 » → (19,)) ; une valeur sans jeton ne se compare pas (« 18a2957, sans
+     release (R188) » : ni le hash ni le numéro de décision ne sont des versions). Une ligne d'écart par entrée en
+     vol en défaut, qui nomme la plus haute des autres versions : « <id> : <version> n'est pas
+     au-dessus de <autre version> (<autre id>) ». Le compte reste « <n> versions » (valeurs
+     distinctes de chantiers.yaml) ;
   5. chantiers en vol : chaque entrée « statut: en-vol » porte un « cdp: » non vide ;
   6. tableau : la page fixe et son fichier de données (celui qui est à côté de
      « --tableau », même nom en « .json ») sont égaux à la régénération de
@@ -46,7 +60,9 @@ Les dix contrôles, dans cet ordre :
   7. journal : la dernière version du journal (dernière ligne du plan qui
      commence par « | `v…` | ») a une entrée de chantiers.yaml en
      « statut: recette » dont l'id ou la version la contient ; avec « --archives », cette
-     entrée se cherche aussi dans les archives (une entrée archivée était en recette) ;
+     entrée se cherche aussi dans les archives (une entrée archivée était en recette). Il
+     vérifie l'accord du journal et des chantiers, pas le numéro d'un correctif : c'est la
+     règle (b) du contrôle 4 ;
   8. livrables et ressources : un livrable (« livrable: », le dépôt de code d'où
      sort la release) et une ressource partagée (« ressource: », une machine ou
      un logiciel que deux lots ne peuvent pas occuper en même temps) n'ont
@@ -65,7 +81,7 @@ Les dix contrôles, dans cet ordre :
   9. checkpoints : chaque domaine (un chef de projet, un périmètre) a un checkpoint, un
      document libre dont une section porte sa file (ce qui vient ensuite). Le contrôle
      recoupe cette file et le document avec chantiers.yaml. Il demande « --domaines » ; il
-     lit la table des domaines dans la même forme pauvre que chantiers.yaml : une entrée
+     lit la table des domaines dans la même forme que chantiers.yaml : une entrée
      commence par « - domaine: », une clé par ligne, les lignes vides et « # » ignorées.
      Les clés : « domaine » (nom court), « cdp » (le chef de projet du domaine),
      « checkpoint » (chemin du checkpoint, relatif à « --racine »), « file » (le début exact
@@ -81,9 +97,12 @@ Les dix contrôles, dans cet ordre :
      par « ## », ou à la fin du fichier. Deux règles : (b) la file ne cite aucun chantier
      clos, c'est-à-dire en « statut: recette » ou seulement archivé (les archives viennent
      de « --archives ») ; (c) chaque entrée du domaine en « statut » a-venir, a-cadrer,
-     dette ou en-vol, sans clé « pour: » (un message, pas un sujet), est citée par le
-     checkpoint. Un « file: » vide fait une ligne d'écart du domaine (« aucune section de file
-     déclarée »), placée avant ses lignes (c) ; (b) ne s'y applique pas, (c) oui. Une table en
+     dette ou en-vol, sans clé « pour: » (un message, pas un sujet), est citée DANS LA
+     SECTION DE LA FILE du checkpoint (la même que lit la règle (b)) : une entrée citée
+     seulement ailleurs dans le checkpoint est un écart. Un « file: » vide fait une ligne
+     d'écart du domaine (« aucune section de file déclarée ») ; sans section de file, la
+     règle (c) cherche la citation dans tout le checkpoint. Cette ligne d'écart est placée
+     avant les lignes (c) ; (b) ne s'y applique pas, (c) oui. Une table en
      défaut (checkpoint introuvable, section de file introuvable, entrée sans « domaine » ou
      sans « checkpoint ») est un écart, et le domaine n'est pas contrôlé plus avant. Le compte
      est « <n> domaines, <b> cités clos, <c> non cités, <v> sans section de file » ;
@@ -96,7 +115,18 @@ Les dix contrôles, dans cet ordre :
      plafond <p> » (le chemin tel qu'écrit dans la table). Un checkpoint introuvable ou une
      entrée sans « domaine » ou sans « checkpoint » est ignoré ici : le contrôle 9 le
      signale déjà. Le compte est « <n> domaines, <k> au-delà de <p> octets », <n> étant les
-     entrées qui ont un domaine et un checkpoint.
+     entrées qui ont un domaine et un checkpoint ;
+ 11. format YAML : chaque valeur de chantiers.yaml (« --chantiers »), des archives (si
+     « --archives » est donné) et de la table des domaines (si « --domaines » est donné) est
+     un scalaire YAML sûr, de sorte qu'un parseur YAML standard lit les mêmes valeurs que ce
+     script. Une valeur est conforme si elle est vide ; ou nue et sûre (sans « : » suivi d'une
+     espace ou de la fin de ligne, sans « # » précédé d'une espace, sans tabulation ni caractère de
+     contrôle, et ne commençant par aucun de - ? : , [ ] { } # & * ! | > ' " % @ ` ) ; ou entre
+     guillemets doubles, où seuls \\" et \\\\ sont des échappements. Le contrôle tourne toujours.
+     OK : « <n> fichiers, <m> lignes lues » ; ÉCART : « <k> valeur(s) non conforme(s), <n> fichiers,
+     <m> lignes lues », les cinq premières valeurs non conformes (« fichier:ligne : clé <clé> »),
+     puis la commande qui normalise (« archiver_chantiers.py normaliser », qui ne réécrit que
+     ces valeurs).
 
 Sortie : une ligne par contrôle (OK, ÉCART ou avertissement, avec un compte),
 le détail des écarts indenté dessous, puis une dernière ligne « VIVANTS · … ».
@@ -104,9 +134,10 @@ Code de retour : 0 sans écart, 1 avec au moins un écart, 2 pour un appel
 invalide (argument manquant, fichier ou dossier introuvable, « --racine » ou
 « --plafond-checkpoint » sans « --domaines », plafond qui n'est pas un entier positif).
 
-Python 3, bibliothèque standard seulement. Le lecteur YAML est volontairement
-pauvre, comme celui du générateur : « - id: » puis des « clé: valeur » sur une
-seule ligne.
+Python 3.11 et plus, bibliothèque standard seulement. Le lecteur YAML est volontairement
+pauvre, comme celui du générateur : « - id: » puis des « clé: valeur » sur une seule ligne ;
+une valeur entre guillemets doubles se lit sans les guillemets ni les échappements
+(\\" et \\\\), une valeur nue se lit telle quelle, conforme ou non.
 """
 import argparse
 import re
@@ -118,7 +149,17 @@ from pathlib import Path
 RE_NUMERO = re.compile(r"^\|\s*\*\*R(\d+)\*\*\s*\|")
 RE_RESERVATION = re.compile(r"^\|\s*\*\*R(\d+)\*\*\s*\|\s*\*réservé")
 RE_JOURNAL = re.compile(r"^\|\s*`(v[^`]*)`\s*\|")
+# le jeton de version (contrôle 4) : la première occurrence, bornée par un caractère non alphanumérique ou le bord,
+# de « [vV]?<n>.<n>[.<n>…] » ou de « [vV]<n> » ; « (?!\.?[^\W_]) » empêche de lire « 1.2 » dans « 1.2.3a »
+RE_JETON_VERSION = re.compile(r"(?<![^\W_])(?:[vV]?[0-9]+(?:\.[0-9]+)+|[vV][0-9]+)(?!\.?[^\W_])")
 RE_DATE = re.compile(rb"\d{2}/\d{2}/\d{4}")
+# Le format YAML strict des valeurs (contrôle 11) : voir la docstring.
+RE_ENTRE_GUILLEMETS = re.compile(r'"((?:[^"\\]|\\["\\])*)"')
+RE_ECHAPPEMENT = re.compile(r'\\(["\\])')
+RE_DEUX_POINTS = re.compile(r":(?:\s|$)")
+RE_COMMENTAIRE = re.compile(r"\s#")
+RE_NON_IMPRIMABLE = re.compile(r"[\x00-\x08\x0b-\x1f\x7f-\x9f\u2028\u2029]")
+DEBUTS_INTERDITS = "-?:,[]{}#&*!|>'\"%@`"
 
 NON_DEMANDE = "—  non demandé"
 STATUTS_OUVERTS = ("a-venir", "a-cadrer", "dette", "en-vol")
@@ -129,20 +170,38 @@ def lire_texte(chemin: Path) -> str:
     return chemin.read_text(encoding="utf-8")
 
 
-def lire_chantiers(chemin: Path) -> list[dict]:
-    """Même lecteur que le générateur ; chaque entrée garde sa ligne source (et son fichier)."""
-    chantiers: list[dict] = []
-    for numero, ligne in enumerate(lire_texte(chemin).split("\n"), start=1):
+def analyser(texte: str):
+    """Les lignes utiles du texte : (numéro, début d'entrée, clé, valeur brute) ; sans « : », clé et valeur sont None."""
+    commencee = False
+    for numero, ligne in enumerate(texte.split("\n"), start=1):
         nue = ligne.strip()
         if not nue or nue.startswith("#"):
             continue
-        if nue.startswith("- "):
-            chantiers.append({"_ligne": numero, "_fichier": chemin.name})
-            nue = nue[2:]
-        if ":" not in nue or not chantiers:
+        debut = nue.startswith("- ")
+        if debut:
+            commencee, nue = True, nue[2:]
+        if ":" not in nue or not commencee:
+            yield numero, debut, None, None
             continue
-        cle, _, valeur = nue.partition(":")
-        chantiers[-1][cle.strip()] = valeur.strip()
+        cle, _, brut = nue.partition(":")
+        yield numero, debut, cle.strip(), brut
+
+
+def lire_valeur(brut: str) -> str:
+    """La valeur d'une ligne : sans les guillemets doubles ni les échappements (\\" et \\\\) si elle est entre guillemets, sinon telle quelle."""
+    valeur = brut.strip()
+    entre = RE_ENTRE_GUILLEMETS.fullmatch(valeur)
+    return RE_ECHAPPEMENT.sub(r"\1", entre.group(1)) if entre else valeur
+
+
+def lire_chantiers(chemin: Path) -> list[dict]:
+    """Même lecteur que le générateur ; chaque entrée garde sa ligne source (et son fichier)."""
+    chantiers: list[dict] = []
+    for numero, debut, cle, brut in analyser(lire_texte(chemin)):
+        if debut:
+            chantiers.append({"_ligne": numero, "_fichier": chemin.name})
+        if cle is not None:
+            chantiers[-1][cle] = lire_valeur(brut)
     return chantiers
 
 
@@ -222,13 +281,32 @@ def ecarts_archives(vivants: dict[str, list[int]], archives: list[dict]) -> list
     return details
 
 
-def controle_versions(chantiers: list[dict]):
+def nombres(version: str) -> tuple[int, ...]:
+    """La suite des nombres du jeton de version d'une valeur : « v1.0065 » → (1, 65) ; « AC-V1.5.1 » → (1, 5, 1) ;
+    « v1.10 (R205) » → (1, 10) ; vide si la valeur n'en porte aucun (« … 18a2957, sans release (R188) »)."""
+    m = RE_JETON_VERSION.search(version)
+    return tuple(int(n) for n in re.findall(r"[0-9]+", m.group(0))) if m else ()
+
+
+def controle_versions(chantiers: list[dict], archives: list[dict] | None = None):
     portees: dict[str, list[str]] = {}
     for c in chantiers:
         if c.get("version"):
             portees.setdefault(c["version"], []).append(nom(c))
     details = [f"version {v} portée par {' et '.join(ids)}"
                for v, ids in portees.items() if len(ids) > 1]
+    # (b) une entrée en vol porte une version plus haute que toute autre du même livrable
+    toutes = chantiers + (archives or [])
+    for c in chantiers:
+        if c.get("statut") != "en-vol" or not c.get("version") or not c.get("livrable") or not nombres(c["version"]):
+            continue
+        autres = [a for a in toutes if a is not c and a.get("livrable") == c["livrable"]
+                  and a.get("version") and nombres(a["version"])]
+        if not autres:
+            continue
+        haute = max(autres, key=lambda a: nombres(a["version"]))
+        if nombres(haute["version"]) >= nombres(c["version"]):
+            details.append(f"{nom(c)} : {c['version']} n'est pas au-dessus de {haute['version']} ({nom(haute)})")
     return ("ÉCART" if details else "OK"), f"{len(portees)} versions", details
 
 
@@ -370,7 +448,7 @@ def citation(i: str) -> str:
 
 def controle_domaine(d: dict, chantiers: list[dict], clos: dict[str, str],
                      domaines: list[dict], racine: Path):
-    """Les défauts de la table, ou : file non déclarée, file qui cite du clos (9b), ouverts non cités (9c)."""
+    """Les défauts de la table, ou : file non déclarée, file qui cite du clos (9b), ouverts non cités dans la file (9c)."""
     nom_d, chemin = d["domaine"], racine / d["checkpoint"]
     if not chemin.is_file():
         return [f"{nom_d} : checkpoint introuvable {d['checkpoint']}"], [], [], []
@@ -383,12 +461,13 @@ def controle_domaine(d: dict, chantiers: list[dict], clos: dict[str, str],
     if titre and section is None:
         return [f"{nom_d} : section de file introuvable « {titre} »"], [], [], []
     sans_file = [] if titre else [f"{nom_d} : aucune section de file déclarée (file: vide)"]
+    zone = section if section is not None else texte  # la citation se cherche dans la file ; sans file, dans tout le checkpoint
     positions = sorted((section.find(citation(i)), i) for i in clos if citation(i) in section) if section else []
     cites = [f"{nom_d} : la file cite {i}, clos ({clos[i]})" for _, i in positions]
     non_cites = [f"{nom_d} : {c['id']} ({c['statut']}) n'est pas cité au checkpoint"
                  for c in chantiers
                  if c.get("id") and c.get("statut") in STATUTS_OUVERTS and "pour" not in c
-                 and domaine_de(c, domaines) == nom_d and citation(c["id"]) not in texte]
+                 and domaine_de(c, domaines) == nom_d and citation(c["id"]) not in zone]
     return [], sans_file, cites, non_cites
 
 
@@ -430,15 +509,57 @@ def controle_taille(table: list[dict], racine: Path, plafond: int):
     return ("ÉCART" if details else "OK"), compte, details
 
 
+def valeur_conforme(brut: str) -> bool:
+    """Un scalaire YAML sûr : vide, entre guillemets doubles, ou nu et sans rien que YAML lirait autrement."""
+    valeur = brut.strip()
+    if RE_NON_IMPRIMABLE.search(valeur):
+        return False
+    if not valeur or RE_ENTRE_GUILLEMETS.fullmatch(valeur):
+        return True
+    return not (valeur[0] in DEBUTS_INTERDITS or "\t" in valeur
+                or RE_DEUX_POINTS.search(valeur) or RE_COMMENTAIRE.search(valeur))
+
+
+def nombre_de_lignes(texte: str) -> int:
+    return texte.count("\n") + (0 if not texte or texte.endswith("\n") else 1)
+
+
+def commande_normaliser(fichiers: dict) -> str:
+    """La commande qui normalise les fichiers contrôlés, avec les chemins tels que donnés."""
+    options = [f"--chantiers {fichiers['chantiers']}"]
+    options += [f"--{option} {fichiers[option]}" for option in ("archives", "domaines") if option in fichiers]
+    return "python3 -B archiver_chantiers.py normaliser " + " ".join(options)
+
+
+def controle_format(fichiers: list[Path], commande: str):
+    """Chaque valeur de chaque fichier est un scalaire YAML sûr (voir la docstring) ; le nombre de fichiers et de lignes lus."""
+    lignes, non_conformes = 0, []
+    for chemin in fichiers:
+        texte = lire_texte(chemin)
+        lignes += nombre_de_lignes(texte)
+        non_conformes += [f"{chemin}:{numero} : clé {cle}" for numero, _, cle, brut in analyser(texte)
+                          if cle is not None and not valeur_conforme(brut)]
+    compte = f"{len(fichiers)} fichiers, {lignes} lignes lues"
+    if not non_conformes:
+        return "OK", compte, []
+    compte = f"{len(non_conformes)} valeur(s) non conforme(s), {compte}"
+    return "ÉCART", compte, non_conformes[:5] + [f"pour normaliser : {commande}"]
+
+
 class Analyseur(argparse.ArgumentParser):
     def error(self, message):
         raise ValueError(message.replace("expected one argument", "valeur manquante"))
 
 
+def fichiers_archives(dossier: Path) -> list[Path]:
+    """Les archives du dossier, par ordre de nom de fichier."""
+    return sorted(p for p in dossier.glob("CHANTIERS_*.yaml") if p.is_file())
+
+
 def lire_archives(dossier: Path) -> list[dict]:
     """Les entrées de toutes les archives du dossier, par ordre de nom de fichier."""
     archives: list[dict] = []
-    for fichier in sorted(p for p in dossier.glob("CHANTIERS_*.yaml") if p.is_file()):
+    for fichier in fichiers_archives(dossier):
         archives += lire_chantiers(fichier)
     return archives
 
@@ -491,7 +612,7 @@ def main(argv: list[str]) -> int:
         ("numéros du registre", lambda: controle_numeros(f["registre"])),
         ("réservations", lambda: controle_reservations(f["registre"])),
         ("identifiants de chantier", lambda: controle_identifiants(chantiers, archives)),
-        ("versions des lots", lambda: controle_versions(chantiers)),
+        ("versions des lots", lambda: controle_versions(chantiers, archives)),
         ("chantiers en vol", lambda: controle_en_vol(chantiers)),
         ("tableau", (lambda: controle_tableau(chantiers, f["chantiers"], f["tableau"], f["generateur"]))
          if "tableau" in f else None),
@@ -501,6 +622,9 @@ def main(argv: list[str]) -> int:
          if table is not None else None),
         ("taille des checkpoints", (lambda: controle_taille(table, f.get("racine", Path(".")), plafond))
          if table is not None else None),
+        ("format YAML", lambda: controle_format(
+            [f["chantiers"]] + (fichiers_archives(f["archives"]) if "archives" in f else [])
+            + ([f["domaines"]] if "domaines" in f else []), commande_normaliser(f))),
     ]
     ecarts = 0
     for rang, (libelle, controle) in enumerate(controles, start=1):

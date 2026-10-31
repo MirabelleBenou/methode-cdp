@@ -11,8 +11,8 @@ reconstitue depuis les dépôts.*
 
 | dépôt | visibilité | porte | qui y écrit |
 |---|---|---|---|
-| **`<owner>/<Projet>`** — les vivants | privé | `README.md` ; `Methode/METHODE_<P>.md` ; `<Dossier>/` : checkpoint, registre, plan, `chantiers.yaml`, statuts des sous-projets ; `<Dossier>/attendus/<version>/` ; `<Dossier>/outils_cdp/` ; `<Dossier>/Archives/` (figées : l'archivage des chantiers en recette y écrit `CHANTIERS_<AAAA-MM>.yaml`, le CdP le reste) | **les sessions de CdP seules** |
-| **`<owner>/<Projet>-App`** — le code | privé (public : §6 B) | le code à la racine ; `banc/` ; `PROMPT_DEV_<P>.md` ; `lots/<version>/` ; `.gitattributes`, `.gitignore`, `CHANGELOG.md` | le CdP sur `main` (fusion, cadrage) ; le dev sur la branche de son lot |
+| **`<owner>/<Projet>`** — les vivants | privé | [`README.md`](modeles/depot-vivants/README.md) ; `Methode/METHODE_<P>.md` ; `<Dossier>/` : checkpoint, registre, plan, `chantiers.yaml`, statuts des sous-projets ; `<Dossier>/attendus/<version>/` ; `<Dossier>/outils_cdp/` ; `<Dossier>/Archives/` (figées : l'archivage des chantiers en recette y écrit `CHANTIERS_<AAAA-MM>.yaml`, le CdP le reste) | **les sessions de CdP seules** |
+| **`<owner>/<Projet>-App`** — le code | privé (public : §6 B) | le code à la racine ; `banc/` ; `PROMPT_DEV_<P>.md` ; `lots/<version>/` ; `.gitattributes`, `.gitignore`, [`CHANGELOG.md`](modeles/depot-app/CHANGELOG.md) | le CdP sur `main` (fusion, cadrage) ; le dev sur la branche de son lot |
 
 **Le dépôt de code est public** (GitHub Pages, licence ouverte) : **le prompt du dev et `lots/` n'y vont jamais** — ils
 nomment le porteur, décrivent la méthode et citent le registre. Ils vont dans un troisième dépôt, privé (§6 B). Un fichier
@@ -22,14 +22,14 @@ poussé sur un dépôt public y reste dans l'historique même retiré ensuite : 
 décisions en cours, ni les autres chantiers. Les vivants restent au CdP.
 
 **Une troisième famille, facultative — le dépôt d'ordres** : quand le projet a un serveur de production et un exécutant
-serveur (`modeles/EXECUTANT_SERVEUR.md`), le CdP y déploie par des ordres.
+serveur ([`modeles/EXECUTANT_SERVEUR.md`](modeles/EXECUTANT_SERVEUR.md)), le CdP y déploie par des ordres.
 
 | dépôt | visibilité | porte | qui y écrit |
 |---|---|---|---|
 | **`<owner>/<Projet>-Ordres`** — les ordres | privé | `ordres/<id>.json` ; `resultats/<id>.md` ; `LISEZ_MOI.md`, le format des ordres | **le CdP** (les ordres) et **le serveur** (les comptes rendus, par une clé de déploiement en écriture sur ce seul dépôt) ; **jamais le dev** |
 
 Le serveur lit le dépôt de code par une seconde clé de déploiement, **en lecture seule**. Chaque CdP qui déploie
-rattache le dépôt d'ordres en écriture ; le dev ne le rattache pas. Un ordre ne se réécrit jamais ; son identifiant se
+rattache le dépôt d'ordres en écriture (son clone : `modeles/METHODE.md` §4 bis) ; le dev ne le rattache pas. Un ordre ne se réécrit jamais ; son identifiant se
 prend par le push, comme un numéro de décision.
 
 ---
@@ -43,7 +43,7 @@ prend par le push, comme un numéro de décision.
 ├── banc/                      ← export-ignore : l'outillage de mesure, son README d'abord
 ├── PROMPT_DEV_<P>.md          ← export-ignore : la commande permanente du dev
 ├── lots/                      ← export-ignore
-│   └── v<X.Y>/
+│   └── v<X.Y>/            ← ou <nom du lot>/ pour un livrable publié par release (sans version par lot)
 │       ├── CADRAGE.md         ← le CdP, un seul commit sur la branche du lot
 │       ├── ADDENDUM_<n>.md    ← le CdP, pour lever un arrêt ou un écart, avant la remise
 │       ├── ARRET_<n>.md       ← le dev, avant de s'arrêter
@@ -80,10 +80,11 @@ lot/vX.Y ●─ CADRAGE ─ … travail … ─ LIVRAISON ─ RAPPORT
 ```
 
 1. **Le CdP crée `lot/v<X.Y>` depuis la tête de `main`** et y pousse **un seul commit** : `lots/v<X.Y>/CADRAGE.md` (et
-   sa maquette s'il y en a une). Le cadrage nomme le commit de base (la tête de `main`).
-2. **Le CdP lance le dev en sous-agent** (`modeles/COMMANDE_DEV.md`) : modèle et effort du cadrage, clone dans un dossier
+   sa maquette s'il y en a une). Le cadrage nomme le commit de base (la tête de `main`). *Un livrable publié par release
+   n'a pas de version par lot : la branche est `lot/<nom du lot>` et le dossier `lots/<nom du lot>/`.*
+2. **Le CdP lance le dev en sous-agent** ([`modeles/COMMANDE_DEV.md`](modeles/COMMANDE_DEV.md)) : modèle et effort du cadrage, clone dans un dossier
    à part (`/home/claude/dev_<lot>/`, jamais aux chemins des copies du CdP), rien d'autre en contexte ; les conditions
-   durables sont au prompt du dev, et **le dev ne parle qu'au CdP**. *Repli : une ligne que tu colles dans une conversation
+   durables sont au prompt du dev, et **le dev ne parle qu'au CdP** ; **il pousse sa branche à chaque étape**. *Repli : une ligne que tu colles dans une conversation
    neuve.*
 3. **Un arrêt** : le dev pousse sa branche avec `ARRET_<n>.md` et s'arrête. Le CdP lit, pousse `ADDENDUM_<n>.md` sur la
    même branche, relance le dev par message. **Une maquette demandée au dev passe par un arrêt** : il pousse les images et
@@ -94,12 +95,12 @@ lot/vX.Y ●─ CADRAGE ─ … travail … ─ LIVRAISON ─ RAPPORT
 5. **La réception** : le CdP refait `git archive` du commit de livraison, remesure à froid, relit le diff, regarde les
    rendus. Il te remet le livrable sous son nom exact, avec son sha256.
 6. **Après ta validation en production** : `git push origin lot/v<X.Y>:main` — **avance rapide, jamais `--force`**.
-   Puis la clôture des vivants, un commit « Lot v<X.Y> clos » au dépôt des vivants, le miroir au projet. *(Un livrable
+   Puis la clôture des vivants, un commit « Lot v<X.Y> clos » au dépôt des vivants ⟨, le miroir au projet⟩. *(Un livrable
    publié par release n'a ni version ni validation en production par lot : la fusion suit la réception, et la release se
    fait à ta demande.)*
 
 **Une livraison = un nouveau numéro** (livrable déployé à chaque lot ; un livrable publié par release ne porte pas de
-version par lot) : un correctif ou des retours d'essai après une remise font un lot de la version suivante, sur sa propre branche partie de celle du lot, un commit et un rapport chacun. L'addendum sous la même version ne
+version par lot) : un correctif ou des retours d'essai après une remise font un lot de la version suivante (la règle et son pourquoi : [`modeles/METHODE.md`](modeles/METHODE.md) §1 bis), sur sa propre branche partie de celle du lot, un commit et un rapport chacun. L'addendum sous la même version ne
 sert que tant que rien n'a été remis ni déployé.
 
 ---
@@ -116,7 +117,7 @@ sert que tant que rien n'a été remis ni déployé.
   témoin ; registre, plan et chantiers en ajout seul ; un numéro de décision se réserve par un push ; un livrable n'a qu'un lot en vol, sa version se
   calcule quand le lot le prend (déployé à chaque lot) ou n'existe pas par lot (publié par release : méthode §1 bis) ; `pull` avant
   chaque écriture, un conflit se voit au `pull` au lieu de s'écraser.
-- **Le miroir au projet** : à chaque clôture, chaque fichier modifié se recopie par l'outil du projet en envoyant le
+- **Le miroir au projet** (une extension, `NOYAU.md` §6 : quand une conversation sans clone doit lire les vivants) : à chaque clôture, chaque fichier modifié se recopie par l'outil du projet en envoyant le
   fichier depuis le clone (`project_write` avec `local_path`), sous le même nom. **Jamais depuis le texte que rend
   l'outil du projet** : il rend tout en texte, sans preuve à l'octet. Un « Sync now » GitHub du projet n'est pas
   automatique — le miroir par le CdP t'évite ce geste.
@@ -137,9 +138,10 @@ sert que tant que rien n'a été remis ni déployé.
 | **Clone d'une seule branche** | `git fetch origin main` ne crée pas `origin/main` | écrire `git fetch origin main:refs/remotes/origin/main` |
 | **Branche de lot qui suit `origin/main`** | le hook de fin de tour croit à des commits non poussés | fixer `branch.<lot>.merge` et ajouter la branche au `remote.origin.fetch` |
 | **Lignes d'attribution** | la session impose ses lignes dans les commits | sur un dépôt public, elles se voient : à savoir |
-| **Secrets** | un `.env` poussé est publié pour toujours | seul `.env.example` porte des valeurs, factices ; vérifier avant le premier push |
+| **Secrets** | un `.env` poussé est publié pour toujours | seul `.env.example` porte des valeurs, factices ; vérifier avant le premier push ; **activer la protection des secrets au push** (réglage du compte) |
+| **`main` sans protection** | un force-push ou une suppression de `main` est possible | **une règle de branche** qui bloque l'un et l'autre. *Sur un compte gratuit, GitHub n'applique pas les règles de branche aux dépôts privés : les dépôts publics se protègent ; les privés gardent la règle écrite (le dev ne pousse que sa branche).* |
 | **Dossier `dist/` ignoré mais suivi** | `git add` ne le prend pas | `git add -f` |
-| **Rejet HTTP 413 au push** | push d'une copie pas à jour | `git fetch origin main` avant de pousser |
+| **Rejet HTTP 413 au push** | un push depuis un clone peu profond qui n'a pas fait `fetch` envoie l'arbre entier, que le proxy refuse pour sa taille (ce n'est pas un refus d'avance rapide) | `git fetch origin main` avant de pousser |
 | **Casse du nom de dépôt** | la session clone en minuscules | les deux marchent ; l'adresse canonique est celle de la création |
 
 ---
@@ -191,7 +193,7 @@ CdP n'écrit pas le livré » s'applique au code, pas à la documentation, que l
 
 *Et dans un dépôt public, en plus : le prompt du dev et `lots/` (§6 B).*
 
-- les secrets, jetons, mots de passe, `.env` réels ;
+- les secrets, jetons, mots de passe, `.env` réels (la protection des secrets au push du compte en rattrape certains, pas tous) ;
 - les données de production (journaux, dumps, exports) : elles se téléversent dans la session qui en a besoin ;
 - les images à faire valider par toi : elles passent dans la discussion (ou dans `lots/<version>/maquette/` quand le
   cadrage les commande).

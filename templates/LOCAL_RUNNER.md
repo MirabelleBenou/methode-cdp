@@ -1,9 +1,9 @@
 # The local runner, the fallback — Claude Code on the PC, driven by files · v2
-### 25 October 2026 · proven on a real project (screenshots of a game installed on the PC)
+### 31 October 2026 (v2) · proven on a real project (screenshots of a game installed on the PC)
 
 > **The bridge first.** Since the Claude app offers a **bridge** when the owner's machine is linked — linked folders
 > (read, write), a terminal if one is offered, the screen through computer use, the owner validating the access in the
-> PL's conversation —, **the PL's session works on the machine itself** (method §1, skill §5a). **This document now
+> PL's conversation —, **the PL's session works on the machine itself** (method §1). **This document now
 > describes the fallback**, for when the bridge is not offered. Reason for this rank: driven by files, the runner got stuck
 > when the owner was away from their machine — screen-access requests refused, endless waiting.
 
@@ -75,7 +75,7 @@ Rules:
 
 ## 5. The typical sequence
 
-1. The PL drops `briefs\BRIEF_<batch>.md` (form of `templates/BRIEF.md`, plus §4 above or a reference to a
+1. The PL drops `briefs\BRIEF_<batch>.md` (form of [`templates/BRIEF.md`](BRIEF.md), plus §4 above or a reference to a
    synchronization addendum).
 2. The owner opens a local Claude Code session **on `<root>\<Project>`**, Sonnet, effort of the brief, new session,
    and pastes:

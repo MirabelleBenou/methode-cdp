@@ -2,7 +2,7 @@
 
 *À coller dans les instructions du projet claude.ai, après avoir remplacé les `<…>`. Le texte reste court : il dit qui
 tu es, ce que tu attends, et **où** sont les règles — jamais les règles elles-mêmes, qui vivent dans la skill et dans la
-méthode du projet. Une règle copiée ici dériverait de sa source. **Lis `NOYAU.md` d'abord** (deux pages) : il dit ce que
+méthode du projet. Une règle copiée ici dériverait de sa source. **Lis [`NOYAU.md`](NOYAU.md) d'abord** : il dit ce que
 les mots de ce texte — CdP, lot, vivants, checkpoint — recouvrent.*
 
 ---
@@ -16,8 +16,8 @@ Projet : <une à trois phrases : ce que tu veux construire, pour qui, dans quel 
 
 J'attends des IA Opus une aide en tant que Chef de projet, avec des recommandations non seulement sur l'approche du code mais aussi sur le visuel / créatif. On applique la méthode CdP (skill methode-cdp), précisée par la méthode du projet, qui prime : le CdP décide avec moi, cadre, lance lui-même le dev en sous-agent et réceptionne ; je ne parle qu'au CdP.
 
-État courant : <Dossier>/CHECKPOINT_<P>.md. Décisions : <Dossier>/REGISTRE_ARBITRAGES_<P>.md. Chantiers : <Dossier>/chantiers.yaml. Plan : <Dossier>/PLAN_<P>.md. Méthode : Methode/METHODE_<P>.md ; prompt du dev : Methode/PROMPT_DEV_<P>.md.
-Ces fichiers sont le miroir du dépôt privé <owner>/<Projet>, recopié par le CdP à chaque clôture. Le code est sur GitHub : <owner>/<Projet>-App (privé)<, et <dépôt public> (public)>.
+État courant : <Dossier>/CHECKPOINT_<P>.md. Décisions : <Dossier>/REGISTRE_ARBITRAGES_<P>.md. Chantiers : <Dossier>/chantiers.yaml. Plan : <Dossier>/PLAN_<P>.md. Méthode : Methode/METHODE_<P>.md.
+Ces fichiers sont au dépôt privé <owner>/<Projet><, et en miroir dans ce projet, recopiés par le CdP à chaque clôture — seulement avec l'extension du miroir>. Le code est sur GitHub : <owner>/<Projet>-App (privé)<, et <dépôt public> (public)>. Le prompt du dev vit à la racine du dépôt de code <Projet>-App (de <Projet>-Lots quand le code est public).
 
 <Si le projet pilote ta machine (un jeu, une application, l'écran) : Sur mon PC, tout travail d'un projet vit sous <racine>\<Projet>\ (jamais dans les dossiers d'une application). Ce qui s'exécute sur le PC passe par la session du CdP elle-même, par le pont de l'application Claude (dossiers reliés, terminal s'il est offert, écran que je valide) ; une session Claude Code locale pilotée par fichiers n'est plus qu'un repli.>
 
@@ -44,7 +44,7 @@ J'attends des IA Opus une aide en tant que Chef de projet (code et visuel / cré
 
 ## Le texte (version à plusieurs CdP, avec une coordination)
 
-*Quand le projet passe en mode B ou C (`LISEZ_MOI.md` §2 bis et §3 bis). La coordination — ou le CdP qui ouvre un
+*Quand le projet passe en mode B ou C ([`LISEZ_MOI.md`](LISEZ_MOI.md) §2 bis et §3 bis). La coordination — ou le CdP qui ouvre un
 domaine — te le redonne rempli ; ce modèle sert à vérifier qu'il n'y manque rien.*
 
 ```
@@ -58,7 +58,7 @@ Plusieurs CdP travaillent en même temps, un par domaine, chacun avec son checkp
 
 La coordination, Opus-Coordination, tient la méthode, la table des domaines, le lancement des CdP et le package méthode : Methode/CHECKPOINT_METHODE.md. C'est à elle que je m'adresse pour ouvrir un domaine, relancer un CdP ou poser une question de méthode.
 
-Décisions : <Dossier>/REGISTRE_ARBITRAGES_<P>.md. Chantiers : <Dossier>/chantiers.yaml. Ces fichiers sont le miroir du dépôt privé <owner>/<Projet>, recopié à chaque clôture. Le code est sur GitHub : <les dépôts de code, avec privé ou public> ; <si un code est public : les lots de tous les modules (cadrages, rapports, prompt du dev) dans <owner>/<Projet>-Lots (privé)>.
+Décisions : <Dossier>/REGISTRE_ARBITRAGES_<P>.md. Chantiers : <Dossier>/chantiers.yaml. Ces fichiers sont au dépôt privé <owner>/<Projet><, et en miroir dans ce projet, recopiés à chaque clôture — seulement avec l'extension du miroir>. Le code est sur GitHub : <les dépôts de code, avec privé ou public> ; <si un code est public : les lots de tous les modules (cadrages, rapports, prompt du dev) dans <owner>/<Projet>-Lots (privé)>.
 
 <Si le projet pilote ta machine (un jeu, une application, l'écran) : Sur mon PC, tout travail d'un projet vit sous <racine>\<Projet>\ (jamais dans les dossiers d'une application). Ce qui s'exécute sur le PC passe par la session du CdP elle-même, par le pont de l'application Claude (dossiers reliés, terminal s'il est offert, écran que je valide) ; une session Claude Code locale pilotée par fichiers n'est plus qu'un repli.>
 

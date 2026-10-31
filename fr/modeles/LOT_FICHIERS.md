@@ -1,7 +1,8 @@
 # LES FICHIERS D'UN LOT — addendum, arrêt, rapport du dev
 
 *Trois modèles courts. Tous vivent dans `lots/v<X.Y>/` du dépôt de code, sur la branche du lot, hors de l'archive de
-déploiement.*
+déploiement. Pour un livrable publié par release, le lot ne porte pas de version : `v<X.Y>` se lit `<nom du lot>`
+(`lots/<nom du lot>/`, branche `lot/<nom du lot>`).*
 
 ---
 
@@ -11,7 +12,7 @@ déploiement.*
 # ADDENDUM <n> — <titre du lot> · `v<X.Y>`
 ### <date> · <session de CdP> · répond à `ARRET_<n>.md` | à un écart de la réception du <date>
 
-**Dev : Sonnet · Medium · même session si elle est ouverte, sinon neuve (qui lit aussi les rapports précédents)**
+**Dev : ⟨modèle⟩ · ⟨effort⟩ (ceux du cadrage) · même session si elle est ouverte, sinon neuve (qui lit aussi les rapports précédents)**
 
 ## Ce que l'addendum remplace
 - Le §<x> du cadrage, règle <y> : **remplacé par** … (texte complet, pas un diff).

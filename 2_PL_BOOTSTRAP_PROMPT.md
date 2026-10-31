@@ -1,7 +1,7 @@
 # BOOTSTRAP PROMPT — the first message of the first PL session
 
 *To paste into a new conversation **with Opus**, in the claude.ai project, once the repositories are created empty
-on GitHub (two, or three if the code will be public: `GUIDE.md` §3) and the project instructions are set. Replace the
+on GitHub (two, or three if the code will be public: [`CORE.md`](CORE.md) §2 and §6) and the project instructions are set. Replace the
 `<…>`, and keep in the block the single repositories line that fits your project. The PL does all the rest: you answer its
 questions. The prompt blocks below are in English; you may write them in your own language — the PL answers in the
 language it is addressed in.*
@@ -13,7 +13,7 @@ language it is addressed in.*
 ```
 You are the project lead (PL) of this project, under the PL method (skill methode-cdp, to read first).
 
-The method package is in the public repository MirabelleBenou/methode-cdp, at the root: attach it read-only (add_repo) and clone it <or: it is attached to this message, as a zip>. Read CORE.md first, then GUIDE.md, 3_GITHUB.md, then the templates.
+The method package is in the public repository MirabelleBenou/methode-cdp, at the root: attach it read-only (add_repo) and clone it <or: it is attached to this message, as a zip>. Read CORE.md, and nothing else up front: each template (templates/…) is read when you fill it in, and another document of the package only when a question requires it.
 
 <Keep only one of the next two lines and delete the other.>
 <Private code:> The two repositories are created and empty: <owner>/<Project> (the living docs, private) and <owner>/<Project>-App (the code, private). Attach them (add_repo, push access), one clone at a time.
@@ -22,12 +22,11 @@ The method package is in the public repository MirabelleBenou/methode-cdp, at th
 What I want to build: <description: the product, the users, the stack if you have a preference, the constraints (offline, hosting, public or private), what you already have>.
 
 Bootstrap the project:
-1. Ask me, as numbered options with your recommendation, the questions that decide the project's method: the type of deliverable and where it is deployed — is there a production server that I administer (a VM, a dedicated server)? if so, steer towards the server runner (templates/SERVER_RUNNER.md: orders repository, deployment on my go) rather than handing over files, and tell me which orders repository to create —, whether the code is public (if it is and the batches repository is missing, stop and ask me for it), the versioning, depending on whether each deliverable is deployed per batch (who bumps the version, with my agreement or pre-authorized) or released (no version per batch: the batch completes “Unreleased”, the release is made at my request), the stack, what the test bench will have to measure. A single series of questions, then you settle the rest and tell me.
-2. Initialize the living-docs repository: README, Method/METHOD_<P>.md drawn from the template (generic part kept, specific part filled in), <Folder>/CHECKPOINT_<P>.md, DECISION_LOG_<P>.md (D1: the adoption of the method and my answers), PLAN_<P>.md, workstreams.yaml (the test bench as the first workstream, then the first batches) with make_board.py copied from the package and the two files it produces, workstreams.html (the fixed page) and workstreams.json (its data) — publish them together as an artifact and give me the page as a file —, expected/ and pl_tools/ empty.
+1. Ask me, as numbered options with your recommendation, the questions that decide the project's method: the type of deliverable and where it is deployed — is there a production server that I administer (a VM, a dedicated server)? if so, steer towards the server runner (templates/SERVER_RUNNER.md: orders repository, deployment on my go) rather than handing over files, and tell me which orders repository to create —, whether the code is public (if it is and the batches repository is missing, stop and ask me for it), the versioning, depending on whether each deliverable is deployed per batch (whose version is computed by the rule of the method §1a and announced in the brief) or released (no version per batch: the batch completes “Unreleased”, the release is made at my request), the stack, what the test bench will have to measure. A single series of questions, then you settle the rest and tell me.
+2. Initialize the living-docs repository: README, Method/METHOD_<P>.md drawn from the template (generic part kept, specific part filled in), <Folder>/CHECKPOINT_<P>.md, DECISION_LOG_<P>.md (D1: the adoption of the method and my answers), PLAN_<P>.md, workstreams.yaml (the test bench as the first workstream, then the first batches), with make_board.py and archive_workstreams.py copied from the package for later (neither published board nor mirror in the project as long as no sign calls for it: CORE.md §6), and pl_tools/ with context.py.
 3. Initialize the code repository: .gitattributes (export-ignore of bench/, batches/, the dev prompt and itself), .gitignore, CHANGELOG.md, DEV_PROMPT_<P>.md drawn from the template — in the batches repository if the code is public, never in the public repository —, and the skeleton of the application if the stack is decided — by a first dev batch, not by you.
-4. Copy into the claude.ai project, as a mirror, each living doc and the dev prompt (project_write with local_path from your clone, into their folders).
-5. Give me back the full text of the project instructions, to paste.
-6. Propose the first batch to me: usually the test bench (tooling batch), then the first product batch.
+4. Give me back the full text of the project instructions, to paste.
+5. Propose the first batch to me: the test bench (tooling batch), then the first product batch.
 
 Tell me at the end what you wrote: repository, commit, path.
 ```
@@ -71,9 +70,9 @@ The domains in activity: <one line per PL: its name, its checkpoint, its reposit
 2. Create your checkpoint, Method/CHECKPOINT_METHOD.md, with its baton, and set it with a push.
 3. Keep the domain table in step in three places: the method §1a, the living-docs README (with each PL's fixed line, which names all its repositories) and Method/domains.yaml (template templates/domains.yaml of the package). Check that every checkpoint has its queue section, which carries the list itself, that the coordination has its own entry in the table, and that every subject of the queue has its workstream.
 4. If a product has several module PLs, propose its product sheet to me (what is shared: ritual, bench, circuit, pitfalls; never the state).
-5. Propose the living-docs arbiter to me (templates/ARBITER.md of the package): what it will bring here, what it costs and its set-up, as numbered options with your recommendation.
+5. Propose the living-docs arbiter (templates/ARBITER.md of the package, a GitHub Action) and the document controller (templates/CONTROLLER.md, a weekly session) to me: what they will bring here, what they cost and their set-up, as numbered options with your recommendation.
 6. Give me back the full text of the project instructions, several-PL version (1_PROJECT_INSTRUCTIONS.md), to paste.
-7. File for each PL in activity a for: workstream that announces the coordination to it and what changes for it.
+7. Announce the coordination and what changes to each PL: if active, by a ready-to-paste message you hand to me, then check its reply in the repository; if its baton is free, by a for: workstream it will read when it resumes (method §1a).
 
 Tell me at the end what you wrote: repository, commit, path.
 ```

@@ -4,13 +4,16 @@
 > **Modèle pour le CdP — un cadrage ne le cite jamais.** Le cadrage est autoportant : avec le prompt du dev, il se
 > suffit. Il porte des règles, des critères et les textes que l'utilisateur lira — **jamais le code tout écrit**.
 > **La version** : `v<X.Y>` n'existe que pour un livrable **déployé à chaque lot** (elle se calcule quand le lot prend le
-> livrable, `main` plus un). Pour un livrable **publié par release**, le lot ne porte pas de version : retirer `v<X.Y>` du
-> titre, nommer la branche et le dossier d'après le lot (`lot/<nom>`), et le §6 complète la section « Unreleased » du
-> `CHANGELOG` (méthode §1 bis, « Le livrable et sa version »).
+> livrable, par la règle de la méthode §1 bis, jamais `main` plus un ; le cadrage l'annonce). Pour un livrable
+> **publié par release**, le lot ne porte pas de version : retirer `v<X.Y>` du titre, nommer la branche et le dossier
+> d'après le lot (`lot/<nom du lot>`, `lots/<nom du lot>/`), et le §6 complète la section « Unreleased » du `CHANGELOG`
+> — c'est elle que vérifie la porte P8 du prompt du dev — avec, si le lot produit une donnée dérivée, « À déposer après
+> la release : … » (méthode §1 bis, « Le livrable et sa version »).
 > Supprimer cet encadré.
 
-**Dev : Sonnet · Medium · session neuve** *(Opus pour ⟨…⟩ ; High pour une migration, plusieurs écrans, un moteur, des
-étapes en cascade)*
+**Dev : ⟨modèle⟩ · ⟨effort⟩ · session neuve** *(par défaut, ceux de la table de la méthode §6 ; Opus pour ⟨…⟩ ; High
+pour une migration, plusieurs écrans, un moteur, des étapes en cascade ; un lot de complexité faible : la forme courte,
+en fin de ce modèle)*
 
 ---
 
@@ -50,6 +53,7 @@ l'utilisateur à la fin.*
 | fichier | change | ce qui y change |
 |---|---|---|
 | ⟨…⟩ | modifié / ajouté / retiré | ⟨fonctions, zones⟩ |
+| ⟨le fichier de verrouillage d'une dépendance nouvelle, s'il y en a une⟩ | ajouté / modifié | ⟨la dépendance, sa version⟩ |
 
 ## §5 · Les critères et la prédiction
 
@@ -70,13 +74,17 @@ l'utilisateur à la fin.*
 
 - **C1** — ⟨ce qui se mesure, comment, valeur attendue⟩.
 - **C2** — …
+- ⟨**Relecture indépendante** — pour un lot de complexité moyenne ou forte, ou qui ajoute une dépendance : un sous-agent
+  neuf, d'un autre modèle que le dev, lit le diff (sécurité, dépendances, lisibilité, tests manquants) ; le CdP tranche
+  ses constats à la réception (méthode §4, point 4). Une dépendance nouvelle est inscrite au registre.⟩
 
 ⟨**La prédiction** : rejeu, empreinte, sortie attendue et son sha256, conditions (locale, largeur, thème).⟩
 
 ## §6 · Le `CHANGELOG`
 
 Texte de l'entrée, mot pour mot — *une entrée `v<X.Y>` pour un livrable déployé à chaque lot ; pour un livrable publié
-par release, il complète la section « Unreleased », sans version* :
+par release, il complète la section « Unreleased », sans version, et y inscrit « À déposer après la release : <quoi,
+d'où, vers où> » pour toute donnée dérivée* :
 
 ```
 ⟨…⟩
@@ -106,10 +114,39 @@ En plus de ceux du prompt du dev :
 - [ ] Rien de ce que le lot crée ne double un existant.
 - [ ] Les dettes à déclencheur passées contre la liste du §4.
 - [ ] Chaque critère essayé sur l'existant ; chaque critère textuel dit s'il compte les commentaires.
-- [ ] La prédiction calculée sous les règles du cadrage ; les attendus écrits au dépôt des vivants, pas ici.
+- [ ] La prédiction calculée sous les règles du cadrage ; les attendus — seulement si le lot produit des valeurs à
+  comparer (méthode §2) — écrits au dépôt des vivants, pas ici.
 - [ ] Les API, fichiers et fonctions que la règle impose, tous nommés.
 - [ ] Une règle de couleur mesurée sur tous les thèmes ; un libellé à la largeur la plus étroite.
 - [ ] Aucun code tout écrit.
-- [ ] La version calculée quand le lot prend le livrable (`main` plus un) — ou aucune version, pour un livrable publié
-  par release.
+- [ ] La version calculée quand le lot prend le livrable (la règle de la méthode §1 bis, pas `main` plus un) — ou
+  aucune version, pour un livrable publié par release.
+- [ ] Lot de complexité moyenne ou forte, ou dépendance nouvelle : la relecture indépendante prévue, le fichier de
+  verrouillage dans la liste du §4.
 - [ ] Modèle, effort, session en tête.
+
+---
+
+## La forme courte — un lot de complexité faible
+
+*Un correctif d'une ligne, un libellé, une valeur (méthode §3) : ce cadrage-ci, d'une page au plus, remplace le modèle
+ci-dessus. Il garde ce qui ne se négocie pas — la base, la liste des fichiers, des critères en deltas, les arrêts — et
+n'appelle que les portes d'un lot de complexité faible (prompt du dev §4). « Faible » est la complexité du lot, jamais
+un effort : l'en-tête porte un vrai effort, celui de la table de la méthode §6, ou Low pour un correctif d'une ligne
+(méthode §3). Pas d'attendus (méthode §2), pas de bloc « base » complet :
+la ligne de la porte P0 suffit.*
+
+```markdown
+# CADRAGE — <titre du lot> · `v<X.Y>` · forme courte
+### <date> · <session de CdP> · branche `lot/v<X.Y>` de `<owner>/<Projet>-App` · base `<sha court de main>`
+
+**Dev : ⟨modèle⟩ · ⟨effort⟩ · session neuve** — complexité faible ; portes : P0, P1, P5, P7, P8, P9, P11 ⟨+ celles que
+ce lot nomme⟩.
+
+- **La base** : `main` au `<sha complet>` ; ⟨la ligne du rituel qui fait P0⟩. Si la tête n'est pas ce commit : arrêt.
+- **Ce que fait le lot** : ⟨une ou deux phrases ; la demande du porteur avec ses mots⟩.
+- **Les fichiers permis** : ⟨la liste exacte⟩ — rien d'autre (P9).
+- **Les critères**, en deltas : C1 ⟨…⟩ ; C2 ⟨…⟩ ⟨; C3⟩.
+- **Les arrêts** : ceux du prompt du dev ⟨, et …⟩.
+- **Le `CHANGELOG`**, mot pour mot : ⟨…⟩.
+```

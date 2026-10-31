@@ -1,7 +1,8 @@
 # THE FILES OF A BATCH — addendum, stop, dev report
 
 *Three short templates. All of them live in `batches/v<X.Y>/` of the code repository, on the batch branch, outside the
-deployment archive.*
+deployment archive. For a deliverable published by release, the batch carries no version: `v<X.Y>` reads `<batch name>`
+(`batches/<batch name>/`, branch `batch/<batch name>`).*
 
 ---
 
@@ -11,7 +12,7 @@ deployment archive.*
 # ADDENDUM <n> — <batch title> · `v<X.Y>`
 ### <date> · <PL session> · answers `STOP_<n>.md` | a gap found at acceptance on <date>
 
-**Dev: Sonnet · Medium · same session if it is open, otherwise a new one (which also reads the previous reports)**
+**Dev: ⟨model⟩ · ⟨effort⟩ (those of the brief) · same session if it is open, otherwise a new one (which also reads the previous reports)**
 
 ## What the addendum replaces
 - §<x> of the brief, rule <y>: **replaced by** … (full text, not a diff).

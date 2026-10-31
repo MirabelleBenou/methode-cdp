@@ -10,11 +10,12 @@ import re
 import unittest
 from datetime import date
 
-from .outils_tests import GENERER, CasTemporaire, bloc, yaml
+from .outils_tests import GENERER, CasTemporaire, bloc, charger, yaml
 
 STATUTS = [("a-venir", "À venir"), ("a-cadrer", "À cadrer"), ("en-vol", "En vol"),
            ("dette", "Dette"), ("recette", "Recetté")]
 RE_DATE = re.compile(r"\d{2}/\d{2}/\d{4}")
+CLES_PAGE = ["id", "titre", "module", "categorie", "statut", "priorite", "complexite", "rang", "mesure", "cout", "refs"]
 LIBELLES_DEFAUT = {"ecran": "Écran", "donnees": "Données", "doc": "Documentation", "outillage": "Outillage",
                    "moteur": "Moteur", "exploitation": "Exploitation", "socle": "Socle"}
 
@@ -196,21 +197,87 @@ class TestGeneration(CasGenerer):
                        for n, (i, s) in enumerate(zip(ids, statuts), start=1)))
         self.assertEqual([c["id"] for c in self.chantiers()], ids)
 
-    def test_chaque_entree_garde_toutes_ses_cles_telles_que_lues(self):
+    def test_chaque_entree_ne_garde_que_les_cles_de_la_page_dans_l_ordre_de_la_page(self):
         self.generer(bloc("alpha-1", titre="Premier", statut="en-vol", cdp="Opus-CdP-Alpha", module="module-a",
                           categorie="doc", priorite="haut", complexite="forte", rang="2", mesure="Une mesure",
-                          cout="2 jours", refs="R1 R2", version="v1.0.0", livrable="depot", attend="alpha-2"),
+                          cout="2 jours", refs="R1 R2", version="v1.0.0", livrable="depot", attend="alpha-2",
+                          touche="un fichier", pour="Opus-CdP-Beta", ressource="machine", recette_le="2026-10-30"),
                      bloc("alpha-2", statut="a-venir", cle_inconnue="valeur"))
         premier, second = self.chantiers()
-        self.assertEqual(premier, {"id": "alpha-1", "titre": "Premier", "statut": "en-vol", "cdp": "Opus-CdP-Alpha",
-                                   "module": "module-a", "categorie": "doc", "priorite": "haut", "complexite": "forte",
-                                   "rang": "2", "mesure": "Une mesure", "cout": "2 jours", "refs": "R1 R2",
-                                   "version": "v1.0.0", "livrable": "depot", "attend": "alpha-2"})
-        self.assertEqual(list(premier), ["id", "titre", "statut", "cdp", "module", "categorie", "priorite", "complexite",
-                                         "rang", "mesure", "cout", "refs", "version", "livrable", "attend"])
-        self.assertEqual(second, {"id": "alpha-2", "statut": "a-venir", "cle-inconnue": "valeur"})
+        self.assertEqual(premier, {"id": "alpha-1", "titre": "Premier", "module": "module-a", "categorie": "doc",
+                                   "statut": "en-vol", "priorite": "haut", "complexite": "forte", "rang": "2",
+                                   "mesure": "Une mesure", "cout": "2 jours", "refs": "R1 R2"})
+        self.assertEqual(list(premier), CLES_PAGE)
+        self.assertEqual(second, {"id": "alpha-2", "statut": "a-venir"}, "l'id et le statut, jamais de clé qui n'est pas à la page")
         for entree in (premier, second):
             self.assertTrue(all(isinstance(v, str) for v in entree.values()), entree)
+
+    def test_les_cles_du_fichier_de_donnees_sont_celles_que_la_page_utilise(self):
+        self.generer(bloc("alpha-1", statut="a-venir"))
+        page = self.page()
+        for cle in CLES_PAGE:
+            self.assertRegex(page, rf'\b[cx]\.{cle}\b|"{cle}"', f"la page n'utilise pas la clé {cle}")
+        for cle in ("cdp", "version", "livrable", "attend", "touche", "pour", "ressource", "recette-le"):
+            self.assertNotIn(f"c.{cle}", page, f"la page n'utilise pas la clé {cle}")
+            self.assertNotIn(f'"{cle}"', page)
+        module = charger(GENERER, "generer_tableau_cles")
+        self.assertEqual(list(module.CLES_PAGE), CLES_PAGE)
+
+    def test_les_valeurs_longues_des_cartes_sont_tronquees_sur_une_espace_avec_des_points_de_suspension(self):
+        module = charger(GENERER, "generer_tableau_troncature")
+        maximum = module.LONGUEUR_MAX
+        long = " ".join(f"mot{n}" for n in range(1, 200))
+        self.generer(bloc("alpha-1", statut="a-venir", mesure=long, cout=long))
+        entree = self.chantiers()[0]
+        for cle in ("mesure", "cout"):
+            valeur = entree[cle]
+            self.assertTrue(valeur.endswith("…"), valeur)
+            self.assertLessEqual(len(valeur), maximum)
+            coupe = valeur[:-1]
+            self.assertTrue(long.startswith(coupe) and long[len(coupe)] == " ", f"coupée sur une espace : {valeur!r}")
+            self.assertGreater(len(valeur), maximum - 10, "la coupe garde presque toute la longueur permise")
+
+    def test_une_valeur_qui_tient_n_est_pas_tronquee_et_les_autres_cles_ne_le_sont_jamais(self):
+        module = charger(GENERER, "generer_tableau_exacte")
+        exacte = "x" * module.LONGUEUR_MAX
+        longue = "mot " * 100
+        self.generer(bloc("alpha-1", titre=longue.strip(), statut="a-venir", mesure=exacte, cout="court", refs=longue.strip()))
+        entree = self.chantiers()[0]
+        self.assertEqual((entree["mesure"], entree["cout"]), (exacte, "court"))
+        self.assertEqual((entree["titre"], entree["refs"]), (longue.strip(), longue.strip()))
+
+    def test_une_valeur_sans_espace_est_coupee_a_la_longueur_permise(self):
+        module = charger(GENERER, "generer_tableau_sans_espace")
+        self.generer(bloc("alpha-1", statut="a-venir", mesure="y" * (module.LONGUEUR_MAX + 50)))
+        self.assertEqual(self.chantiers()[0]["mesure"], "y" * (module.LONGUEUR_MAX - 1) + "…")
+
+    def test_la_troncature_est_deterministe(self):
+        long = "texte " * 80
+        self.generer(bloc("alpha-1", statut="a-venir", mesure=long, cout=long), bloc("alpha-2", statut="dette", mesure=long))
+        premieres = RE_DATE.sub("<date>", self.texte_donnees())
+        self.generer(bloc("alpha-1", statut="a-venir", mesure=long, cout=long), bloc("alpha-2", statut="dette", mesure=long))
+        self.assertEqual(RE_DATE.sub("<date>", self.texte_donnees()), premieres)
+
+    def test_le_fichier_de_donnees_est_un_extrait_leger(self):
+        """Beaucoup d'entrées aux valeurs longues et aux clés de toute sorte : le JSON reste petit."""
+        long = "une phrase assez longue pour peser dans le fichier " * 20
+        blocs = [bloc(f"alpha-{n}", titre=f"Titre {n}", statut="a-venir", module="module-a", mesure=long, cout=long,
+                      refs="R1", cdp="Opus-CdP-Alpha", touche=long, version=f"v{n}", livrable="depot") for n in range(100)]
+        self.generer(*blocs)
+        self.assertLess(self.json.stat().st_size, 90000)
+        self.assertLess(self.json.stat().st_size, self.source.stat().st_size // 4)
+
+    def test_une_valeur_entre_guillemets_est_lue_sans_guillemets_ni_echappements(self):
+        self.generer(bloc("alpha-1", titre='"Un \\"titre\\" : suite"', statut="a-venir", mesure='"a \\\\ b"', refs='""'))
+        entree = self.chantiers()[0]
+        self.assertEqual(entree["titre"], 'Un "titre" : suite')
+        self.assertEqual(entree["mesure"], "a \\ b")
+        self.assertEqual(entree["refs"], "")
+
+    def test_une_valeur_nue_non_conforme_est_lue_telle_quelle(self):
+        self.generer(bloc("alpha-1", titre="Un titre : suite", statut="a-venir", mesure='"sans fin', refs='"a" b'))
+        entree = self.chantiers()[0]
+        self.assertEqual((entree["titre"], entree["mesure"], entree["refs"]), ("Un titre : suite", '"sans fin', '"a" b'))
 
     def test_les_libelles_par_defaut_sont_dans_les_donnees(self):
         self.generer(bloc("alpha-1", statut="a-venir"))

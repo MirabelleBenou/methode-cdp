@@ -4,8 +4,9 @@
 > **This prompt is self-sufficient together with the batch brief and the PL's command.** It carries the standing
 > execution conditions, the run, the gates and the shape of the report; the tooling is in the test bench. The brief
 > carries what the batch does: its rules, its criteria, its prediction; the command only repeats what changes from one
-> batch to the next. *This prompt evolves by version; it lives at the root of the `<Project>-App` repository, and a dev
-> session reads the one on its batch's branch, and nothing else.*
+> batch to the next. *This prompt evolves by version; it lives at the root of the code repository (`<Project>-App`) — of
+> the `<Project>-Batches` repository when the code is public —, and a dev session reads the one on its batch's branch,
+> and nothing else. When copying, its links to the package become plain text.*
 >
 > *Template: what is between `⟨…⟩` is specific to the project, to be filled in at bootstrap or in the test-bench batch.*
 
@@ -31,11 +32,14 @@ not read you and runs nothing; address no question, command or file to them.
 
 ## §1 · What you receive
 
-**The PL launches you** — a sub-agent of their session, Sonnet model unless the brief says Opus — **with a command**
-(template `DEV_COMMAND.md` of the package): it names the branch, the starting commit, your working folder and what you
+**The PL launches you** — a sub-agent of their session, with the brief's model and effort — **with a command**
+(template [`DEV_COMMAND.md`](DEV_COMMAND.md) of the package): it names the branch, the starting commit, your working folder and what you
 read first. **Its practical conditions take precedence over this prompt and over the brief.** *Fallback, when the PL
 cannot launch a sub-agent: the owner opens a new conversation with a line the PL gives them; you then do the same work,
 and tell them only, in one sentence, when you stop or deliver.*
+
+*(For a deliverable published by release, the batch carries no version: `v<X.Y>` reads `<batch name>` throughout this
+prompt — branch `batch/<batch name>`, folder `batches/<batch name>/`.)*
 
 **Everything is on the batch branch**, `batch/v<X.Y>` of the `<owner>/<Project>-App` repository ⟨— public code: the code
 is in the public `<Project>-App` repository; this prompt and `batches/` are in the private `<Project>-Batches`
@@ -96,10 +100,11 @@ cd <clone> && git fetch --depth 1 origin main:refs/remotes/origin/main && git re
 what your batch requires.
 
 **2 — P0, the base.** ⟨The test-bench ritual on `base/`⟩: the output must equal, line for line, the “base” block of the
-brief; tests and lint on a copy. **A divergence: stop.**
+brief — for a low-complexity batch, the base line of its short form; tests and lint on a copy. **A divergence: stop.**
 
-**3 — The version.** ⟨`release` on the dev side, with no typed number, with no force option — or: no version, the PL
-decides it with the owner.⟩ The version obtained must be that of the branch; otherwise, stop.
+**3 — The version.** It is the one the **brief names**, computed by the method's rule: ⟨`release` on the dev side, with
+no typed number, with no force option⟩. The version obtained must be that of the brief; otherwise, stop. **A deliverable
+published by release has no version**: the batch only completes the “Unreleased” entry of the `CHANGELOG` (step 7).
 
 **4 — Build**, in the clone, **what the brief commands and nothing else**: only the files and areas it names. No
 reformatting, no “improvement”. Write like the surrounding code; the batch name as a comment at the top of what you add.
@@ -108,7 +113,8 @@ reformatting, no “improvement”. Write like the surrounding code; the batch n
 - **A rule of the brief seems wrong or impossible to you: stop and say so**, do not work around it.
 - ⛔ **Outside the code, you write only in `batches/v<X.Y>/`.**
 
-**5 — Check your work, on the archive of a commit.** Commit on the batch branch (as much as you like), then unpack
+**5 — Check your work, on the archive of a commit.** Commit on the batch branch (as much as you like) **and push it at
+every step** (the death of the PL's session must not take your work with it), then unpack
 outside the clone (`git archive HEAD | tar -x -C <folder>/delivered`) and check there: tests, lint, syntax.
 *An end-to-end check outside the archive is allowed if it proves a criterion the tests do not cover: it lives in
 `/tmp`, never in the repository, and its output goes in the report.*
@@ -148,7 +154,7 @@ prediction.
 
 | gate | measurement | source |
 |---|---|---|
-| P0 | the base equals the brief's “base” block; the head of `main` is the commit it names | ritual on `base/`, `git rev-parse` |
+| P0 | the base equals the brief's “base” block (or the base line of its short form); the head of `main` is the commit it names | ritual on `base/`, `git rev-parse` |
 | P1 | the version, as the brief predicts it | ⟨…⟩ |
 | P2 | ⟨file count, caches at zero⟩ | ⟨ritual⟩ |
 | P3 | ⟨lint: nothing⟩ | `measure/` |
@@ -156,10 +162,13 @@ prediction.
 | P5 | ⟨tests: the brief's count, everything passes⟩ | copy of `measure/` |
 | P6 | ⟨i18n: languages equal, 0 duplicates, 0 missing⟩ | ⟨…⟩ |
 | P7 | ⛔ ⟨the project invariant: unchanged unless authorized in writing in the brief⟩ | ⟨…⟩ |
-| P8 | `CHANGELOG`: 0 “to be completed”, the first entry = the delivered version | ⟨…⟩ |
+| P8 | `CHANGELOG`: 0 “to be completed”; the first entry = the delivered version — **for a deliverable published by release, the “Unreleased” entry carries the brief's text** | ⟨…⟩ |
 | P9 | `base` → `measure` gap: **the exact list** of modified, added, removed files = the brief's | ⟨…⟩ |
 | P10 | the fingerprint of the code in `measure/`; with a mock-up, equal to the one noted at validation | ⟨fingerprint command⟩ |
 | P11 | **outside the code, nothing moves** except `batches/v<X.Y>/`: `git diff --stat origin/main HEAD -- bench DEV_PROMPT_<P>.md .gitattributes` is empty | the clone |
+
+**A low-complexity batch** (its brief says so, in its short form: method §3) passes only **P0, P1, P5, P7, P8, P9 and P11**; the
+other gates apply only if its brief names them. Your report gives those, and says “not called” for the others.
 
 ---
 
@@ -172,7 +181,8 @@ prediction.
   stop and say so; you do not fix them.
 - ⛔ The claude.ai project documents and the living-docs repository: they belong to the PL.
 - ⛔ ⟨Project with a server runner:⟩ the orders repository: you neither read nor write it, even if it is attached to the
-  session; an order is pushed by the PL only, and deployment is never your action.
+  session or if its clone lies on the disk (then say so in the report); an order is pushed by the PL only, and
+  deployment is never your action.
 - ⛔ No secret in a commit; only `.env.example` carries values, dummy ones.
 - ⛔ No question, no command given to the owner, no file for them to run: you talk only to the PL.
 
@@ -190,8 +200,8 @@ prediction.
 - a test-bench tool fails;
 - a `push` is refused.
 
-**Before stopping, push your branch** with the reason in `batches/v<X.Y>/STOP_<n>.md`: the PL reads your work on the
-repository, and say so in your final reply, in one sentence. **Leave no process running in the background** when you stop
+**Push your branch at every step** (§3), and once more before stopping, with the reason in `batches/v<X.Y>/STOP_<n>.md`:
+the PL reads your work on the repository, and say so in your final reply, in one sentence. **Leave no process running in the background** when you stop
 or deliver. **A stop is lifted by an addendum from the PL** (`ADDENDUM_<n>.md`) on the same branch; the PL tells you by
 message (or relaunches you new, with your previous stops and reports to read): `git pull --rebase origin batch/v<X.Y>`,
 read it, resume at the step it indicates.
@@ -212,7 +222,7 @@ reopened by an addendum — its fix reaches you through a new brief, under the n
 cd <clone> && git fetch origin batch/v<X.Y> && git rebase origin/batch/v<X.Y> && git push origin HEAD:batch/v<X.Y>
 ```
 
-**The report, in this order** (template: `BATCH_FILES.md`):
+**The report, in this order** (template: [`BATCH_FILES.md`](BATCH_FILES.md)):
 1. **What I'm not sure about** — at the top, always; “Nothing” if there is nothing. Also mention there any existing code
    that seems to do what the brief asks you to create.
 2. **The delivery commit** (full sha) and **the gates**: measured next to expected.

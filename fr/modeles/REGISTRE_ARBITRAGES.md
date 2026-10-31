@@ -3,9 +3,9 @@
 
 *Tenu par le CdP. Mis à jour à chaque lot clos. Dernière mise à jour : **<date>, par <session>** : **R1**.*
 
-> **Ce registre ne porte que ce qui vit encore.** **Une entrée tient en ~800 caractères.** **Le registre se coupe par
-> tranches de cinquante numéros quand il dépasse ~150 Ko** : ce qui ne vit plus part dans une archive figée, une par
-> tranche (`Archives/REGISTRE_ARBITRAGES_ARCHIVE_R<a>_a_R<b>.md`), qui ne se réécrit jamais. Les numéros restent stables
+> **Ce registre ne porte que ce qui vit encore.** **Une entrée tient sous son plafond, et le registre se coupe par
+> tranches au-delà de sa taille de coupe** (les deux chiffres : la méthode §6) : ce qui ne vit plus part dans une archive figée, une par
+> tranche (`<Dossier>/Archives/REGISTRE_ARBITRAGES_ARCHIVE_R<a>_a_R<b>.md`), qui ne se réécrit jamais. Les numéros restent stables
 > d'un document à l'autre. **Une décision archivée qui change se rejoue ici, sous un numéro neuf qui cite l'ancien.**
 
 ---
@@ -15,13 +15,14 @@
 Chaque décision qui engage le projet — de produit, de visuel, de technique, de méthode — porte un numéro **R** stable.
 Un cadrage, un chantier, une méthode citent leurs R. On ne rejoue pas une décision rendue ; on la remplace par une neuve.
 
-**Une entrée dit** — en ~800 caractères ; le détail va au dossier du lot ou dans une note du domaine, l'entrée n'en garde
+**Une entrée dit** — sous son plafond ; le détail va au dossier du lot ou dans une note du domaine, l'entrée n'en garde
 que le résumé et le chemin :
 - **ce qui est décidé**, en une phrase en gras ;
 - **par qui** : « Tranché par le porteur » (avec ses mots quand ils décident, l'option choisie, l'heure si utile) /
   « Tranché par le CdP » (décision technique déléguée) ;
 - **sur quoi** : la mesure qui a fondé la décision ;
-- **le lot** et son résultat (dev, durée, arrêts, réception, empreinte, validation en production).
+- **le lot, cité au journal des versions** du plan (sa version ou son nom) : son dev, sa durée, ses arrêts, sa
+  réception, son empreinte et sa validation s'écrivent là, une fois, pas ici (méthode §6).
 
 **Une entrée « Ce que le lot apprend »** suit un lot quand il y a une leçon : numérotée ①, ②… ; chaque arrêt ou
 signalement juste du dev s'y compte (« l'exécution a raison »), chaque défaut du CdP vu en production ouvre le compte

@@ -10,12 +10,17 @@ figées (une par mois), et permet de retrouver un chantier archivé.
         [--delai <jours, 7 par défaut>] [--date AAAA-MM-JJ] [--a-blanc]
     python3 -B archiver_chantiers.py chercher <motif> --chantiers <chantiers.yaml> \\
         --archives <dossier> [--partout]
+    python3 -B archiver_chantiers.py normaliser --chantiers <chantiers.yaml> \\
+        [--archives <dossier>] [--domaines <fichier>]
 
-La forme du fichier : chantiers.yaml n'est PAS du YAML standard et se lit sans
-bibliothèque. Une entrée commence par « - id: <id> » en colonne 0 ; ses autres clés
-suivent, une par ligne, en « <deux espaces><clé>: <valeur> ». Le bloc d'une entrée est
-cette ligne et les lignes de clé qui la suivent, jusqu'à la première ligne qui n'a pas
-cette forme. Les lignes vides et les commentaires entre les blocs ne sont jamais touchés.
+La forme du fichier : chantiers.yaml se lit sans bibliothèque. Une entrée commence par
+« - id: <id> » en colonne 0 ; ses autres clés suivent, une par ligne, en
+« <deux espaces><clé>: <valeur> ». Le bloc d'une entrée est cette ligne et les lignes de clé
+qui la suivent, jusqu'à la première ligne qui n'a pas cette forme. Les lignes vides et les
+commentaires entre les blocs ne sont jamais touchés. Une valeur qui contient « : » ou « # »
+précédé d'une espace, ou qui commence par un caractère spécial, s'écrit entre guillemets
+doubles (seuls \\" et \\\\ y sont des échappements) ; « normaliser » le fait. Ainsi tout fichier
+conforme se lit aussi par un parseur YAML standard.
 
 « archiver » applique ces règles, dans l'ordre :
   1. dater : une entrée en « statut: recette » sans « recette-le: » reçoit la ligne
@@ -45,10 +50,23 @@ cherche le motif, sans casse, dans l'id et le titre (dans toutes les valeurs ave
 « --partout »). Une ligne par entrée : « <chemin>:<ligne> · <id> · <statut> · <titre> » ;
 s'il n'y en a qu'une, son bloc complet suit.
 
+« normaliser » met les fichiers au format YAML strict (le contrôle 11 du vérificateur) : il ne
+réécrit que les valeurs non conformes de --chantiers, de chaque <dossier>/CHANTIERS_*.yaml
+(avec --archives) et de la table des domaines (avec --domaines), en les mettant entre
+guillemets doubles avec les échappements. Tout le reste reste identique à l'octet : ordre,
+lignes vides, commentaires, fins de ligne, lignes déjà conformes. Un second passage ne change
+rien. Chaque fichier s'écrit par un fichier temporaire puis os.replace, et seulement si une
+valeur change ; avant d'écrire, il vérifie que la lecture rend les mêmes valeurs qu'avant. Il dit,
+par fichier, le nombre de valeurs réécrites. Une valeur qui porte un caractère de contrôle ne
+peut pas s'écrire en YAML avec ces seuls échappements : elle n'est pas touchée, le script la
+signale et finit en code 1.
+
 Code de retour de « archiver » : 0 fait (avec ou sans changement), 1 fait avec au moins un
 avertissement, 2 appel invalide, fichier ou dossier introuvable, ou contrôle 7 en défaut
 (rien n'est écrit). Code de « chercher » : 0 au moins un trouvé, 1 aucun, 2 appel invalide
-ou fichier introuvable.
+ou fichier introuvable. Code de « normaliser » : 0 fait (avec ou sans réécriture), 1 avec une
+valeur non normalisable, 2 appel invalide, fichier ou dossier introuvable, ou lecture changée
+(rien n'est écrit).
 
 Python 3.11 et plus, bibliothèque standard seulement.
 """
@@ -66,6 +84,13 @@ from pathlib import Path
 RE_ENTREE = re.compile(r"^- id:(.*)$")
 RE_CLE = re.compile(r"^  ([a-z][a-z0-9-]*):(.*)$")
 RE_DATE = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
+# Le format YAML strict des valeurs : voir la docstring ; mêmes définitions que verifier_vivants.py.
+RE_ENTRE_GUILLEMETS = re.compile(r'"((?:[^"\\]|\\["\\])*)"')
+RE_ECHAPPEMENT = re.compile(r'\\(["\\])')
+RE_DEUX_POINTS = re.compile(r":(?:\s|$)")
+RE_COMMENTAIRE = re.compile(r"\s#")
+RE_NON_IMPRIMABLE = re.compile(r"[\x00-\x08\x0b-\x1f\x7f-\x9f\u2028\u2029]")
+DEBUTS_INTERDITS = "-?:,[]{}#&*!|>'\"%@`"
 
 MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août",
         "septembre", "octobre", "novembre", "décembre"]
@@ -89,6 +114,13 @@ class Bloc:
         return self.cles[cle][1] if cle in self.cles else ""
 
 
+def lire_valeur(brut: str) -> str:
+    """La valeur d'une ligne : sans les guillemets doubles ni les échappements (\\" et \\\\) si elle est entre guillemets, sinon telle quelle."""
+    valeur = brut.strip()
+    entre = RE_ENTRE_GUILLEMETS.fullmatch(valeur)
+    return RE_ECHAPPEMENT.sub(r"\1", entre.group(1)) if entre else valeur
+
+
 def lire_lignes(chemin: Path) -> tuple[list[str], bool]:
     """Les lignes du fichier (sans leur fin) et : le fichier finit-il par une fin de ligne ?"""
     texte = chemin.read_bytes().decode("utf-8")
@@ -108,12 +140,12 @@ def trouver_blocs(lignes: list[str]) -> list[Bloc]:
     for i, ligne in enumerate(lignes):
         m = RE_ENTREE.match(ligne)
         if m:
-            blocs.append(Bloc(i, i + 1, m.group(1).strip(), {"id": (i, m.group(1).strip())}))
+            blocs.append(Bloc(i, i + 1, lire_valeur(m.group(1)), {"id": (i, lire_valeur(m.group(1)))}))
             continue
         m = RE_CLE.match(ligne)
         if m and blocs and blocs[-1].fin == i:
             blocs[-1].fin = i + 1
-            blocs[-1].cles.setdefault(m.group(1), (i, m.group(2).strip()))
+            blocs[-1].cles.setdefault(m.group(1), (i, lire_valeur(m.group(2))))
     return blocs
 
 
@@ -226,7 +258,8 @@ def entete_archive(aujourdhui: date, delai: int) -> str:
     return (f"# Chantiers archivés — {mois}\n"
             "#\n"
             "# Sortis automatiquement de chantiers.yaml par archiver_chantiers.py : chantiers en recette depuis\n"
-            f"# au moins {delai} jours (clé recette-le). Même forme que chantiers.yaml (pas du YAML standard).\n"
+            f"# au moins {delai} jours (clé recette-le). Même forme que chantiers.yaml : une valeur qui contient « : » ou « # » précédé\n"
+            "# d'une espace, ou qui commence par un caractère spécial, s'écrit entre guillemets doubles ; normaliser le fait.\n"
             "# On n'y fait qu'ajouter ; figé à la fin du mois. Chercher : archiver_chantiers.py chercher <mot>\n"
             "\n")
 
@@ -337,8 +370,105 @@ def commande_chercher(a) -> int:
     return 0 if trouvees else 1
 
 
+def analyser(texte: str):
+    """Les lignes utiles du texte : (numéro, début d'entrée, clé, valeur brute) ; sans « : », clé et valeur sont None.
+
+    Le même lecteur que verifier_vivants.py : le contrôle 11 et « normaliser » voient les mêmes valeurs."""
+    commencee = False
+    for numero, ligne in enumerate(texte.split("\n"), start=1):
+        nue = ligne.strip()
+        if not nue or nue.startswith("#"):
+            continue
+        debut = nue.startswith("- ")
+        if debut:
+            commencee, nue = True, nue[2:]
+        if ":" not in nue or not commencee:
+            yield numero, debut, None, None
+            continue
+        cle, _, brut = nue.partition(":")
+        yield numero, debut, cle.strip(), brut
+
+
+def valeur_conforme(brut: str) -> bool:
+    """Un scalaire YAML sûr : vide, entre guillemets doubles, ou nu et sans rien que YAML lirait autrement."""
+    valeur = brut.strip()
+    if RE_NON_IMPRIMABLE.search(valeur):
+        return False
+    if not valeur or RE_ENTRE_GUILLEMETS.fullmatch(valeur):
+        return True
+    return not (valeur[0] in DEBUTS_INTERDITS or "\t" in valeur
+                or RE_DEUX_POINTS.search(valeur) or RE_COMMENTAIRE.search(valeur))
+
+
+def entre_guillemets(valeur: str) -> str:
+    return '"' + valeur.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def valeurs_lues(lignes: list[str]) -> list[tuple[int, str, str]]:
+    """(numéro, clé, valeur lue) de chaque ligne de valeur, dans l'ordre du fichier."""
+    return [(numero, cle, lire_valeur(brut)) for numero, _, cle, brut in analyser("\n".join(lignes))
+            if cle is not None]
+
+
+def normaliser_lignes(lignes: list[str]) -> tuple[list[str], int, list[str]]:
+    """Les lignes dont chaque valeur non conforme est entre guillemets doubles ; rien d'autre ne change.
+
+    Rend (nouvelles lignes, nombre de valeurs réécrites, lignes « <numéro> : clé <clé> » non normalisables)."""
+    nouvelles, reecrites, impossibles = list(lignes), 0, []
+    for numero, _, cle, brut in analyser("\n".join(lignes)):
+        if cle is None or valeur_conforme(brut):
+            continue
+        valeur = brut.strip()
+        if RE_NON_IMPRIMABLE.search(valeur):
+            impossibles.append(f"{numero} : clé {cle}")
+            continue
+        ligne = lignes[numero - 1]
+        fin = "\r" if ligne.endswith("\r") else ""
+        corps = ligne[:len(ligne) - len(fin)]
+        deux_points = corps.index(":")
+        apres = corps[deux_points + 1:]
+        debut_blanc, fin_blanc = apres[:len(apres) - len(apres.lstrip())], apres[len(apres.rstrip()):]
+        nouvelles[numero - 1] = corps[:deux_points + 1] + debut_blanc + entre_guillemets(valeur) + fin_blanc + fin
+        reecrites += 1
+    return nouvelles, reecrites, impossibles
+
+
+def commande_normaliser(a) -> int:
+    chantiers = Path(a.chantiers)
+    if not chantiers.is_file():
+        raise ValueError(f"fichier introuvable : --chantiers {chantiers}")
+    fichiers = [chantiers]
+    if a.archives is not None:
+        dossier = Path(a.archives)
+        if not dossier.is_dir():
+            raise ValueError(f"dossier introuvable : --archives {dossier}")
+        fichiers += sorted(p for p in dossier.glob("CHANTIERS_*.yaml") if p.is_file())
+    if a.domaines is not None:
+        domaines = Path(a.domaines)
+        if not domaines.is_file():
+            raise ValueError(f"fichier introuvable : --domaines {domaines}")
+        fichiers.append(domaines)
+    travaux, total, avertissements = [], 0, []
+    for fichier in fichiers:  # tout se calcule et se vérifie avant d'écrire quoi que ce soit
+        lignes, finale = lire_lignes(fichier)
+        nouvelles, reecrites, impossibles = normaliser_lignes(lignes)
+        if [(c, v) for _, c, v in valeurs_lues(nouvelles)] != [(c, v) for _, c, v in valeurs_lues(lignes)]:
+            raise ControleEnDefaut(f"contrôle de lecture en défaut ({fichier}) : rien n'est écrit")
+        travaux.append((fichier, nouvelles, finale, reecrites))
+        total += reecrites
+        avertissements += [f"{fichier}:{i} : valeur non normalisable (caractère de contrôle)" for i in impossibles]
+    for fichier, nouvelles, finale, reecrites in travaux:
+        if reecrites:
+            ecrire(fichier, assembler(nouvelles, finale))
+        print(f"{fichier} : {reecrites} valeur(s) réécrite(s)")
+    print(f"normaliser · {total} valeur(s) réécrite(s) dans {sum(1 for t in travaux if t[3])} fichier(s) sur {len(travaux)}")
+    for avertissement in avertissements:
+        print(avertissement)
+    return 1 if avertissements else 0
+
+
 class ControleEnDefaut(Exception):
-    """Le contrôle « sans perte » (règle 7) a échoué."""
+    """Un contrôle avant écriture a échoué : « sans perte » (règle 7) ou lecture inchangée (normaliser)."""
 
 
 class Analyseur(argparse.ArgumentParser):
@@ -353,7 +483,7 @@ def en_francais(message: str) -> str:
         (r"unrecognized arguments: (\S*).*", r"argument inconnu : \1"),
         (r"argument (\S+): expected one argument", r"\1 : valeur manquante"),
         (r"argument (\S+): invalid int value: (.*)", r"\1 : un nombre entier est attendu, reçu \2"),
-        (r"argument commande: invalid choice: (\S+).*", r"commande inconnue : \1 (archiver ou chercher)"),
+        (r"argument commande: invalid choice: (\S+).*", r"commande inconnue : \1 (archiver, chercher ou normaliser)"),
     ]
     for motif, remplacement in traductions:
         if re.fullmatch(motif, message):
@@ -366,6 +496,7 @@ def construire_analyseur() -> argparse.ArgumentParser:
     sous = p.add_subparsers(dest="commande", required=True)
     arch = sous.add_parser("archiver", allow_abbrev=False, add_help=False)
     cher = sous.add_parser("chercher", allow_abbrev=False, add_help=False)
+    norm = sous.add_parser("normaliser", allow_abbrev=False, add_help=False)
     for s in (arch, cher):
         s.add_argument("--chantiers", required=True)
         s.add_argument("--archives", required=True)
@@ -374,6 +505,9 @@ def construire_analyseur() -> argparse.ArgumentParser:
     arch.add_argument("--a-blanc", dest="a_blanc", action="store_true")
     cher.add_argument("motif")
     cher.add_argument("--partout", action="store_true")
+    norm.add_argument("--chantiers", required=True)
+    norm.add_argument("--archives")
+    norm.add_argument("--domaines")
     return p
 
 
@@ -393,7 +527,8 @@ def lire_arguments(argv: list[str]):
 def main(argv: list[str]) -> int:
     try:
         a = lire_arguments(argv)
-        return commande_archiver(a) if a.commande == "archiver" else commande_chercher(a)
+        commandes = {"archiver": commande_archiver, "chercher": commande_chercher, "normaliser": commande_normaliser}
+        return commandes[a.commande](a)
     except (ValueError, ControleEnDefaut, OSError, UnicodeDecodeError) as erreur:
         print(f"archiver_chantiers : {' '.join(str(erreur).split())}", file=sys.stderr)
         return 2

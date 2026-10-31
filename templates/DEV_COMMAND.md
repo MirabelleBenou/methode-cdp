@@ -1,10 +1,14 @@
 # THE DEV COMMAND — the sub-agent launch, and the fallback line
 
-*The PL launches the dev themselves (`Agent` tool, in the background), with the model and effort mode of the brief. The dev
+*The PL launches the dev themselves (`Agent` tool, in the background), with the model and effort mode of the brief, **after
+deleting the orders repository's clone if it has one** (the sub-agent shares its disk; method §4 bis). For a deliverable
+published by release, which carries no version, `v<X.Y>` reads `<batch name>` throughout below: branch
+`batch/<batch name>`. The dev
 starts **without the PL's context**: this command is all they know beyond the repository. It comes in four parts.
-**The standing conditions are in the dev prompt** (`templates/DEV_PROMPT.md`, §1, §2 and §6): **the command only repeats
+**The standing conditions are in the dev prompt** ([`templates/DEV_PROMPT.md`](DEV_PROMPT.md), §1, §2 and §6): **the command only repeats
 what changes from one batch to the next** — the document to execute, the working folder, the branches, the commit lines.
-The dev talks only to the PL: through what it pushes and through its final reply.*
+The dev talks only to the PL: through what it pushes and through its final reply. When copying, the links to the
+package become plain text.*
 
 ---
 
@@ -36,7 +40,9 @@ A point that is ambiguous, impossible, or contradicts the real state of the code
 **After a stop or a mock-up**: the PL pushes the addendum (or, for a mock-up, looks at the images, shows them to the owner
 and collects their verdict) and relaunches **the same sub-agent by message** (`SendMessage`) if it can still be reached;
 otherwise a new one, whose part 1 also names the previous stops and reports to read. **The owner's verdict is passed on
-word for word**, without rephrasing it; a requested change makes a new round, `MOCKUP_<n+1>.md`.
+word for word**, without rephrasing it; a requested change makes a new round, `MOCKUP_<n+1>.md`. **No handover while the
+dev is running**: the new session cannot reach the old one's sub-agent (method §6); the dev's work, for its part, is on
+its branch, pushed at every step.
 
 **In the meantime**: the PL does not touch the paths the dev occupies — its working folder, and those the test bench
 writes in hard; they are notified at the end, wait on nothing actively and never predict the result of a sub-agent that
@@ -50,7 +56,7 @@ is running.
 effort and the session: the owner does not necessarily read the brief. The dev prompt then tells the dev to tell the
 owner only one sentence, when it stops or delivers.*
 
-**Sonnet · Medium · new conversation in the project**
+**⟨model⟩ · ⟨effort⟩ · new conversation in the project** *(those of the brief)*
 
 ```
 You are the dev of <Project>. Attach the repository <owner>/<Project>-App (add_repo tool, push access), clone branch batch/v<X.Y>, read DEV_PROMPT_<P>.md then batches/v<X.Y>/BRIEF.md, and execute.

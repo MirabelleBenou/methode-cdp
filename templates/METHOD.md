@@ -4,16 +4,18 @@
 *How a batch is decided, built, accepted and closed.*
 - *It changes by version, after a batch that caught it out; each version cites the decisions in the log that ground
   it.*
-- *The dev's side is in `DEV_PROMPT_<P>.md`, at the root of the `<Project>-App` repository.*
+- *The dev's side is in `DEV_PROMPT_<P>.md`, at the root of the code repository (`<Project>-App`) — of the
+  `<Project>-Batches` repository when the code is public.*
 - *It takes precedence over the `methode-cdp` skill, which carries the part common to all projects.*
-- *The terms (baton, queue, batch, deliverable, living docs…) are defined in the package's `GLOSSARY.md`.*
+- *The terms (baton, queue, batch, deliverable, living docs…) are defined in the package's [`GLOSSARY.md`](../GLOSSARY.md).*
 - *It carries only what holds for all the domains: every PL re-reads it, and on the first project 40% of its text served
   only a single product (measurements, mock-up, test bench, screen pitfalls). **What is specific to a product goes to its
   product sheet** (the one the coordination keeps when a product has several PLs) **or to the checkpoint of its
   domain** — a paragraph is enough here to point to it.*
 
 > **How to use this template** — what is in plain text is generic: keep it. What is between `⟨…⟩` is specific to the
-> project: fill it in at bootstrap, or at the first batch that decides it. Delete this box.
+> project: fill it in at bootstrap, or at the first batch that decides it. When copying, the links to the package become
+> plain text. Delete this box.
 
 **The repositories**:
 
@@ -25,7 +27,7 @@
 | ⟨production server with a server runner:⟩ `<owner>/<Project>-Orders` (private) — the orders repository, **and the file-exchange bridge** (`transfers/`) | `ordres/<id>.json` (orders), `resultats/<id>.md` (reports), the order format in `LISEZ_MOI.md` (§4a); `transfers/<domain>/<edition>/`: the data produced in a session, for as long as it takes to serve it | the PL (the orders, and the transfers: whoever produces the data); the server runner (the reports); **never the dev** |
 
 ⟨Several code repositories:⟩ they share **a single `<Project>-Batches`**, and each batch there carries a module prefix
-(`batch/<prefix>-<batch>`); the code starts from the module's repository, on `batch/<batch>` (`3_GITHUB.md` §6 C).
+(`batch/<prefix>-<batch>`); the code starts from the module's repository, on `batch/<batch>` ([`3_GITHUB.md`](../3_GITHUB.md) §6 C).
 
 ---
 
@@ -45,11 +47,15 @@
   reason as a developer **and** as a designer: they recommend on the code and on the visuals.
   - **They write no code of the deliverable or of the test bench. Not in a brief either**: a brief carries rules,
     criteria and the texts the user will read, never the fully written code. A fingerprint that cannot be predicted
-    without writing the code is taken from the dev's account.
+    without writing the code is taken from the dev's account. *The one acknowledged exception: a touch-up of static
+    files that their mock-up has already fixed (§3a).* *Why: otherwise the PL becomes the executor, and their text and
+    the delivered code fall out of step.*
   - They write their **throwaway scripts** for measurement, probing or mock-ups, which are never passed on to the dev.
   - They may edit the **documentation** directly, with the owner's authorization.
-- **The dev** (a new session per batch) builds, measures cold and delivers. **Sonnet by default; Opus for** ⟨the
-  calculation engine, a delicate migration, writing…⟩.
+  - **The style guides, the decision log and the design documents are kept by the PL alone**, after the owner's
+    validation; the dev never touches them.
+- **The dev** (a new session per batch) builds, measures cold and delivers. **The default model is in the table of
+  §6; Opus for** ⟨the calculation engine, a delicate migration, writing…⟩.
   - **The PL launches them themselves, as a sub-agent of their session**: the dev starts **without the PL's context**,
     with the command of §2 as their only instruction. Their report and stops come back to the PL. **The owner talks
     only to the PL, and the dev too: it talks only to the PL**, through what it pushes and through its final reply; the
@@ -61,7 +67,7 @@
 - **The owner's machine** (a game, an application, the screen): **the PL's session works on it itself, through the
   bridge** of the Claude app — linked folders (read, write), a terminal if one is offered, the screen through computer
   use, the owner validating the access in the PL's conversation. **The local runner**, driven by files
-  (`templates/LOCAL_RUNNER.md` of the package), **is now only the fallback**, when the bridge is not offered: it got stuck
+  ([`templates/LOCAL_RUNNER.md`](LOCAL_RUNNER.md) of the package), **is now only the fallback**, when the bridge is not offered: it got stuck
   when the owner was away from their machine. Everything stays under the project folder, never in an application's; **a
   workstream that needs the machine is a debt as long as the owner is not there**.
 - The **mechanical checks** belong to the PL and the dev; the **visual checks** to the owner.
@@ -73,7 +79,8 @@
 *With two, “`git pull` before writing” is enough. With four, decision numbers come out twice, counters drift, versions
 are shared out through messages the owner relays (first project, four PLs in parallel).*
 *A single PL, independent modules, or linked modules with a coordinator: what applies in each case is in the method
-package's `GUIDE.md` §2a.*
+package's [`GUIDE.md`](../GUIDE.md) §2a.* **The number of PL sessions is not asked of the owner**: a session carries a
+domain or a series of features, handovers do the rest.
 
 **Five principles**:
 1. **One active PL = one domain = a checkpoint of its own.** Nobody writes in someone else's checkpoint.
@@ -82,8 +89,9 @@ package's `GUIDE.md` §2a.*
 3. **Whatever can be taken only once is taken by a push** (a decision number, a deliverable): a refused push is the
    only atomic operation available.
 4. **What can be computed is not written**: totals, the board. After a conflict, regenerate; never merge by hand.
-5. **A file that is not append-only has a single owner**: this method, the dev prompt, the living-docs README and the
-   method package belong to **the coordination session** (Opus-Coordination).
+5. **A file that is not append-only has a single owner**: this method, the dev prompt, the living-docs README, the
+   method package and the skill belong to **the coordination session** (Opus-Coordination) when there is one; **with no
+   coordination (mode B), to the first PL**.
 
 **The domains**: ⟨one line per PL — its name (`Opus-PL-<Product>[-<Module>]`, a module only when a product has several
 PLs), what it carries, its checkpoint (`<Folder>/CHECKPOINT_<PRODUCT>_<MODULE>.md`); plus the coordinator and its
@@ -97,11 +105,12 @@ is a gap of the domain, which the checker flags.
 
 **Opening a domain**: the owner tells the coordinator what they want to do; the coordinator gives the fixed line of an
 existing domain with a free baton, or opens the domain (line here, in the README and in `Method/domains.yaml`, seeded checkpoint, workstreams
-attached), then gives each PL's title and line — or starts the session through a scheduled task. A product with several
-module PLs keeps a **product sheet** (what is common: ritual, bench, circuit, pitfalls; never the state), held by the
-coordinator. The coordinator briefs no product batch; **it briefs and launches the tooling batches of the method and of
-the living docs** (`check_living_docs.py`, `make_board.py`, the arbiter — `Method/ARBITER.md`, drawn from
-`templates/ARBITER.md` of the package: role, why, procedure, scheduled task).
+attached), then gives each PL's title and line — or starts the session through a scheduled task; it flags the overlaps
+(shared versions, common files). A product with several module PLs keeps a **product sheet** (what is common: ritual,
+bench, circuit, pitfalls; never the state: the version in production is read in the plan's log, each deliverable's
+batch in flight in `workstreams.yaml`), held by the coordinator. The coordinator briefs no product batch; **it briefs and launches the tooling batches of the method and of
+the living docs** (`check_living_docs.py`, `make_board.py`, `archive_workstreams.py`, the arbiter and the controller — `Method/ARBITER.md` and
+`Method/CONTROLLER.md`, drawn from [`templates/ARBITER.md`](ARBITER.md) and [`templates/CONTROLLER.md`](CONTROLLER.md) of the package).
 
 **Closing a domain**: a finished or dormant domain closes on the owner's decision, between two batches. The coordinator
 (in B, the PL that holds the method) marks its checkpoint “closed” (it stays as a reference), removes the domain from
@@ -126,15 +135,24 @@ with no release (a probe, a played study, documentation) carries no `deliverable
 **Nobody decides a version number in advance**: no checkpoint, workstream, study or message announces “such version for
 such batch”. **Two versioning regimes, depending on the deliverable**:
 - **deployed per batch** (an application in production, its agent, the deployer): the version is computed when the batch
-  takes the deliverable, before its branch: the version of `main` plus one; it is then written in `version:` of the
-  in-flight entry and in the brief; a suspended batch that resumes computes it on the new `main`, redoes its base and its
-  expected results;
+  takes the deliverable, before its branch: **the highest version carried by a batch branch (`batch/…`) or by an entry of
+  `workstreams.yaml`, open or archived, handed over or refused, plus one** (the plan's version log is written only at
+  close: it does not see a refused batch), never “the version of `main` plus one” — a version handed over then refused is not merged,
+  `main` is still at the previous one, and giving it again would make two deliveries under one number. **Computed by
+  the rule, announced in the brief**: it is then written in `version:` of the in-flight entry and in the brief; a
+  suspended batch that resumes recomputes it, redoes its base and its expected results. **Check 4** of
+  `check_living_docs.py` verifies it for the batch in flight (its version is above every other version of its
+  deliverable, archives included); check 7 only verifies that the log and the workstreams agree;
 - **released** (a tool downloaded as a package): **the batch carries no version** (neither `version:` nor a number in the
-  brief); it completes the “Unreleased” section of the `CHANGELOG` (and the files to download, if there are any) and
-  **frees the deliverable at its merge, after acceptance**. **The release is made at the owner's request**: the PL then
-  fixes the number by the repository's `CHANGELOG` rule, renames the section, rebuilds the packages in one pass and
-  hands the owner the text and the packages. For this regime, validation in production is that release; whatever depends
-  on a release (data dropped on a server) waits for the release.
+  brief); **its branch is `batch/<batch name>`** (and its folder `batches/<batch name>/`) instead of `batch/v<X.Y>`; it
+  completes the “Unreleased” section of the `CHANGELOG` (and the files to download, if there are any) — that is the
+  entry gate P8 of the dev prompt checks — and **frees the deliverable at its merge, after acceptance**. **The release
+  is made at the owner's request**: the PL then fixes the number by the repository's `CHANGELOG` rule, renames the
+  section, rebuilds the packages in one pass and hands the owner the text and the packages. For this regime, validation
+  in production is that release; whatever depends on a release (data dropped on a server) waits for the release. **The
+  batch that produces such derived data records it in “Unreleased”, under “To drop after the release: <what, from where,
+  to where>”** (template `code-repo/CHANGELOG.md`), and **the release ends with those drops**, in the same move: whoever
+  makes the release makes the drops.
 
 *Why two regimes*: “the version is computed when the batch takes the deliverable” holds for what is deployed at every
 batch. For a suite downloaded by release, a release per batch is noise for those who download it, and brings them
@@ -147,7 +165,9 @@ released when the runner has returned its last report and the PL has accepted it
 
 **Between PLs**: a report for another domain becomes a workstream of its module, `status: to-brief`, `for: <PL>`;
 **after every `pull`, a PL reads the `for:` entries addressed to it**. The owner no longer relays. A generic lesson is a
-workstream `module: method`, `for:` the method session.
+workstream `module: method`, `for:` the method session. **A method change that affects an active PL** reaches it by a
+ready-to-paste message, handed to the owner, and the coordinator then checks its reply in the repository; a PL whose
+baton is free finds it through a `for:` workstream when it resumes.
 
 **The baton**: each checkpoint carries at the top `Session active: <short id>, since <time>` (or “none — free since
 <time>”). **The short id is the last eight characters of the session's identifier**, the one in the session attribution
@@ -175,18 +195,24 @@ top of its reply.
 2. **The measurement, then the brief** (§3), and the PL's mock-up if there is one (§3a).
    - **The acceptance expected results are computed at brief time**, in `<Folder>/expected/<version>/` of the
      living-docs repository — never in the code repository, which the dev reads. A delivery simulated by the PL can
-     be used to compute them: **it is never passed on**.
+     be used to compute them: **it is never passed on**. **Only when the batch produces values that acceptance must
+     compare** (a calculation, an output file, a format): a screen batch is proven by a screen check, a documentation
+     batch by its criteria — no empty expected-results folder.
    - **The PL pushes the brief on the batch branch**: `batch/v<X.Y>`, started from the head of `main`, which carries
-     only one more commit, `batches/v<X.Y>/BRIEF.md` (and its mock-up). The brief names this base commit.
+     only one more commit, `batches/v<X.Y>/BRIEF.md` (and its mock-up). The brief names this base commit. *(A
+     deliverable published by release has no version per batch: `v<X.Y>` then reads `<batch name>` in this document,
+     §1a.)*
    - **The PL launches the dev**: `Agent` tool, in the background, **the model and effort mode of the brief**, and a
-     command in four parts (template: `DEV_COMMAND.md`) — who they are and what they execute; the practical
+     command in four parts (template: [`DEV_COMMAND.md`](DEV_COMMAND.md)) — who they are and what they execute; the practical
      conditions, which take precedence over the brief; the stops; their final answer. **The standing conditions are in
      the dev prompt** (repositories already attached; clones in `/home/claude/dev_<batch>/`, never at the paths of the
      PL's copies; push to the batch's branches only; no process left running in the background): **the command only
      repeats what changes from one batch to the next**. While the dev works, **the PL does not touch the paths it
-     occupies**. **The dev talks only to the PL.**
+     occupies**. **The dev talks only to the PL.** **The sub-agent inherits the PL's repositories and disk** (the orders repository: §4a).
+   - **The dev pushes their branch at every step** (clone, build, check, delivery): the death of the PL's session — usage
+     limit, crash, handover — must not take the sub-agent's work with it; a new session resumes it from the branch.
    - **Fallback**: if the PL cannot launch a sub-agent, they give the owner a line to paste word for word, with above
-     it “**Sonnet · Medium · new conversation**” (model, effort, session); the dev prompt then tells the dev to tell the
+     it “**⟨model⟩ · ⟨effort⟩ · new conversation**” (those of the brief); the dev prompt then tells the dev to tell the
      owner only, in one sentence, when it stops or delivers.
    - **Safeguard**: a sub-agent consumes the credit of the PL's session; the handover is always measured.
 3. **A dev stop**: the dev pushes their branch and the reason (`STOP_<n>.md`). The PL reads it in the repository,
@@ -204,11 +230,11 @@ top of its reply.
 5. **The acceptance** (§4), then the verdict to the owner, with the prediction for production, and **the deliverable
    handed over as is**, under its exact name, with its sha256 — ⟨with a server runner: **deployed by an order** (§4a),
    the hand-over becoming the fallback⟩.
-6. **One delivery = one new number.** Whatever is handed over to the owner or deployed carries a version never handed
-   over before. A fix or trial feedback after a hand-over makes **a batch of the next version**, which keeps the
-   deliverable, on its own branch started from the batch's branch, in the same dev session if it is still open.
-   **An addendum under the same version only serves while nothing has been handed over or deployed**: lifting a stop,
-   correcting a gap found at acceptance.
+6. **One delivery = one new number** (the rule and its reason: §1a). A fix or trial feedback after a hand-over makes
+   **a batch of the next version**, which keeps the deliverable,
+   on its own branch started from the batch's branch, in the same dev session if it is still open. **An addendum under
+   the same version only serves while nothing has been handed over or deployed**: lifting a stop, correcting a gap found
+   at acceptance.
 7. **Validation in production by the owner**, then **the merge**: `git push origin batch/v<X.Y>:main` as a
    fast-forward, never `--force`; finally **the close-out** (§6), once per batch. *(For a deliverable published by
    release, there is neither a version nor a validation in production per batch: the merge happens after acceptance, and
@@ -218,20 +244,24 @@ top of its reply.
 
 ## §3 · The brief, the dev command
 
-**It carries** (template: `BRIEF.md`):
+**It carries** (template: [`BRIEF.md`](BRIEF.md)):
 - the dev's **model**, **effort mode** and **session**;
 - the owner's decisions and the rules;
 - **what does not move**, and the **exact list of files** the batch is allowed to touch;
 - the criteria and the prediction of the gates, **as deltas against the base measured cold**;
 - the `CHANGELOG` text, word for word;
 - the stops specific to the batch;
-- the base commit and the pieces it pushes with it — nothing to upload.
+- the base commit and the pieces it pushes with it — nothing to upload; **with no repository**, the exact list of the
+  files to upload, and an execution report as a named `.md`, never pasted as text into the chat.
 
 **It is self-contained**: with the dev prompt, it is sufficient. It cites neither a previous brief nor the brief
 template.
 
-**The effort mode**: Medium by default; High for a migration, a deep pass, several screens, a new screen with its
-routes, a calculation engine, cascading steps; Low for a one-line fix.
+**The effort mode**: by default, the one in the table of §6; High for a migration, a deep pass, several screens, a new
+screen with its routes, a calculation engine, cascading steps; Low for a one-line fix. **A low-complexity batch** — a
+one-line fix, a label, a value; the complexity is the batch's, never an effort — is briefed with **the short form** of
+the brief template (one page at most), which carries a real effort, and passes only **the gates of a low-complexity
+batch** (dev prompt §4); the other gates, only if its brief names them.
 
 **Measure first**:
 - **On the verified real state**, never on the assumed execution of a previous batch. When specs have piled up,
@@ -302,14 +332,20 @@ routes, a calculation engine, cascading steps; Low for a one-line fix.
 the dependencies installed under the right version, the services started in the command that uses them⟩.
 
 **The steps**:
-1. **The expected results**, computed at brief time in `<Folder>/expected/<version>/`. **They are never copied from
-   the dev report.** Only an unpredictable value is taken from their account, then recomputed.
+1. **The expected results**, computed at brief time in `<Folder>/expected/<version>/`, when the batch has some (§2).
+   **They are never copied from the dev report.** Only an unpredictable value is taken from their account, then recomputed.
 2. **The delivery archive**: `git archive` of the delivery commit named by the report. **It is the deliverable**: the
    one measured is the one the owner deploys.
-3. **The gates, replayed** on the unpacked archive: ⟨the test bench ritual, the common measurement, tests, lint,
+3. **The batch's gates, replayed** (those of a low-complexity batch: §3) on the unpacked archive: ⟨the test bench ritual, the common measurement, tests, lint,
    syntax check on the output actually produced — not only on the sources⟩.
 4. **The diff, read against the brief's rules**: each rule is found in the code; **nothing outside the authorized
    files**; outside the code, nothing moves except `batches/v<X.Y>/`.
+   - **The independent review**, for a batch of medium or high complexity, or that adds a dependency: a new
+     sub-agent, **of a different model than the dev**, reads the diff against a short list — security, dependencies,
+     readability, missing tests — and returns **findings, not a grade**. The PL settles them at acceptance: an addendum
+     (nothing has been handed over yet; a fix is a following batch, only after a hand-over), or a line of reasoning in the
+     decision log. **A new dependency is an entry in the decision log**, and its
+     lock file is in the brief's list of authorized files.
 5. ⟨**The migration**, if there is one: up, down, up again from a base seeded at the previous head.⟩
 6. **The rendering, looked at by the PL themselves**: the dev reviews no capture, so nobody else sees the screen
    before the owner. What the criteria do not measure can only be seen there. With a mock-up: pixel comparison.
@@ -317,7 +353,8 @@ the dependencies installed under the right version, the services started in the 
    to deploy (an HTML page) is handed over **outside a zip**. ⟨With a server runner: the archive is still produced and
    kept; **the order names the accepted commit** (and the sha256 for a static file); the hand-over becomes the fallback
    (§4a).⟩
-8. **The verdict**: compliant, or a fix (next version). **A justified dev stop is never a reproach**: execution is
+8. **The verdict**: compliant, or an addendum to the batch (nothing has been handed over yet); the fix, a batch of the
+   next version, only comes after a hand-over. **A justified dev stop is never a reproach**: execution is
    often right against the brief.
 
 ---
@@ -325,7 +362,7 @@ the dependencies installed under the right version, the services started in the 
 ## §4a · Deployment ⟨optional: project with a production server and a server runner⟩
 
 *No production server administered by the owner: delete this section; the deliverable is handed over (§4, step 7). The
-guide and the reference implementation: `templates/SERVER_RUNNER.md` and `templates/server-runner/` of the package.*
+guide and the reference implementation: [`templates/SERVER_RUNNER.md`](SERVER_RUNNER.md) and `templates/server-runner/` of the package.*
 
 **The principle**: a deterministic program on the server (⟨its name in this project⟩) pulls the orders from the orders
 repository every minute, runs only a whitelist of actions and pushes its report there. **No AI in the deployment
@@ -352,26 +389,20 @@ path**; an agent on a production server, if there is one, is bounded (no secrets
    **Never a database restore by the server runner**: manual procedure ⟨where it is written⟩.
 
 **The fallback**: the server runner down, the deliverable is handed to the owner as is (§4, step 7) and the manual
-procedure applies. **Each PL who deploys attaches the orders repository with write access; the dev never reads or
-writes it.**
+procedure applies. **The dev never reads or writes the orders repository, and it shares the PL's disk: the PL clones it
+only after acceptance, to deploy, and deletes that clone before any dev launch** (nothing is played while a dev runs).
+The program, its installer and its agent, if any, stay outside the circuit of product batches: they change only through
+a tooling batch.
 
-**How data gets onto the server** (a package of rendered pages, tiles, maps — the orders repository is also the
-**file-exchange bridge**):
-- **Produced in a session**: the PL who produces it pushes it to the orders repository under
-  `transfers/<domain>/<edition>/` (**never the dev**; **a file of 95 MiB at most**, the host refuses anything beyond
-  100 MB; larger: split, or another route); then a `fichiers` order: `telecharger` **from the orders repository, at the
-  40-hex commit, sha256 mandatory**, `decompresser` into a new folder, `basculer` — **the PL tells the owner before
-  replacing what is served**. Once the report has succeeded, it **removes the folder from the tree** by a commit (the
-  history keeps it; a partial copy at the commit reads only what is needed).
+**How data gets onto the server** (the orders repository is also the **file-exchange bridge**):
+- **Produced in a session** (a package of rendered pages, tiles): **to come** — the route through the orders repository
+  (`transfers/<domain>/<edition>/`, then a `fichiers` order) is described in `SERVER_RUNNER.md` §3 point 9, but **the
+  reference implementation does not yet have the private source of `telecharger` that it requires** (§13): the route
+  cannot be played yet.
 - **Produced on the owner's PC** (captures, large backgrounds): `rsync` into `entree/` (`SERVER_RUNNER.md` §4), then a
   `fichiers` order.
 - **Published elsewhere** (a release, a known public repository, an authorized host): `telecharger`, as for any file.
 - **Never the history of a public code repository**: every edition would stay there forever and weigh down every clone.
-- *Points of attention*: the runner keeps a clone of the orders repository up to date every minute — if it is complete,
-  the files pushed then removed stay in its history: the defence (partial copy, or `transfers/` outside the orders clone)
-  is decided **at set-up** ⟨and noted here⟩; reading a file at a commit is a private source of `telecharger` that the
-  reference implementation does not have yet (`SERVER_RUNNER.md` §13). The why, and the step by step: `SERVER_RUNNER.md`
-  §3 point 9 and §5.
 
 ⟨What is specific to the project: the actions in service, the static files and the zones, the counted tables, the
 manual procedure, the date it went into service.⟩
@@ -381,9 +412,14 @@ manual procedure, the date it went into service.⟩
 ## §5 · What is unforgiving
 
 - **Nothing is believed, everything is measured**, on the archive unpacked cold. The gates are read as deltas.
-- **The version**: ⟨who bumps it — `release` script on the dev side, pre-authorized, +1 step per batch / only with
-  the owner's explicit agreement⟩. A batch that does not change the code (method, test bench) takes no version, nor
-  does a batch of a deliverable published by release (§1a, “The deliverable and its version”).
+- **The dev pushes only their batch's branch**: never `main`, never a tag, never `--force` (dev prompt §5).
+- **No secret nor production data in a repository** (`3_GITHUB.md` §7 of the package); **nothing is deleted without
+  the owner's agreement** (§6).
+- **The version**: computed by the rule of §1a (“The deliverable and its version”), announced in the brief ⟨; the
+  `release` script on the dev side bumps it by one step per batch — but a batch started from `main` after a refused
+  batch takes the highest number handed over plus one, not `main` plus one⟩. A batch that does not change the code (method, test
+  bench) takes no version, nor does a batch of a deliverable published by release. **No version change without the
+  owner's explicit agreement**, unless a rule written in this project says otherwise — the rule of §1a is one.
 - ⟨The project's invariants: a file, a module or a fingerprint that only move on the owner's written authorization
   carried by the brief.⟩
 - **Produced texts remain gender-neutral**: never presume a person's gender from a pseudonym.
@@ -401,35 +437,60 @@ manual procedure, the date it went into service.⟩
 ## §6 · Close-out and the documents
 
 **At each closed batch, once**:
-- the plan's version log line, for a batch that takes a version (a deliverable deployed per batch); **for a deliverable
-  published by release, the batch takes no version**: it completes the “Unreleased” section of the `CHANGELOG` and frees
-  the deliverable at its merge, after acceptance (§1a);
-- the decision log (the decision, and “what the batch teaches” when there is a lesson);
-- `workstreams.yaml`, **then the board's page and data file regenerated** (below);
-- **a commit “Batch v<X.Y> closed”** in the living-docs repository, then **the mirror in the project**;
-- the checkpoint **of the domain**, at handover, **its queue re-read against `workstreams.yaml`** (below).
+- **the line of the plan's version log** (`PLAN.md` §11) — **the batch's facts are written there, and there only**:
+  the version (or, for a deliverable published by release, which takes no version, the batch's name), the date, the dev
+  (model, effort), the duration, the stops, the acceptance, the fingerprint, the validation; elsewhere, they are cited.
+  A batch of a deliverable published by release completes the “Unreleased” section of the `CHANGELOG` and frees the
+  deliverable at its merge, after acceptance (§1a); the `CHANGELOG` says what changes for the user, a different content;
+- the decision log: the decision, and “what the batch teaches” when there is a lesson; **the entry names the batch, cited
+  in the version log**, without repeating its dev, duration, stops or fingerprint; the “execution is right” count stays
+  there (§5);
+- `workstreams.yaml` — the `done:` field of the closed entry fits on one line, the date and the version, without the
+  detail —, ⟨with the published board: **then the board's page and data file regenerated** (below)⟩;
+- **a commit “Batch v<X.Y> closed”** in the living-docs repository, whose message carries the line **`Context: <N>
+  tokens`** (the measure of `context.py`, “The handover” below) ⟨, then **the mirror in the project**, if there is one⟩;
+- **§0 of the domain's checkpoint**, refreshed (the state only), **its queue re-read against `workstreams.yaml`**
+  (below): the handover only rewrites a state already up to date, at the moment when the context is heaviest.
 
 Two batches accepted the same day can be closed together.
 
 **The living docs**:
-- live in the living-docs repository **under stable names**; the version is in the header, the history in git;
-- are modified by targeted replacements, or replaced in full while removing what is obsolete;
+- live in the living-docs repository (with no repository, in the project files) **under stable names**; the version
+  is in the header **of single-owner files only** (§1a), the history in git;
+- are modified by targeted replacements, or replaced in full while removing what is obsolete — by the PL themselves,
+  once per batch: they never ask the owner to upload them;
 - **stay short**, under caps (below): when one grows long again, what no longer lives goes into a **new archive**
-  (`Archives/<NAME>_ARCHIVE_<range>.md`), frozen, never rewritten; for `workstreams.yaml`, the archiving is automatic
+  (`<Folder>/Archives/<NAME>_ARCHIVE_<range>.md`), frozen, never rewritten; for `workstreams.yaml`, the archiving is automatic
   (below) and `search` finds an entry;
-- **the project carries a mirror of them**, copied at each close-out by `project_write` with `local_path` from the
-  clone; **never from the text served by the project tool**.
+- ⟨**the mirror in the project**, an extension — the day a conversation without a clone must read the living docs: the
+  project carries a copy of them, copied at each close-out by `project_write` with `local_path` from the clone; **never
+  from the text served by the project tool**. Without it, the PL reads their clone.⟩
+
+**The method's figures — this table is their only source**; everywhere else, the package points to it (“the cap in the
+method §6”), and a CI test checks it. The scripts' code keeps its default values, which are the same. ⟨A project that
+changes one changes it here.⟩
+
+| figure | value | what it governs |
+|---|---|---|
+| handover thresholds, a single PL | **250,000** tokens to warn, **350,000** at the latest to hand over | the handover (below); they assume a window of about 1 M tokens |
+| handover thresholds, several PLs | **450,000** and **550,000** | the same moves: a domain has more documents to re-read there |
+| cap of a checkpoint | **10 KB** (10,240 bytes) | check 10 (`--checkpoint-cap`) |
+| cap of a workstream entry | **~1.5 KB** | |
+| cap of a decision log entry | **~800 characters** | |
+| cut of the decision log | **in slices of fifty numbers**, beyond **~150 KB** | |
+| archiving delay of an accepted workstream | **seven days** | `archive_workstreams.py`, without `--delay` |
+| default model and effort of the dev | **Sonnet · Medium** | Opus for ⟨…⟩ (§1); High or Low (§3) |
 
 **The caps** — *every PL re-reads everything at every resume, and the messages between PLs piled up in the entries: on the
 first project, a workstreams file went from 95 to 146 KB in one day, a decision log reached 206 KB, a checkpoint 47 KB*:
-- **a workstream entry fits in ~1.5 KB**: the state, the decision, the next move; a long exchange goes to the batch
+- **a workstream entry fits under its cap**: the state, the decision, the next move; a long exchange goes to the batch
   folder or into a domain note, the entry only keeps the summary and the path;
-- **a decision log entry fits in ~800 characters**;
-- **a workstream accepted leaves for the archive seven days later** (below);
-- **the decision log is cut into slices of fifty numbers** when it exceeds ~150 KB: one frozen archive per slice
-  (`Archives/DECISION_LOG_ARCHIVE_D<a>_to_D<b>.md`), and the “execution is right” counts are carried over into a base at
+- **a decision log entry fits under its own**;
+- **an accepted workstream leaves for the archive after the delay in the table** (below);
+- **the decision log is cut into slices** beyond its cut size: one frozen archive per slice
+  (`<Folder>/Archives/DECISION_LOG_ARCHIVE_D<a>_to_D<b>.md`), and the “execution is right” counts are carried over into a base at
   the cut (§1a of the log);
-- **a checkpoint fits in 10 KB** (10,240 bytes): the fixed line, the baton, the state, the queue, what is needed to
+- **a checkpoint fits under its cap**: the fixed line, the baton, the state, the queue, what is needed to
   resume; the history goes to a domain archive (`<Folder>/Archives/CHECKPOINT_<DOMAIN>_ARCHIVE_<date>.md`). **Check 10**
   of `check_living_docs.py --domains` flags it (cap adjustable with `--checkpoint-cap`); the arbiter, if there is one,
   turns it into **one workstream per domain**, without filing a new one when its message already exists; without an
@@ -439,13 +500,13 @@ first project, a workstreams file went from 95 to 146 KB in one day, a decision 
 - at close-out, the entry goes to `status: accepted`, then **is no longer touched by hand**: the line
   `accepted-on: <date>` is set by `archive_workstreams.py` (it is neither written nor corrected by hand), and removed by
   it from a reopened entry;
-- an entry accepted for seven days moves out to `<Folder>/Archives/WORKSTREAMS_<YYYY-MM>.yaml` (the month of the run;
+- an entry accepted for the delay in the table moves out to `<Folder>/Archives/WORKSTREAMS_<YYYY-MM>.yaml` (the month of the run;
   things are only appended to it, frozen at the end of the month); the script checks that nothing is lost before
   writing;
-- **who archives**: the arbiter, if there is one, at every run (`Method/ARBITER.md` §1.4a); **without an arbiter**, the
+- **who archives**: the arbiter, if there is one, at every run (`Method/ARBITER.md`); **without an arbiter**, the
   PL or the coordinator runs, at their close-out,
   `python3 -B <Folder>/archive_workstreams.py archive --workstreams <Folder>/workstreams.yaml --archives <Folder>/Archives`
-  (without `--delay`: the default delay is seven days), then regenerates the board and commits;
+  (without `--delay`: its default is the delay in the table), then ⟨regenerates the board and⟩ commits;
 - **an archived id is not reused**;
 - the checker is run with `--archives <Folder>/Archives`: an id both living and archived is a gap, and the last version
   of the log is also looked for in the archives.
@@ -453,7 +514,7 @@ first project, a workstreams file went from 95 to 146 KB in one day, a decision 
 **A checkpoint's queue — registered workstreams only**:
 - **Every upcoming or to-brief subject, every debt or idea kept, first has its entry in `workstreams.yaml`**
   (`status: upcoming`, `to-brief` or `debt`), and **the checkpoint cites it by its id, between backticks**. The owner
-  only reads the board (`workstreams.html`): a subject that lives only in a checkpoint exists neither for them, nor for
+  only reads the workstreams (`workstreams.yaml`, ⟨or, with the published board, its page `workstreams.html`⟩): a subject that lives only in a checkpoint exists neither for them, nor for
   the other PLs, nor for the arbiter — it gets lost, or it is still announced when it is finished.
 - **At every resume and every handover**, the PL re-reads their queue against `workstreams.yaml`: they **register what
   is missing** (then cite it) and **remove from the queue what is closed** (accepted or archived) — a closed workstream
@@ -465,12 +526,24 @@ first project, a workstreams file went from 95 to 146 KB in one day, a decision 
   renames this title changes, in the same commit, the `queue:` line of its domain**; an empty `queue:` is a gap of the
   domain.
 - **Who checks**: check 9 of `check_living_docs.py --domains Method/domains.yaml` reports the queue that cites a closed
-  workstream, every open workstream of the domain that its checkpoint does not cite, and a domain with no declared queue
-  section; the arbiter, if there is one,
-  runs it at every run and, **on Mondays, re-reads the checkpoints against the week's decisions** (`Method/ARBITER.md`
-  §1.4b); **without an arbiter**, the coordinator runs the checker with `--domains` at their close-out.
+  workstream, every open workstream of the domain that **the queue section** does not cite (9c only looks at that
+  section: a citation elsewhere in the checkpoint is not enough), and a domain with no declared queue section; the
+  arbiter, if there is one, runs it every day (`Method/ARBITER.md`) and **the controller** (`Method/CONTROLLER.md`),
+  every Monday, judges what the checker does not measure: contradiction, omission, duplication, useless history;
+  **without them**, the coordinator runs the checker with `--domains` at their close-out.
 
-**The workstreams board** — the readable page of `workstreams.yaml`: **a fixed page and its data file**:
+**The living docs' `.yaml` files are valid YAML** (strict form: a value that carries “: ” or a “#” preceded by a space,
+or that starts with a special character, is written between double quotes): `archive_workstreams.py normalize` rewrites
+what is not, and **check 11** of `check_living_docs.py` verifies it, so that a standard parser reads the same values as
+the scripts. The rest of the tooling fits in three lines: ⟨with the published board, `workstreams.json` is an extract of
+`workstreams.yaml` (the open workstreams: closed ones are archived) in short fields, a data file small enough to be read
+in full (“The workstreams board”, below)⟩; `context.py` has its guards (with no log or no `usage` line, it says so and exits with code 1) and measures only the
+main session, never a sub-agent; the scripts' CI runs on Python 3.11, 3.12 and 3.13.
+
+⟨**extension: published board** (`CORE.md` §6; without it, this paragraph does not apply and the PL reads
+`workstreams.yaml`) — **The workstreams board** — the readable page of `workstreams.yaml`: **a fixed page and its data
+file**, **at a single link** ⟨the link⟩ — written here and in the living-docs README; any other workstreams page is obsolete, and a trial page
+is deleted (with the owner's agreement, like any deletion):
 - `make_board.py` writes `workstreams.html`, **a fixed page of about 11 KB, with no workstream data at all**, and
   `workstreams.json` next to it (same name); the page reads its data in that file. The command line is
   `python3 -B <Folder>/make_board.py <Folder>/workstreams.yaml <Folder>/workstreams.html`. **Check 6** of
@@ -478,25 +551,21 @@ first project, a workstreams file went from 95 to 146 KB in one day, a decision 
   data: it is served or published.
 - **Every time the PL writes `workstreams.yaml`** — at close-out, but also mid-exchange (a workstream added, a
   status that changes) —, they regenerate both files in the same move. A `workstreams.yaml` modified without its two
-  files is not finished. They commit them together in the living-docs repository and copy them to the project as a
-  mirror.
-- **Before republishing**:
+  files is not finished. They commit them together in the living-docs repository ⟨and, with the mirror extension, copy
+  them to the project⟩.
+- **The board is republished at close-out only**, not at every write of the yaml: the artifact tool requires the session
+  that publishes to have read in full any file it did not write, **including the already published data file that it
+  replaces** (a real case: a republication refused until that file had been read). Hence:
   - **regenerate after the last `git pull` / rebase, never before** (a real case: a data file pulled before the base
-    missed three workstreams of another session; check 6 saw it); **the checker passes, check 6 OK** — it is what
-    guarantees the data, not a reading;
-  - **the PL reads the page in full** (the artifact tool requires it; a reading “by file” does not count), about 4,000
-    tokens;
+    missed three workstreams of another session; check 6 saw it); **the checker passes, check 6 OK** — it guarantees that
+    both files are those of the yaml;
+  - **the PL reads the page and the data file in full themselves** (lightened for that purpose: they are the one who
+    publishes); a reading “by file” does not count;
   - **they re-read the diff of their own writes** in `workstreams.yaml` since their last publication.
-- **They republish the page and the data file together, at the same link** (the link is recorded in §6 of the
-  checkpoint), even if only the data changed, and hand the page over as an `.html` file in the conversation.
-- *Why not the whole data file every time*: the tool's rule is not to distribute what one has not seen. Here the file is
-  produced by the generator from a yaml that only PL sessions write: every line was seen by the session that wrote it, and
-  the session that publishes re-reads its own writes. **The data file is re-read in full, by a light subagent (Haiku)**,
-  in two cases only: the first publication of a board, and an entry drawn from an outside source (pasted text, a web
-  page) that no session has re-read. **It is also the fallback**: if the tool were to require reading every published
-  file, we go back to that subagent for every republication.
+- **They republish the page and the data file together, at the same link**, even if only the data changed, and hand the
+  page over as an `.html` file in the conversation.
 - `make_board.py` is not modified for a project: title and labels are read from the header of
-  `workstreams.yaml`.
+  `workstreams.yaml`.⟩
 
 **Where each document lives**:
 - **in the living-docs repository**: the living docs, the sub-projects' statuses, the expected results, the PL's
@@ -509,12 +578,12 @@ first project, a workstreams file went from 95 to 146 KB in one day, a decision 
 
 **The PL files into the project themselves**: they say what they wrote (repository, commit, path); **they delete
 nothing without the owner's explicit agreement**, except the version they have just replaced; a new document is
-created in its folder, never at the root; an old one joins its folder at its next update.
+created in its folder, never at the root; an old one joins its folder at its next update, with no mass moves.
 
 | project folder | carries |
 |---|---|
-| `Method/` | this method, the dev prompt (mirror), the common charters |
-| `<Folder>/` | the plan, the decision log, `workstreams.yaml`, `workstreams.html` and `workstreams.json`, `make_board.py`, the checkpoint, the reference notes |
+| `Method/` | this method, ⟨with the mirror extension: the dev prompt (mirror)⟩, the common charters |
+| `<Folder>/` | the plan, the decision log, `workstreams.yaml`, ⟨extension: published board — `workstreams.html` and `workstreams.json`, `make_board.py`⟩, the checkpoint, the reference notes |
 | `<Folder>/Archives/` | the frozen archives |
 | `<Folder>/Specs/` · `<Folder>/StyleGuide/` | the product references |
 | ⟨`<SubProject>/`⟩ | ⟨one folder per sub-project⟩ |
@@ -525,19 +594,29 @@ handover prompt** (the handover, below). **Images** go through the conversation,
 **The handover is measured, not guessed**:
 - **What is measured**: the context size at the last turn, with `python3 -B <Folder>/pl_tools/context.py` (copied
   from the package). It is not the cumulative consumption since the start of the session, which grows much faster.
-- **Why these thresholds**: every turn re-reads the whole context, cache included. The bigger it is, the more each turn
+- **Why thresholds**: every turn re-reads the whole context, cache included. The bigger it is, the more each turn
   costs and the more quality drops.
-- **When**: at each batch close-out, before each brief or dev launch, and at least every ten exchanges.
-- **At 450,000 tokens, the PL warns the owner**, at the top of their answer: “Context: ~N tokens — handover ahead”.
-  They no longer launch a new batch; they finish the one in progress.
-- **At 550,000 tokens at the latest**, or at a natural end of a queue before that, or at the first sign of saturation,
-  **they hand over**, without waiting to be asked, in one go, in a single answer:
-  1. §0 of the domain's checkpoint rewritten on the real state (where things stand, what blocks, what awaits the owner),
-     **its queue re-read against `workstreams.yaml`** (what is missing gets registered, what is closed leaves), **the
-     saturation signs seen during the session noted (or “none”)**, and the fixed line at the top checked: it names **all
-     the domain's repositories** (§7);
+- **The thresholds are in the table “The method's figures”** (above), which also says the window they assume: **at the
+  first**, the PL warns the owner at the top of their answer (“Context: ~N tokens — handover ahead”) and launches no
+  new batch, they finish the one in progress; **at the second at the latest**, or at a natural end of a queue before
+  that, or at the first sign of saturation, they hand over. **A project with several PLs** takes the second line of
+  the table: a domain has more documents to re-read there, and the PL needs a longer context.
+- **When to measure — three moments**: **at each batch close-out** (the `Context: <N> tokens` line of the closing
+  commit), **before each dev launch**, and **at least every ten exchanges**.
+- **If the product compacts the conversation** (it may do so by itself), `context.py` measures a reduced context: the
+  threshold never comes and the PL carries on from a summary. **This is the most likely risk** ([`CLAUDE_DEPENDENCIES.md`](../CLAUDE_DEPENDENCIES.md)).
+  The defence: the three moments of measurement, handing over at a natural end of a queue without waiting for the
+  threshold, and the “compaction seen” line that `context.py` writes when it finds the mark — then hand over.
+- **No handover with a dev in flight**: the session that hands over waits for the end of the batch, or its stop; the new
+  session cannot reach the previous one's sub-agent through `SendMessage`. Its work is not lost for all that: it pushes
+  its branch at every step (§2).
+- **At the handover threshold**, **the PL hands over**, without waiting to be asked, in one go, in a single answer:
+  1. §0 of the domain's checkpoint (already refreshed at each batch close-out, §6) completed on the real state — where
+     things stand, what blocks, what awaits the owner —, **its queue re-read against `workstreams.yaml`** (what is
+     missing gets registered, what is closed leaves), **the saturation signs seen during the session noted (or
+     “none”)**, and the fixed line at the top checked: it names **all the domain's repositories** (§7);
   2. the baton set back to “none — free since <time>”;
-  3. push, then the mirror in the project;
+  3. push ⟨, then the mirror in the project⟩;
   4. **the domain's fixed line**, under “**Opus · new conversation in the project**”: “You are <PL>. Resume: attach
      with push access the repositories <owner> <domain repositories> (one clone at a time), git pull in <living-docs
      repository>, read `<domain checkpoint>` in full (§0 first) and follow it.” — each domain's exact line is in the
@@ -547,8 +626,8 @@ handover prompt** (the handover, below). **Images** go through the conversation,
 - **The resume can be started by the session itself**: a one-off scheduled task whose prompt is the fixed line; the
   owner opens the session in their task list. When the owner is not there to open it, the fixed line is enough.
 - **At the first sign of saturation** before the threshold (losing the thread, contradictions, a forgotten decision):
-  same handover, right away. **Every handover notes the signs seen, or “none”**: these notes serve to recalibrate the
-  thresholds on measurements, not on an impression.
+  the handover, as soon as the dev has returned (never with a dev in flight). **Every handover notes the signs seen,
+  or “none”**: these notes serve to recalibrate the thresholds on measurements, not on an impression.
 - The context of a sub-agent (the dev, or a delegated reading) does not count in the PL's; its credit does.
 
 ---
@@ -567,11 +646,12 @@ handover prompt** (the handover, below). **Images** go through the conversation,
 - **A workstream not found in `workstreams.yaml` may be archived**: look for it with
   `python3 -B <Folder>/archive_workstreams.py search <id or word> --workstreams <Folder>/workstreams.yaml --archives <Folder>/Archives`
   (`--everywhere`: in all the values), never by recreating the entry.
-- ⟨With a server runner: attach the orders repository with write access at the start of the session; re-read
-  `resultats/` with a bounded wait, never an endless loop.⟩
+- ⟨With a server runner: the orders-repository clone follows §4a; re-read `resultats/` with a bounded wait, never an endless loop.⟩
 
 **Git and GitHub**: see `3_GITHUB.md` §5 of the package — tags, releases and branch deletions by the owner; clone of
-a single branch; attribution lines; no secrets. **A domain's fixed line names all its repositories**, with push
+a single branch; attribution lines; no secrets; **`git fetch origin main` before `git push`** (a shallow clone that has
+not run `fetch` sends the whole tree, which the proxy refuses for its size — HTTP 413; it is not a fast-forward
+refusal). **A domain's fixed line names all its repositories**, with push
 access: a session's safeguard refuses an attachment the owner has not asked for in so many words, and the line they
 paste stands for that request. One more repository along the way: the session asks the owner for it in a ready line
 (“tell me “attach X””).

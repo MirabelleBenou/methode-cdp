@@ -1,6 +1,6 @@
 """Aides communes aux tests des scripts des vivants.
 
-Les trois scripts (verifier_vivants.py, archiver_chantiers.py, generer_tableau.py) se lancent
+Les quatre scripts (verifier_vivants.py, archiver_chantiers.py, generer_tableau.py, contexte.py) se lancent
 toujours par un chemin calculé depuis ce fichier, jamais depuis le dossier courant ; chaque test
 bâtit ses fixtures dans un dossier temporaire, à partir de textes courts et neutres.
 
@@ -14,12 +14,20 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from datetime import date
 from pathlib import Path
+
+try:
+    import yaml as pyyaml
+except ImportError:  # PyYAML n'est installé que dans le workflow : les tests qui s'y comparent se sautent
+    pyyaml = None
 
 MODELES = Path(__file__).resolve().parent.parent
 VERIFIER = MODELES / "verifier_vivants.py"
 ARCHIVER = MODELES / "archiver_chantiers.py"
 GENERER = MODELES / "generer_tableau.py"
+CONTEXTE = MODELES / "contexte.py"
+SANS_PYYAML = unittest.skipIf(pyyaml is None, "PyYAML absent")
 
 ECART = "ÉCART"
 AVERTISSEMENT = "avertissement"
@@ -45,6 +53,23 @@ def bloc(id: str, **cles) -> str:
 def yaml(*blocs: str, entete: str = "# Chantiers — Essai") -> str:
     """Un chantiers.yaml : l'en-tête, puis les blocs séparés par une ligne vide."""
     return entete + "\n\n" + "\n\n".join(blocs) + "\n"
+
+
+def en_texte(valeur) -> str:
+    """Une valeur lue par PyYAML, en texte comme nos scripts la lisent : vide pour null, dates au format ISO."""
+    if valeur is None:
+        return ""
+    return valeur.isoformat() if isinstance(valeur, date) else str(valeur)
+
+
+def lecture_pyyaml(texte: str) -> list:
+    """Les entrées d'un fichier lues par PyYAML (yaml.safe_load), valeurs converties en texte."""
+    return [{cle: en_texte(valeur) for cle, valeur in entree.items()} for entree in pyyaml.safe_load(texte) or []]
+
+
+def sans_position(entrees: list) -> list:
+    """Les entrées lues par un de nos scripts, sans leurs clés internes (_ligne, _fichier)."""
+    return [{cle: valeur for cle, valeur in entree.items() if not cle.startswith("_")} for entree in entrees]
 
 
 def registre(*numeros: int) -> str:
@@ -136,9 +161,9 @@ class CasTemporaire(unittest.TestCase):
         chemin.mkdir(parents=True, exist_ok=True)
         return chemin
 
-    def lancer(self, script: Path, *arguments, cwd=None) -> Sortie:
+    def lancer(self, script: Path, *arguments, cwd=None, env=None) -> Sortie:
         """Lance le script avec le même Python ; le dossier courant est le dossier temporaire par défaut."""
-        environnement = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONDONTWRITEBYTECODE": "1"}
+        environnement = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONDONTWRITEBYTECODE": "1", **(env or {})}
         processus = subprocess.run(
             [sys.executable, "-B", str(script), *map(str, arguments)],
             capture_output=True, text=True, encoding="utf-8",

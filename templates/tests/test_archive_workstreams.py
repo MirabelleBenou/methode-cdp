@@ -1,13 +1,15 @@
-"""Tests of archive_workstreams.py: date, move out, lose nothing, search; the invalid calls.
+"""Tests of archive_workstreams.py: date, move out, lose nothing, search, normalize; the invalid calls.
 
 Every test builds its fixtures in a temporary folder (see test_tools.py) and calls the script on the
 command line with "--date", so that days are counted without depending on the clock.
 """
+import os
 import re
 import unittest
 from collections import Counter
 
-from .test_tools import ARCHIVER, TempCase, block, load, yaml
+from .test_tools import (ARCHIVER, CHECKER, GAP, NO_PYYAML, TempCase, block, decision_log, load, pyyaml_reading,
+                         without_position, yaml)
 
 TODAY = "2026-03-15"            # today's date for the tests
 SEVEN_DAYS_AGO = "2026-03-08"
@@ -482,6 +484,195 @@ class TestSearch(ArchiverCase):
         self.assertEqual((self.workstreams.read_bytes(), self.archive.read_bytes()), before)
 
 
+WORKSTREAMS_TO_NORMALIZE = (
+    "# Workstreams — Test\n"
+    "# a comment : with a colon\n"
+    "\n"
+    "- id: alpha-1\n"
+    "  title: A title\n"
+    "  basis: text : continued\n"
+    "  rank: 5\n"
+    "  \n"
+    "\n"
+    "\n"
+    "- id: alpha-2\n"
+    "  title: Careful:\n"
+    "  accepted-on: 2026-10-30\n"
+    '  refs: "conforming as is : yes"\n'
+    "  cost:\n"
+    '  note: says "yes" : c:\\folder\n'
+)
+DOMAINS_TO_NORMALIZE = (
+    "# Domains\n"
+    "- domain: alpha\n"
+    "  queue: ## §1 · The queue\n"
+    "  modules: module-a\n"
+    "\n"
+    "- domain: beta\n"
+    '  queue: "## §3 · The queue"\n'
+    "  modules:\n"
+)
+
+
+class TestNormalize(ArchiverCase):
+    """"normalize": puts only the non-conforming values between double quotes, nothing else; idempotent."""
+
+    def setUp(self):
+        super().setUp()
+        self.workstreams = self.write("workstreams.yaml", WORKSTREAMS_TO_NORMALIZE)
+
+    def normalize(self, *options, workstreams=None):
+        return self.run_script(ARCHIVER, "normalize", "--workstreams", workstreams or self.workstreams, *options)
+
+    def test_rewrites_the_non_conforming_values_and_leaves_the_rest_to_the_byte(self):
+        output = self.normalize()
+        self.assertEqual(output.code, 0, output.stdout + output.stderr)
+        expected = (WORKSTREAMS_TO_NORMALIZE
+                    .replace("  basis: text : continued\n", '  basis: "text : continued"\n')
+                    .replace("  title: Careful:\n", '  title: "Careful:"\n')
+                    .replace('  note: says "yes" : c:\\folder\n', '  note: "says \\"yes\\" : c:\\\\folder"\n'))
+        self.assertEqual(self.workstreams.read_bytes().decode("utf-8"), expected)
+        self.assertEqual(output.stdout, f"{self.workstreams} : 3 value(s) rewritten\n"
+                                        "normalize · 3 value(s) rewritten in 1 file(s) out of 1\n")
+
+    def test_a_value_normalized_before_or_conforming_is_not_touched(self):
+        conforming = yaml(block("alpha-1", title='"text : continued"', basis="simple", rank="5"), block("alpha-2", cost=""))
+        self.workstreams = self.write("workstreams.yaml", conforming)
+        before = self.workstreams.stat()
+        output = self.normalize()
+        self.assertEqual(output.code, 0)
+        self.assertEqual(self.workstreams.read_bytes().decode("utf-8"), conforming)
+        self.assertEqual(self.workstreams.stat().st_ino, before.st_ino, "nothing to write: the file is not replaced")
+        self.assertIn("0 value(s) rewritten", output.stdout)
+
+    def test_idempotent(self):
+        self.normalize()
+        first = self.workstreams.read_bytes()
+        inode = self.workstreams.stat().st_ino
+        output = self.normalize()
+        self.assertEqual(output.code, 0)
+        self.assertEqual(self.workstreams.read_bytes(), first)
+        self.assertEqual(self.workstreams.stat().st_ino, inode)
+        self.assertEqual(output.stdout, f"{self.workstreams} : 0 value(s) rewritten\n"
+                                        "normalize · 0 value(s) rewritten in 0 file(s) out of 1\n")
+
+    def test_keeps_the_line_endings_and_the_trailing_blanks(self):
+        text = "# Workstreams — Test\r\n\r\n- id: a\r\n  basis:   text : continued \t \r\n  rank: 5\r\n\r\n- id: b\r\n  title: end:"
+        self.workstreams = self.write("workstreams.yaml", text)
+        self.assertEqual(self.normalize().code, 0)
+        self.assertEqual(self.workstreams.read_bytes().decode("utf-8"),
+                         '# Workstreams — Test\r\n\r\n- id: a\r\n  basis:   "text : continued" \t \r\n  rank: 5\r\n\r\n'
+                         '- id: b\r\n  title: "end:"', "line ending, blanks, no final newline: everything stays")
+
+    def test_after_it_check_11_is_ok_and_the_reading_gives_the_same_values(self):
+        c = load(CHECKER, "check_living_docs_for_normalize")
+        before = without_position(c.read_workstreams(self.workstreams))
+        log = self.write("decision_log.md", decision_log(1, 2, 3))
+        check = lambda: self.run_script(CHECKER, "--workstreams", self.workstreams, "--log", log)
+        self.assertEqual(check().verdict(11), GAP)
+        self.normalize()
+        self.assertEqual(check().verdict(11), "OK")
+        self.assertEqual(without_position(c.read_workstreams(self.workstreams)), before)
+        self.assertEqual(before[0]["basis"], "text : continued")
+        self.assertEqual(before[1]["note"], 'says "yes" : c:\\folder')
+
+    @NO_PYYAML
+    def test_with_pyyaml_the_normalized_file_is_read_as_by_our_reading(self):
+        c = load(CHECKER, "check_living_docs_for_pyyaml")
+        self.normalize()
+        text = self.workstreams.read_text(encoding="utf-8")
+        self.assertEqual(pyyaml_reading(text), without_position(c.read_workstreams(self.workstreams)))
+        self.assertEqual(pyyaml_reading(text)[0]["basis"], "text : continued")
+
+    def test_the_archives_and_the_table_are_normalized_with_their_options(self):
+        self.write("archives/WORKSTREAMS_2026-01.yaml", yaml(block("old-1", title="Done : almost"), header="# Archive"))
+        self.write("archives/WORKSTREAMS_2026-02.yaml", yaml(block("old-2", title="Clean"), header="# Archive"))
+        other = self.write("archives/other.yaml", yaml(block("outside", title="Not : an archive")))
+        table = self.write("domains.yaml", DOMAINS_TO_NORMALIZE)
+        output = self.normalize("--archives", self.archives_folder, "--domains", table)
+        self.assertEqual(output.code, 0, output.stdout + output.stderr)
+        self.assertEqual(output.stdout.split("\n"), [
+            f"{self.workstreams} : 3 value(s) rewritten",
+            f"{self.archives_folder}/WORKSTREAMS_2026-01.yaml : 1 value(s) rewritten",
+            f"{self.archives_folder}/WORKSTREAMS_2026-02.yaml : 0 value(s) rewritten",
+            f"{table} : 1 value(s) rewritten",
+            "normalize · 5 value(s) rewritten in 3 file(s) out of 4", ""])
+        self.assertEqual(table.read_text(encoding="utf-8"),
+                         DOMAINS_TO_NORMALIZE.replace("queue: ## §1 · The queue", 'queue: "## §1 · The queue"'))
+        self.assertIn('  title: "Done : almost"\n', (self.archives_folder / "WORKSTREAMS_2026-01.yaml").read_text(encoding="utf-8"))
+        self.assertIn("title: Not : an archive", other.read_text(encoding="utf-8"), "only the WORKSTREAMS_*.yaml")
+
+    def test_without_the_options_the_archives_and_the_table_are_not_touched(self):
+        archive = self.write("archives/WORKSTREAMS_2026-01.yaml", yaml(block("old-1", title="Done : almost")))
+        table = self.write("domains.yaml", DOMAINS_TO_NORMALIZE)
+        before = (archive.read_bytes(), table.read_bytes())
+        self.normalize()
+        self.assertEqual((archive.read_bytes(), table.read_bytes()), before)
+
+    def test_the_reading_after_normalizing_the_table_gives_the_same_values(self):
+        c = load(CHECKER, "check_living_docs_for_table")
+        table = self.write("domains.yaml", DOMAINS_TO_NORMALIZE)
+        before = without_position(c.read_workstreams(table))
+        self.normalize("--domains", table)
+        self.assertEqual(without_position(c.read_workstreams(table)), before)
+        self.assertEqual(before[0]["queue"], "## §1 · The queue")
+
+    def test_a_bare_value_that_starts_with_a_quote_is_written_between_quotes_with_escapes(self):
+        c = load(CHECKER, "check_living_docs_for_quotes")
+        self.workstreams = self.write("workstreams.yaml", '- id: a\n  title: "a" b\n  note: "no end\n  other: \'x\'\n')
+        before = without_position(c.read_workstreams(self.workstreams))
+        self.normalize()
+        self.assertEqual(self.workstreams.read_text(encoding="utf-8"),
+                         '- id: a\n  title: "\\"a\\" b"\n  note: "\\"no end"\n  other: "\'x\'"\n')
+        self.assertEqual(without_position(c.read_workstreams(self.workstreams)), before)
+
+    def test_a_value_with_a_control_character_is_not_touched_and_the_code_is_1(self):
+        self.workstreams = self.write("workstreams.yaml", "- id: a\n  title: a\x01b\n  basis: x : y\n")
+        output = self.normalize()
+        self.assertEqual(output.code, 1, output.stdout + output.stderr)
+        self.assertEqual(self.workstreams.read_bytes().decode("utf-8"), '- id: a\n  title: a\x01b\n  basis: "x : y"\n')
+        self.assertIn(f"{self.workstreams}:2 : key title : value cannot be normalized (control character)", output.stdout)
+
+    def test_writes_only_through_a_temporary_file_and_leaves_none(self):
+        self.normalize()
+        self.assertEqual(sorted(p.name for p in self.folder.iterdir() if p.is_file()), ["workstreams.yaml"])
+
+    def test_keeps_the_file_mode(self):
+        os.chmod(self.workstreams, 0o640)
+        self.normalize()
+        self.assertEqual(self.workstreams.stat().st_mode & 0o777, 0o640)
+
+    def test_the_archiver_keeps_a_block_as_is_quotes_included(self):
+        self.write_workstreams(block('"alpha-1"', title='"The title : continued"', status="accepted", accepted_on=SEVEN_DAYS_AGO,
+                                     basis='"says \\"yes\\""'),
+                               block("alpha-2", status="upcoming"))
+        output = self.archive_run()
+        self.assertEqual(output.code, 0, output.stdout + output.stderr)
+        archive = self.archive.read_text(encoding="utf-8")
+        self.assertIn('- id: "alpha-1"\n  title: "The title : continued"\n  status: accepted\n  accepted-on: 2026-03-08\n'
+                      '  basis: "says \\"yes\\""\n', archive)
+        self.assertIn("  alpha-1\n", output.stdout, "the id is read without quotes")
+        found = self.search("alpha-1")
+        self.assertEqual(found.code, 0, found.stdout)
+        self.assertIn("· alpha-1 · accepted · The title : continued\n", found.stdout, "the search reads values without quotes")
+
+    def test_invalid_calls(self):
+        absent = self.folder / "absent.yaml"
+        output = self.run_script(ARCHIVER, "normalize", "--workstreams", absent)
+        self.assertEqual((output.code, output.stdout), (2, ""))
+        self.assertIn(f"archive_workstreams: file not found: --workstreams {absent}", output.stderr)
+        output = self.normalize("--archives", self.folder / "nowhere")
+        self.assertEqual(output.code, 2)
+        self.assertIn(f"folder not found: --archives {self.folder / 'nowhere'}", output.stderr)
+        output = self.normalize("--domains", self.folder / "table.yaml")
+        self.assertEqual(output.code, 2)
+        self.assertIn("file not found: --domains", output.stderr)
+        output = self.run_script(ARCHIVER, "normalize")
+        self.assertEqual(output.code, 2)
+        self.assertIn("missing argument: --workstreams", output.stderr)
+        self.assertEqual(self.workstreams.read_bytes().decode("utf-8"), WORKSTREAMS_TO_NORMALIZE, "nothing was written")
+
+
 class TestInvalidCalls(ArchiverCase):
     def setUp(self):
         super().setUp()
@@ -499,7 +690,7 @@ class TestInvalidCalls(ArchiverCase):
     def test_unknown_command(self):
         output = self.run_script(ARCHIVER, "erase")
         self.invalid(output, "unknown command: ")
-        self.assertRegex(output.stderr, r"unknown command: '?erase'? \(archive or search\)")
+        self.assertRegex(output.stderr, r"unknown command: '?erase'? \(archive, search or normalize\)")
 
     def test_workstreams_missing(self):
         self.invalid(self.run_script(ARCHIVER, "archive", "--archives", self.archives_folder), "missing argument")
@@ -582,6 +773,28 @@ class TestFunctions(TempCase):
     def test_tighten_at_most_one_empty_line_around_a_marker(self):
         self.assertEqual(self.a.tighten(["a", "", "", None, "", "b"], 0, 0), ["a", "", "b"])
         self.assertEqual(self.a.tighten(["a", "", None], 0, 0), ["a"])
+
+    def test_read_value(self):
+        self.assertEqual(self.a.read_value('  "A \\"title\\" with \\\\ and : colon"  '), 'A "title" with \\ and : colon')
+        self.assertEqual(self.a.read_value('""'), "")
+        for raw, expected in ((" text : continued ", "text : continued"), ('"no end', '"no end'), ('"a" b', '"a" b'),
+                              ('"a\\"', '"a\\"'), ('"a\\n"', '"a\\n"'), ("", "")):
+            self.assertEqual(self.a.read_value(raw), expected, raw)
+
+    def test_find_blocks_reads_the_quoted_values(self):
+        blocks = self.a.find_blocks(['- id: "a"', '  title: "A : title"', '  status: accepted'])
+        self.assertEqual((blocks[0].id, blocks[0].value("title"), blocks[0].value("status")), ("a", "A : title", "accepted"))
+
+    def test_value_conforms_like_the_checker(self):
+        c = load(CHECKER, "check_living_docs_to_compare")
+        values = ["", "text", "a:b", "a#b", "5", '"x : y"', '"a \\" b"', "a: b", "end:", "x # y", "## t", "- i", "'x'", '"x',
+                  "`x`", "a\tb", "a\x01b", '"a\\n"']
+        for value in values:
+            self.assertEqual(self.a.value_conforms(value), c.value_conforms(value), repr(value))
+
+    def test_quoted(self):
+        self.assertEqual(self.a.quoted('a "b" \\ c'), '"a \\"b\\" \\\\ c"')
+        self.assertEqual(self.a.read_value(self.a.quoted('a "b" \\ c : #')), 'a "b" \\ c : #')
 
     def test_reworded_rewords_the_messages_of_the_argument_parser(self):
         self.assertEqual(self.a.reworded("the following arguments are required: --workstreams"),

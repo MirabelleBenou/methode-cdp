@@ -1,10 +1,14 @@
 # LA COMMANDE DU DEV — le lancement en sous-agent, et la ligne de repli
 
-*Le CdP lance le dev lui-même (outil `Agent`, en arrière-plan), avec le modèle et le mode d'effort du cadrage. Le dev
+*Le CdP lance le dev lui-même (outil `Agent`, en arrière-plan), avec le modèle et le mode d'effort du cadrage, **après
+avoir supprimé le clone du dépôt d'ordres s'il en a un** (le sous-agent partage son disque ; méthode §4 bis). Pour un
+livrable publié par release, qui ne porte pas de version, `v<X.Y>` se lit `<nom du lot>` partout ci-dessous : branche
+`lot/<nom du lot>`. Le dev
 part **sans le contexte du CdP** : cette commande est tout ce qu'il sait en plus du dépôt. Elle tient en quatre parts.
-**Les conditions durables sont au prompt du dev** (`modeles/PROMPT_DEV.md`, §1, §2 et §6) : **la commande ne redit que ce
+**Les conditions durables sont au prompt du dev** ([`modeles/PROMPT_DEV.md`](PROMPT_DEV.md), §1, §2 et §6) : **la commande ne redit que ce
 qui change d'un lot à l'autre** — le document à exécuter, le dossier de travail, les branches, les lignes de commit. Le dev
-ne parle qu'au CdP : par ce qu'il pousse et par sa réponse finale.*
+ne parle qu'au CdP : par ce qu'il pousse et par sa réponse finale. À la copie, les liens vers le package se mettent en
+texte simple.*
 
 ---
 
@@ -36,7 +40,9 @@ Un point ambigu, impossible, ou qui contredit l'état réel du code : écris lot
 **Après un arrêt ou une maquette** : le CdP pousse l'addendum (ou, pour une maquette, regarde les images, les montre au
 porteur et recueille son verdict) et relance **le même sous-agent par message** (`SendMessage`) s'il est encore joignable ;
 sinon un neuf, dont la part 1 nomme aussi les arrêts et rapports précédents à lire. **Le verdict du porteur se transmet mot
-pour mot**, sans le reformuler ; un changement demandé fait un nouveau tour, `MAQUETTE_<n+1>.md`.
+pour mot**, sans le reformuler ; un changement demandé fait un nouveau tour, `MAQUETTE_<n+1>.md`. **Pas de passation
+tant que le dev tourne** : la session neuve ne peut pas joindre le sous-agent de l'ancienne (méthode §6) ; le travail du
+dev, lui, est sur sa branche, poussée à chaque étape.
 
 **Pendant ce temps** : le CdP ne touche pas aux chemins que le dev occupe — son dossier de travail, et ceux que le banc
 écrit en dur ; il est notifié à la fin, n'attend rien activement et ne prédit jamais le résultat d'un sous-agent en
@@ -50,7 +56,7 @@ cours.
 l'effort et la session : le porteur ne lit pas forcément le cadrage. Le prompt du dev dit alors au dev de ne dire au porteur
 qu'une phrase, quand il s'arrête ou livre.*
 
-**Sonnet · Medium · conversation neuve dans le projet**
+**⟨modèle⟩ · ⟨effort⟩ · conversation neuve dans le projet** *(ceux du cadrage)*
 
 ```
 Tu es le dev de <Projet>. Rattache le dépôt <owner>/<Projet>-App (outil add_repo, accès push), clone la branche lot/v<X.Y>, lis PROMPT_DEV_<P>.md puis lots/v<X.Y>/CADRAGE.md, et exécute.

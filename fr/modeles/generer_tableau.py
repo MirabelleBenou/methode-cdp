@@ -11,6 +11,12 @@ même en-tête donnent la même page à l'octet ; seules les données changent, 
 elles se republient quand un chantier bouge. Le fichier de données est déterministe (deux
 générations de la même source sont identiques à l'octet, hors la date « engendré le »).
 
+Le fichier de données est un EXTRAIT de chantiers.yaml, pas une copie : il ne porte, pour chaque
+entrée, que les clés que la page affiche ou utilise (CLES_PAGE, l'id toujours), dans cet ordre, et
+les valeurs longues des cartes (CLES_TRONQUEES) y sont coupées à LONGUEUR_MAX caractères, sur une
+espace, terminées par « … ». La source fait foi : le texte complet est dans chantiers.yaml. Ce
+poids léger permet de lire le fichier en entier avant de le publier.
+
 Les deux fichiers se publient ensemble, côte à côte. La page ouverte depuis le disque
 (« file:// ») ne charge pas ses données : c'est une limite des navigateurs, et la page
 l'affiche (« Impossible de charger chantiers.json (…) »). Elle s'ouvre servie
@@ -19,7 +25,9 @@ l'affiche (« Impossible de charger chantiers.json (…) »). Elle s'ouvre servi
 Outil du CdP (pas du livrable), copié tel quel du package méthode dans le dépôt
 des vivants, à côté de chantiers.yaml. Aucune dépendance, aucun réseau à
 l'exécution du générateur. Le lecteur ne couvre QUE la forme du fichier (« - id: » puis des
-« clé: valeur » sur une ligne) : c'est voulu, la source reste lisible à l'œil.
+« clé: valeur » sur une ligne) : c'est voulu, la source reste lisible à l'œil. Une valeur entre
+guillemets doubles se lit sans les guillemets ni les échappements (\\" et \\\\) ; une valeur
+nue se lit telle quelle.
 
 Ce qui est propre au projet se lit dans l'en-tête de chantiers.yaml, rien à
 modifier ici :
@@ -40,8 +48,19 @@ STATUTS = [("a-venir", "À venir"), ("a-cadrer", "À cadrer"), ("en-vol", "En vo
            ("dette", "Dette"), ("recette", "Recetté")]
 PRIORITES = [("haut", "Important"), ("moyen", "Moyen"), ("faible", "Faible")]
 COMPLEXITES = [("forte", "Forte"), ("moyenne", "Moyenne"), ("faible", "Faible")]
+# Les clés que la page affiche ou utilise (voir son script) : seules elles vont dans le fichier de données.
+CLES_PAGE = ("id", "titre", "module", "categorie", "statut", "priorite", "complexite", "rang", "mesure", "cout", "refs")
+CLES_TRONQUEES = ("mesure", "cout")  # les valeurs longues affichées sur les cartes
+LONGUEUR_MAX = 180  # caractères, « … » compris : un fichier de données assez petit pour être lu en entier avant sa publication (méthode §6)
 LIBELLES_DEFAUT = {"ecran": "Écran", "donnees": "Données", "doc": "Documentation", "outillage": "Outillage",
                    "moteur": "Moteur", "exploitation": "Exploitation", "socle": "Socle"}
+
+
+def lire_valeur(brut: str) -> str:
+    """La valeur d'une ligne : sans les guillemets doubles ni les échappements (\\" et \\\\) si elle est entre guillemets, sinon telle quelle."""
+    valeur = brut.strip()
+    entre = re.fullmatch(r'"((?:[^"\\]|\\["\\])*)"', valeur)
+    return re.sub(r'\\(["\\])', r"\1", entre.group(1)) if entre else valeur
 
 
 def lire(chemin: pathlib.Path):
@@ -65,7 +84,7 @@ def lire(chemin: pathlib.Path):
         if ":" not in nue or not chantiers:
             continue
         cle, _, valeur = nue.partition(":")
-        chantiers[-1][cle.strip()] = valeur.strip()
+        chantiers[-1][cle.strip()] = lire_valeur(valeur)
     manquants = [c for c in chantiers if not c.get("id") or not c.get("statut")]
     if manquants:
         sys.exit(f"ARRÊT : {len(manquants)} entrée(s) sans id ou sans statut.")
@@ -86,10 +105,26 @@ def chemin_donnees(sortie: pathlib.Path) -> pathlib.Path:
     return sortie.with_suffix(".json")
 
 
+def tronquer(valeur: str) -> str:
+    """La valeur telle quelle si elle tient en LONGUEUR_MAX caractères ; sinon coupée sur une espace, terminée par « … »."""
+    if len(valeur) <= LONGUEUR_MAX:
+        return valeur
+    debut = valeur[:LONGUEUR_MAX - 1]
+    if valeur[LONGUEUR_MAX - 1] != " " and " " in debut:  # on coupe entre deux mots, pas au milieu d'un mot
+        debut = debut.rsplit(" ", 1)[0]
+    return debut.rstrip() + "…"
+
+
+def extrait(chantier: dict) -> dict:
+    """L'entrée réduite aux clés de la page (CLES_PAGE, dans cet ordre), valeurs longues tronquées."""
+    return {cle: tronquer(chantier[cle]) if cle in CLES_TRONQUEES else chantier[cle]
+            for cle in CLES_PAGE if cle in chantier}
+
+
 def donnees(projet, libelles, chantiers: list[dict]) -> dict:
-    """Tout ce que la page affiche : les entrées dans l'ordre du fichier, avec toutes leurs clés."""
+    """Ce que la page affiche : les entrées dans l'ordre du fichier, réduites aux clés de la page (un extrait)."""
     return {"projet": projet, "engendre": date.today().strftime("%d/%m/%Y"),
-            "libelles": libelles, "chantiers": chantiers}
+            "libelles": libelles, "chantiers": [extrait(c) for c in chantiers]}
 
 
 def texte_donnees(projet, libelles, chantiers: list[dict]) -> str:

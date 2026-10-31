@@ -14,15 +14,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.12", "3.13"]
+        python-version: ["3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: French tests (fr/)
+      - name: Install PyYAML (only for the tests that compare with a standard YAML parser)
+        run: python3 -m pip install pyyaml
+      - name: French tests (fr/; the links and parity tests included)
         run: python3 -B -m unittest discover -s fr/modeles/tests -t .
-      - name: English tests
+      - name: English tests (the links and parity tests included)
         run: python3 -B -m unittest discover -s templates/tests -t .
       - name: Server runner tests
         run: cd templates/server-runner && python3 -B -m unittest discover -s tests
