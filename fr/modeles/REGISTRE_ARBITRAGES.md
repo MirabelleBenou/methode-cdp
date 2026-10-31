@@ -3,9 +3,10 @@
 
 *Tenu par le CdP. Mis à jour à chaque lot clos. Dernière mise à jour : **<date>, par <session>** : **R1**.*
 
-> **Ce registre ne porte que ce qui vit encore.** Quand il devient long, ce qui ne vit plus part dans une archive figée
-> (`Archives/REGISTRE_ARBITRAGES_ARCHIVE_R1_a_R<n>.md`), qui ne se réécrit jamais. Les numéros restent stables d'un
-> document à l'autre. **Une décision archivée qui change se rejoue ici, sous un numéro neuf qui cite l'ancien.**
+> **Ce registre ne porte que ce qui vit encore.** **Une entrée tient en ~800 caractères.** **Le registre se coupe par
+> tranches de cinquante numéros quand il dépasse ~150 Ko** : ce qui ne vit plus part dans une archive figée, une par
+> tranche (`Archives/REGISTRE_ARBITRAGES_ARCHIVE_R<a>_a_R<b>.md`), qui ne se réécrit jamais. Les numéros restent stables
+> d'un document à l'autre. **Une décision archivée qui change se rejoue ici, sous un numéro neuf qui cite l'ancien.**
 
 ---
 
@@ -14,7 +15,8 @@
 Chaque décision qui engage le projet — de produit, de visuel, de technique, de méthode — porte un numéro **R** stable.
 Un cadrage, un chantier, une méthode citent leurs R. On ne rejoue pas une décision rendue ; on la remplace par une neuve.
 
-**Une entrée dit** :
+**Une entrée dit** — en ~800 caractères ; le détail va au dossier du lot ou dans une note du domaine, l'entrée n'en garde
+que le résumé et le chemin :
 - **ce qui est décidé**, en une phrase en gras ;
 - **par qui** : « Tranché par le porteur » (avec ses mots quand ils décident, l'option choisie, l'heure si utile) /
   « Tranché par le CdP » (décision technique déléguée) ;
@@ -39,6 +41,9 @@ inverse.
 
 > **Au <date> : <n> pour l'exécution, <n> pour le compte inverse.**
 > *C'est la raison d'être de la rubrique « ce dont je ne suis pas sûr » exigée à chaque livraison.*
+> **À chaque coupe du registre**, le compte des entrées qui partent à l'archive se reporte ici comme une base
+> (« base R1–R<b> : <n> pour l'exécution, <n> pour le compte inverse »), et les entrées qui restent s'y ajoutent : le
+> compte ne se perd pas avec l'archive.
 
 ---
 

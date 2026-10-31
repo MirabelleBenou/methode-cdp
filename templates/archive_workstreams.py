@@ -7,7 +7,7 @@ automatically moves the workstreams accepted for long enough into frozen archive
 month), and makes it possible to find an archived workstream.
 
     python3 -B archive_workstreams.py archive --workstreams <workstreams.yaml> --archives <folder> \\
-        [--delay <days, 15 by default>] [--date YYYY-MM-DD] [--dry-run]
+        [--delay <days, 7 by default>] [--date YYYY-MM-DD] [--dry-run]
     python3 -B archive_workstreams.py search <pattern> --workstreams <workstreams.yaml> \\
         --archives <folder> [--everywhere]
 
@@ -70,7 +70,7 @@ RE_DATE = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
 MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August",
           "September", "October", "November", "December"]
 
-DEFAULT_DELAY = 15
+DEFAULT_DELAY = 7
 
 
 @dataclass

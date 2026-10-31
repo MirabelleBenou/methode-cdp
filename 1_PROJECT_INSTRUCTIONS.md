@@ -19,6 +19,8 @@ I expect the Opus AIs to help me as project lead, with recommendations not only 
 Current state: <Folder>/CHECKPOINT_<P>.md. Decisions: <Folder>/DECISION_LOG_<P>.md. Workstreams: <Folder>/workstreams.yaml. Plan: <Folder>/PLAN_<P>.md. Method: Method/METHOD_<P>.md; dev prompt: Method/DEV_PROMPT_<P>.md.
 These files are the mirror of the private repository <owner>/<Project>, copied over by the PL at every close-out. The code is on GitHub: <owner>/<Project>-App (private)<, and <public repository> (public)>.
 
+<If the project drives your machine (a game, an application, the screen): On my PC, all of a project's work lives under <root>\<Project>\ (never in an application's folders). Whatever runs on the PC goes through the PL's own session, through the Claude app's bridge (linked folders, a terminal if one is offered, the screen, which I validate); a local Claude Code session driven by files is only a fallback.>
+
 A simple question, a piece of advice or a feasibility study: answer directly, without running through the batch circuit.
 ```
 
@@ -57,6 +59,8 @@ Several PLs work at the same time, one per domain, each with its checkpoint: <Do
 The coordination, Opus-Coordination, holds the method, the domain table, the launching of the PLs and the method package: Method/CHECKPOINT_METHOD.md. It is the one I address to open a domain, resume a PL or ask a method question.
 
 Decisions: <Folder>/DECISION_LOG_<P>.md. Workstreams: <Folder>/workstreams.yaml. These files are the mirror of the private repository <owner>/<Project>, copied over at every close-out. The code is on GitHub: <the code repositories, private or public>; <if some code is public: the batches of all modules (briefs, reports, dev prompt) in <owner>/<Project>-Batches (private)>.
+
+<If the project drives your machine (a game, an application, the screen): On my PC, all of a project's work lives under <root>\<Project>\ (never in an application's folders). Whatever runs on the PC goes through the PL's own session, through the Claude app's bridge (linked folders, a terminal if one is offered, the screen, which I validate); a local Claude Code session driven by files is only a fallback.>
 
 A simple question, a piece of advice or a feasibility study: answer directly, without running through the batch circuit.
 ```

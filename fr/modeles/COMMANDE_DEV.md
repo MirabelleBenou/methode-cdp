@@ -1,7 +1,10 @@
 # LA COMMANDE DU DEV — le lancement en sous-agent, et la ligne de repli
 
 *Le CdP lance le dev lui-même (outil `Agent`, en arrière-plan), avec le modèle et le mode d'effort du cadrage. Le dev
-part **sans le contexte du CdP** : cette commande est tout ce qu'il sait en plus du dépôt. Elle tient en quatre parts.*
+part **sans le contexte du CdP** : cette commande est tout ce qu'il sait en plus du dépôt. Elle tient en quatre parts.
+**Les conditions durables sont au prompt du dev** (`modeles/PROMPT_DEV.md`, §1, §2 et §6) : **la commande ne redit que ce
+qui change d'un lot à l'autre** — le document à exécuter, le dossier de travail, les branches, les lignes de commit. Le dev
+ne parle qu'au CdP : par ce qu'il pousse et par sa réponse finale.*
 
 ---
 
@@ -15,14 +18,14 @@ Lis avant tout, dans cet ordre : PROMPT_DEV_<P>.md (racine de la branche), le ca
 Rapport attendu : lots/v<X.Y>/<RAPPORT_DEV.md | RAPPORT_DEV_<n>.md>.
 
 2 · LES CONDITIONS PRATIQUES — elles priment sur le cadrage et le prompt
-- Les dépôts sont déjà rattachés à cette session : n'appelle ni add_repo ni register_repo_root.
-- Tes clones vont dans /home/claude/dev_<lot>/, jamais dans les copies du CdP. Délai de commande généreux pour les clones.
-- Tu ne pousses que sur lot/v<X.Y> : jamais sur main, jamais de tag, jamais --force ; en avance rapide, après un fetch.
-- <Les lignes de fin des messages de commit imposées par la session, s'il y en a.>
+- Ton dossier de travail : /home/claude/dev_<lot>/ ; jamais <les chemins des copies du CdP>, qu'il occupe lui-même.
+- Tu ne pousses que sur lot/v<X.Y> <code public : et sur lot/<lot> du dépôt public, où tu pousses le code seul>.
+- Fin de chaque message de commit, ces lignes : <les lignes d'attribution imposées par la session du CdP, recopiées telles quelles>.
 - <Les outils déjà présents : navigateur à tel chemin, ne pas le réinstaller ; version de l'interpréteur.>
+<Les dépôts rattachés, les clones à part, les branches seules, aucun processus en arrière-plan : au prompt du dev, qui les porte. Un projet sans prompt du dev les redit ici.>
 
 3 · LES ARRÊTS
-Un point ambigu, impossible, ou qui contredit l'état réel du code : écris lots/v<X.Y>/ARRET_<n>.md, commite, pousse la branche, puis arrête-toi et dis-le dans ta réponse. Ne tranche pas.
+Un point ambigu, impossible, ou qui contredit l'état réel du code : écris lots/v<X.Y>/ARRET_<n>.md, commite, pousse la branche, puis arrête-toi et dis-le dans ta réponse. Ne tranche pas. Une maquette demandée : MAQUETTE_<n>.md, et arrête-toi de même (prompt du dev, §3 étape 6).
 
 4 · TA RÉPONSE FINALE, POUR LE CdP
 - les hashs complets : commit de livraison, commit du rapport ;
@@ -30,18 +33,22 @@ Un point ambigu, impossible, ou qui contredit l'état réel du code : écris lot
 - ce dont tu n'es pas sûr.
 ```
 
-**Après un arrêt** : le CdP pousse l'addendum et relance — le même sous-agent s'il est encore joignable (message de
-suite), sinon un neuf, dont la commande nomme aussi les rapports et arrêts précédents à lire.
+**Après un arrêt ou une maquette** : le CdP pousse l'addendum (ou, pour une maquette, regarde les images, les montre au
+porteur et recueille son verdict) et relance **le même sous-agent par message** (`SendMessage`) s'il est encore joignable ;
+sinon un neuf, dont la part 1 nomme aussi les arrêts et rapports précédents à lire. **Le verdict du porteur se transmet mot
+pour mot**, sans le reformuler ; un changement demandé fait un nouveau tour, `MAQUETTE_<n+1>.md`.
 
-**Ce qui reste au CdP pendant ce temps** : rien à attendre activement ; il est notifié à la fin. Il ne prédit jamais le
-résultat d'un sous-agent en cours.
+**Pendant ce temps** : le CdP ne touche pas aux chemins que le dev occupe — son dossier de travail, et ceux que le banc
+écrit en dur ; il est notifié à la fin, n'attend rien activement et ne prédit jamais le résultat d'un sous-agent en
+cours.
 
 ---
 
 ## B · Le repli — la ligne que le porteur colle
 
 *Quand le CdP ne peut pas lancer de sous-agent. Le CdP donne la ligne au mot près, avec au-dessus, en gras, le modèle,
-l'effort et la session : le porteur ne lit pas forcément le cadrage.*
+l'effort et la session : le porteur ne lit pas forcément le cadrage. Le prompt du dev dit alors au dev de ne dire au porteur
+qu'une phrase, quand il s'arrête ou livre.*
 
 **Sonnet · Medium · conversation neuve dans le projet**
 

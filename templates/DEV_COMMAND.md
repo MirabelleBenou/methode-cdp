@@ -1,7 +1,10 @@
 # THE DEV COMMAND — the sub-agent launch, and the fallback line
 
 *The PL launches the dev themselves (`Agent` tool, in the background), with the model and effort mode of the brief. The dev
-starts **without the PL's context**: this command is all they know beyond the repository. It comes in four parts.*
+starts **without the PL's context**: this command is all they know beyond the repository. It comes in four parts.
+**The standing conditions are in the dev prompt** (`templates/DEV_PROMPT.md`, §1, §2 and §6): **the command only repeats
+what changes from one batch to the next** — the document to execute, the working folder, the branches, the commit lines.
+The dev talks only to the PL: through what it pushes and through its final reply.*
 
 ---
 
@@ -15,14 +18,14 @@ Read first, in this order: DEV_PROMPT_<P>.md (root of the branch), the brief, it
 Expected report: batches/v<X.Y>/<DEV_REPORT.md | DEV_REPORT_<n>.md>.
 
 2 · THE PRACTICAL CONDITIONS — they take precedence over the brief and the prompt
-- The repositories are already attached to this session: call neither add_repo nor register_repo_root.
-- Your clones go in /home/claude/dev_<batch>/, never in the PL's copies. Generous command timeout for the clones.
-- You push only to batch/v<X.Y>: never to main, never a tag, never --force; fast-forward, after a fetch.
-- <The commit-message trailer lines imposed by the session, if any.>
+- Your working folder: /home/claude/dev_<batch>/; never <the paths of the PL's copies>, which it occupies itself.
+- You push only to batch/v<X.Y> <public code: and to batch/<batch> of the public repository, where you push the code alone>.
+- End of every commit message, these lines: <the attribution lines imposed by the PL's session, copied as they are>.
 - <The tools already present: browser at such path, do not reinstall it; interpreter version.>
+<The attached repositories, the separate clones, the batch branches only, no background process: in the dev prompt, which carries them. A project with no dev prompt repeats them here.>
 
 3 · THE STOPS
-A point that is ambiguous, impossible, or contradicts the real state of the code: write batches/v<X.Y>/STOP_<n>.md, commit, push the branch, then stop and say so in your reply. Do not decide.
+A point that is ambiguous, impossible, or contradicts the real state of the code: write batches/v<X.Y>/STOP_<n>.md, commit, push the branch, then stop and say so in your reply. Do not decide. A mock-up commanded: MOCKUP_<n>.md, and stop in the same way (dev prompt, §3 step 6).
 
 4 · YOUR FINAL REPLY, FOR THE PL
 - the full hashes: delivery commit, report commit;
@@ -30,18 +33,22 @@ A point that is ambiguous, impossible, or contradicts the real state of the code
 - what you are not sure about.
 ```
 
-**After a stop**: the PL pushes the addendum and relaunches — the same sub-agent if it can still be reached (follow-up
-message), otherwise a new one, whose command also names the previous reports and stops to read.
+**After a stop or a mock-up**: the PL pushes the addendum (or, for a mock-up, looks at the images, shows them to the owner
+and collects their verdict) and relaunches **the same sub-agent by message** (`SendMessage`) if it can still be reached;
+otherwise a new one, whose part 1 also names the previous stops and reports to read. **The owner's verdict is passed on
+word for word**, without rephrasing it; a requested change makes a new round, `MOCKUP_<n+1>.md`.
 
-**What is left to the PL in the meantime**: nothing to wait on actively; they are notified at the end. They never predict the
-result of a sub-agent that is running.
+**In the meantime**: the PL does not touch the paths the dev occupies — its working folder, and those the test bench
+writes in hard; they are notified at the end, wait on nothing actively and never predict the result of a sub-agent that
+is running.
 
 ---
 
 ## B · The fallback — the line the owner pastes
 
 *When the PL cannot launch a sub-agent. The PL gives the line word for word, with, above it in bold, the model, the
-effort and the session: the owner does not necessarily read the brief.*
+effort and the session: the owner does not necessarily read the brief. The dev prompt then tells the dev to tell the
+owner only one sentence, when it stops or delivers.*
 
 **Sonnet · Medium · new conversation in the project**
 

@@ -1,6 +1,7 @@
 # CHECKPOINT — <Projet> · <domaine> · `v<X.Y>`
 
-**Session en activité : aucune — libre depuis <date, heure>.** *(ou : `<identifiant court>`, depuis <heure>)*
+**Session en activité : aucune — libre depuis <date, heure>.** *(ou : `<identifiant court>`, depuis <heure> — les huit
+derniers caractères de l'identifiant de la session, celui de la ligne d'attribution de session de ses commits)*
 
 > **Reprise** — le porteur colle dans une conversation neuve du projet, avec Opus : « Tu es Opus-CdP-<Domaine>.
 > Reprends : rattache en accès push les dépôts <owner> <Projet>, <Projet>-App⟨, <Projet>-Lots, les autres dépôts du
@@ -13,7 +14,10 @@
 > *Source : dépôt privé `<owner>/<Projet>`, `<Dossier>/CHECKPOINT_<P>.md`. Le projet claude.ai en porte un miroir sous
 > le même nom, recopié par le CdP.*
 >
-> *Le checkpoint dit l'état **réel**, mesuré — pas l'état espéré. Il se réécrit en entier à chaque passation.*
+> *Le checkpoint dit l'état **réel**, mesuré — pas l'état espéré. Il se réécrit en entier à chaque passation. **Il tient
+> en 10 Ko** (10 240 octets) : la ligne fixe, le témoin, l'état, la file, ce qu'il faut pour reprendre ; l'historique part
+> à une archive du domaine (`<Dossier>/Archives/CHECKPOINT_<DOMAINE>_ARCHIVE_<date>.md`). Le contrôle 10 du vérificateur
+> le signale.*
 
 ---
 
@@ -60,11 +64,13 @@ changé depuis la dernière fois en gras.>
 
 ## §3 · La file — à arbitrer avec le porteur
 
-*La file ne porte que des **chantiers inscrits** (méthode §6) : chaque sujet est cité par son id de `chantiers.yaml`,
-entre accents graves. Un sujet qui n'a pas encore de chantier s'inscrit **d'abord** (à venir, à cadrer ou dette), puis se
-cite ; un chantier clos (en recette ou archivé) sort de la file. À chaque reprise et à chaque passation, relire cette
-file face à `chantiers.yaml`. Le début de ce titre est celui que porte `file:` dans la table des domaines
-(`Methode/domaines.yaml`) : le coordinateur le tient à jour si on le renomme.*
+*Cette section — `## §<n> · La file`, §3 ici — **porte la liste elle-même**, jamais un renvoi (« tout est au §0 »). La
+file ne porte que des **chantiers inscrits** (méthode §6) : chaque sujet est cité par son id de `chantiers.yaml`, entre
+accents graves. Un sujet qui n'a pas encore de chantier s'inscrit **d'abord** (à venir, à cadrer ou dette), puis se cite ;
+un chantier clos (en recette ou archivé) sort de la file. À chaque reprise et à chaque passation, relire cette file face à
+`chantiers.yaml`. Le début de ce titre est celui que porte `file:` dans la table des domaines (`Methode/domaines.yaml`) :
+si on le renomme, on change la ligne `file:` de son domaine dans le même commit — la seule ligne de la table qu'un CdP
+touche.*
 
 - **Décidé, à cadrer en premier** (R<n>) : `<id>` — <…>.
 - **Ensuite** : `<id>` — <…>.

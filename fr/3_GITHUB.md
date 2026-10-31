@@ -47,8 +47,9 @@ prend par le push, comme un numéro de décision.
 │       ├── CADRAGE.md         ← le CdP, un seul commit sur la branche du lot
 │       ├── ADDENDUM_<n>.md    ← le CdP, pour lever un arrêt ou un écart, avant la remise
 │       ├── ARRET_<n>.md       ← le dev, avant de s'arrêter
+│       ├── MAQUETTE_<n>.md    ← le dev, avant de s'arrêter sur une maquette demandée (une ligne par image, l'empreinte du code rendu)
 │       ├── RAPPORT_DEV.md     ← le dev, après le commit de livraison
-│       └── maquette/          ← la maquette du CdP, ou les images montrées
+│       └── maquette/          ← la maquette du CdP, ou les images que le dev rend et que le CdP montre
 ├── .gitattributes             ← export-ignore de lui-même aussi
 └── .gitignore
 ```
@@ -75,14 +76,19 @@ main ──●──────────────────────
 lot/vX.Y ●─ CADRAGE ─ … travail … ─ LIVRAISON ─ RAPPORT
           (CdP)       (dev)        (dev)        (dev)
                          └ ARRET_1 (dev) ─ ADDENDUM_1 (CdP) ┘  si besoin
+                         └ MAQUETTE_1 (dev) ─ verdict (CdP, mot pour mot) ┘  si le cadrage la demande
 ```
 
 1. **Le CdP crée `lot/v<X.Y>` depuis la tête de `main`** et y pousse **un seul commit** : `lots/v<X.Y>/CADRAGE.md` (et
    sa maquette s'il y en a une). Le cadrage nomme le commit de base (la tête de `main`).
 2. **Le CdP lance le dev en sous-agent** (`modeles/COMMANDE_DEV.md`) : modèle et effort du cadrage, clone dans un dossier
-   à part, rien d'autre en contexte. *Repli : une ligne que tu colles dans une conversation neuve.*
+   à part (`/home/claude/dev_<lot>/`, jamais aux chemins des copies du CdP), rien d'autre en contexte ; les conditions
+   durables sont au prompt du dev, et **le dev ne parle qu'au CdP**. *Repli : une ligne que tu colles dans une conversation
+   neuve.*
 3. **Un arrêt** : le dev pousse sa branche avec `ARRET_<n>.md` et s'arrête. Le CdP lit, pousse `ADDENDUM_<n>.md` sur la
-   même branche, relance le dev.
+   même branche, relance le dev par message. **Une maquette demandée au dev passe par un arrêt** : il pousse les images et
+   `MAQUETTE_<n>.md` et s'arrête ; le CdP les regarde, te les montre, puis relance le même sous-agent avec ton verdict, mot
+   pour mot.
 4. **La livraison** : le dev pousse son commit de livraison, **puis** `RAPPORT_DEV.md` dans un commit à part (le rapport
    n'entre pas dans l'archive, l'empreinte n'en dépend pas).
 5. **La réception** : le CdP refait `git archive` du commit de livraison, remesure à froid, relit le diff, regarde les

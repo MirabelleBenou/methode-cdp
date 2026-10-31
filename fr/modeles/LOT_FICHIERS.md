@@ -75,8 +75,8 @@ demandes du porteur, puis les règles qui en découlent.*
 - **C1** — tenu / non tenu — <mesure>.
 
 ## 4 · La maquette (s'il y en a une)
-Images montrées ; mots de validation du porteur ; chaque demande mot pour mot et ce que j'en ai fait ; tours ; empreinte
-notée à la validation.
+Images montrées ; verdict du porteur, transmis par le CdP mot pour mot ; chaque demande mot pour mot et ce que j'en ai fait ;
+tours ; empreinte notée à la validation.
 
 ## 5 · Les sorties brutes
 <rituel, tests, lint, syntaxe, migration, empreinte — tels quels>

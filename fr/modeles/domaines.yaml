@@ -6,8 +6,10 @@
 # domaine (méthode §6).
 #
 # QUI LA TIENT : le coordinateur, au pas de la table des domaines de la méthode (§1 bis) et du README des vivants.
-# QUAND LA CHANGER : un domaine ouvert (une entrée de plus), un domaine fermé (une entrée de moins), ou une section de
-# file renommée dans un checkpoint (`file:` suit le titre). Une table en retard fait un écart au contrôle 9.
+# QUAND LA CHANGER : un domaine ouvert (une entrée de plus), un domaine fermé (une entrée de moins). Une section de file
+# renommée dans un checkpoint : le CdP du domaine change lui-même `file:` dans le même commit — la seule ligne de la table
+# qu'il touche. Une table en retard fait un écart au contrôle 9.
+# LA COORDINATION A SON ENTRÉE, comme un domaine : elle a une file comme les autres.
 #
 # Même forme pauvre que chantiers.yaml (pas du YAML standard) : une entrée commence par « - domaine: », chaque clé tient
 # sur UNE ligne « clé: valeur », les lignes vides et celles qui commencent par « # » sont ignorées. Pas de commentaire en
@@ -17,8 +19,10 @@
 #   domaine   : le nom court du domaine (obligatoire)
 #   cdp       : le nom du CdP du domaine ; une entrée de chantiers.yaml qui porte ce `cdp:` est à lui
 #   checkpoint: le chemin du checkpoint du domaine (obligatoire)
-#   file      : le début exact du titre de la section du checkpoint qui porte sa file — la ligne « ## … » ; vide si le
-#               checkpoint n'a pas de section de file. Le titre se copie du checkpoint, caractère pour caractère
+#   file      : le début exact du titre de la section du checkpoint qui porte sa file — la ligne « ## … » (par exemple
+#               « ## §3 · La file »). Chaque checkpoint a cette section, et elle porte la liste elle-même, jamais un
+#               renvoi. VIDE = UN ÉCART DU DOMAINE : le vérificateur signale « aucune section de file déclarée ». Le titre
+#               se copie du checkpoint, caractère pour caractère
 #   modules   : les modules de chantiers.yaml qui sont à lui, séparés par des espaces (peut être vide)
 #   prefixes  : facultatif — les débuts d'id de chantier qui sont à lui, séparés par des espaces ; ils l'emportent sur
 #               les modules
@@ -39,3 +43,9 @@
   file: ## §3 · La file
   modules: <module-2> <module-3>
   prefixes: <préfixe->
+
+- domaine: coordination
+  cdp: Opus-Coordination
+  checkpoint: Methode/CHECKPOINT_METHODE.md
+  file: ## §3 · La file
+  modules: methode

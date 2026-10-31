@@ -48,8 +48,9 @@ push, like a decision number.
 │       ├── BRIEF.md           ← the PL, a single commit on the batch's branch
 │       ├── ADDENDUM_<n>.md    ← the PL, to lift a stop or a gap, before hand-over
 │       ├── STOP_<n>.md        ← the dev, before stopping
+│       ├── MOCKUP_<n>.md      ← the dev, before stopping on a requested mock-up (one line per image, the fingerprint of the rendered code)
 │       ├── DEV_REPORT.md      ← the dev, after the delivery commit
-│       └── mock-up/            ← the PL's mock-up, or the images shown
+│       └── mock-up/            ← the PL's mock-up, or the images the dev renders and the PL shows
 ├── .gitattributes             ← export-ignore of itself too
 └── .gitignore
 ```
@@ -76,14 +77,19 @@ main ────●────────────────────
 batch/vX.Y ●─ BRIEF ─ … work … ─ DELIVERY ─ REPORT
               (PL)    (dev)      (dev)      (dev)
                          └ STOP_1 (dev) ─ ADDENDUM_1 (PL) ┘  if needed
+                         └ MOCKUP_1 (dev) ─ verdict (PL, word for word) ┘  if the brief asks for it
 ```
 
 1. **The PL creates `batch/v<X.Y>` from the head of `main`** and pushes **a single commit** to it:
    `batches/v<X.Y>/BRIEF.md` (and its mock-up if there is one). The brief names the base commit (the head of `main`).
 2. **The PL launches the dev as a sub-agent** (`templates/DEV_COMMAND.md`): model and effort from the brief, clone in a
-   separate folder, nothing else in context. *Fallback: a line you paste into a new conversation.*
+   separate folder (`/home/claude/dev_<batch>/`, never at the paths of the PL's copies), nothing else in context; the
+   standing conditions are in the dev prompt, and **the dev talks only to the PL**. *Fallback: a line you paste into a new
+   conversation.*
 3. **A stop**: the dev pushes its branch with `STOP_<n>.md` and stops. The PL reads it, pushes `ADDENDUM_<n>.md` on the
-   same branch, relaunches the dev.
+   same branch, relaunches the dev by message. **A mock-up requested from the dev goes through a stop**: it pushes the
+   images and `MOCKUP_<n>.md` and stops; the PL looks at them, shows them to you, then relaunches the same sub-agent with
+   your verdict, word for word.
 4. **The delivery**: the dev pushes its delivery commit, **then** `DEV_REPORT.md` in a separate commit (the report
    does not enter the archive, the hash does not depend on it).
 5. **The acceptance**: the PL redoes `git archive` of the delivery commit, re-measures cold, rereads the diff, looks at

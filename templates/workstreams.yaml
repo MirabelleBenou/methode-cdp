@@ -11,7 +11,7 @@
 #   status     : upcoming | to-brief | in-flight | debt | accepted
 #                (accepted = delivered and validated; the entry is kept, for the history)
 #   accepted-on: the date it became accepted, set by archive_workstreams.py (never written or corrected by hand);
-#                15 days later, the entry moves out to Archives/WORKSTREAMS_<YYYY-MM>.yaml — to find it again:
+#                seven days later, the entry moves out to Archives/WORKSTREAMS_<YYYY-MM>.yaml — to find it again:
 #                python3 -B archive_workstreams.py search <id or word> --workstreams workstreams.yaml --archives Archives
 #   module     : <module-1> | <module-2> | core | tooling | doc | operations
 #   category   : screen | data | engine | tooling | doc | operations
@@ -28,6 +28,9 @@
 #   cost       : what it will cost (upcoming) or what it cost (delivered: version, dev, duration, stops, acceptance)
 #   basis      : what the workstream rests on — the owner's request, the measurement, the defect seen
 #   refs       : D from the decision log · brief · report · other workstreams
+#
+# An entry fits in ~1.5 KB: the state, the decision, the next move. A long exchange goes to the batch folder or into a
+# domain note; the entry only keeps the summary and the path (method §6, “the caps”).
 #
 # Labels displayed by the page (optional; otherwise the value itself):
 # label: <module-1> = <Module 1 label>

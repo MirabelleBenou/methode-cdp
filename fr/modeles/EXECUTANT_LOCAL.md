@@ -1,5 +1,11 @@
-# L'exécutant local — Claude Code sur le PC, piloté par fichiers · v1
+# L'exécutant local, le repli — Claude Code sur le PC, piloté par fichiers · v2
 ### 25 octobre 2026 · éprouvé sur un projet réel (captures d'écran d'un jeu installé sur le PC)
+
+> **Le pont d'abord.** Depuis que l'application Claude offre un **pont** quand la machine du porteur est reliée — dossiers
+> reliés (lire, écrire), terminal s'il est offert, écran par l'usage de l'ordinateur, le porteur validant l'accès dans la
+> conversation du CdP —, **la session du CdP travaille elle-même sur la machine** (méthode §1, skill §5 bis). **Ce
+> document décrit désormais le repli**, pour quand le pont ne s'offre pas. Raison de ce rang : piloté par fichiers,
+> l'exécutant s'est bloqué quand le porteur était loin de sa machine — demandes d'accès à l'écran refusées, attente sans fin.
 
 *Pour le travail qui doit tourner **sur le PC du porteur** (un jeu, une application installée, l'écran, un matériel) et que le
 CdP, dans le cloud, ne peut pas exécuter. Le reste de la méthode ne change pas : le CdP cadre et réceptionne, l'exécutant
@@ -9,19 +15,22 @@ exécute, le porteur décide.*
 
 ## 1. Quand s'en servir
 
-- Le CdP voit les dossiers du PC (dossiers connectés à la conversation : lister, lire, écrire des fichiers), mais **n'y a
-  pas de terminal** : il ne lance rien sur la machine.
+- **Quand le pont est offert**, le CdP travaille lui-même sur la machine : ce document ne sert pas.
+- **Quand le pont ne s'offre pas** (la machine n'est pas reliée, ou son terminal n'est pas offert), le CdP voit au mieux
+  les dossiers du PC (dossiers connectés à la conversation : lister, lire, écrire des fichiers), mais **n'y a pas de
+  terminal** : il ne lance rien sur la machine.
 - Le contrôle de l'écran par le CdP ne remplace pas un shell : les terminaux et éditeurs y sont en clic seulement (pas de
   frappe).
-- Dès qu'il faut **exécuter** sur le PC (un script Python, un programme, une capture d'écran en pleine résolution), on
-  passe par une **session Claude Code locale** : app Desktop, onglet Code, environnement **Local**. C'est l'exécutant.
+- Dès qu'il faut **exécuter** sur le PC (un script Python, un programme, une capture d'écran en pleine résolution) et que
+  le pont ne le permet pas, on passe par une **session Claude Code locale** : app Desktop, onglet Code, environnement
+  **Local**. C'est l'exécutant.
 - Un lot qui ne touche que du code dans un dépôt reste au dev en sous-agent, dans le cloud (méthode §5).
 
 ## 2. Les rôles
 
 | | fait | ne fait pas |
 |---|---|---|
-| **CdP** (cloud) | écrit cadrages et addenda dans l'espace du projet ; lit les sorties ; donne le feu vert ; répond aux questions ; re-mesure à froid ; verse au dépôt | n'exécute rien sur le PC |
+| **CdP** (cloud) | écrit cadrages et addenda dans l'espace du projet ; lit les sorties ; donne le feu vert ; répond aux questions ; re-mesure à froid ; verse au dépôt | n'exécute rien sur le PC, au repli |
 | **Exécutant** (Claude Code local, Sonnet) | lit le cadrage, exécute, écrit son état et ses questions en fichiers, rédige le rapport | ne décide rien hors cadrage ; ne parle pas au porteur dans son chat une fois la synchro lancée |
 | **Le porteur** | colle **une ligne** par cadrage ou addendum ; accepte les autorisations ; fait les gestes physiques demandés (lancer le jeu, un réglage à l'écran) | ne relaie pas les messages entre les deux |
 

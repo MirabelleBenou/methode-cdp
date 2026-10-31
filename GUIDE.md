@@ -1,5 +1,5 @@
-# PL METHOD PACKAGE · v16
-### 30 October 2026 · to start a new project under the PL method
+# PL METHOD PACKAGE · v17
+### 31 October 2026 · to start a new project under the PL method
 
 *This package reproduces a way of working proven batch after batch: a **project lead** (PL, Opus) who decides
 with you, writes the briefs, launches the dev and accepts; a **dev** (Sonnet by default) who builds one batch at a time;
@@ -29,11 +29,11 @@ with you, writes the briefs, launches the dev and accepts; a **dev** (Sonnet by 
 | `templates/workstreams.yaml` | the single source of the workstreams (upcoming, debts, delivered) | living-docs repository, mirror in the project |
 | `templates/context.py` | measures the context of the PL session: warn at 600,000 tokens, hand over at 700,000 | `pl_tools/` in the living-docs repository |
 | `templates/make_board.py` | builds `workstreams.html`, the readable page of the workstreams, at every write of the yaml | living-docs repository, mirror in the project |
-| `templates/check_living_docs.py` | checks the shared living docs (decision numbers, workstreams, reserved versions, workstreams in flight, board, log) when several PLs write to them; read-only; with `--archives <folder>`, checks 3 (identifiers) and 7 (log) also read the workstream archives; with `--domains <file>` (and `--root <folder>`), check 9 cross-checks each checkpoint's queue with `workstreams.yaml` | living-docs repository, run by the coordinator and the arbiter |
-| `templates/domains.yaml` | **modes B and C** — the domain table that check 9 of `check_living_docs.py` reads: per domain, its PL, its checkpoint, the title of its queue section, its modules; kept by the coordinator | `Method/domains.yaml` in the living-docs repository, mirror in the project |
-| `templates/archive_workstreams.py` | archives the accepted workstreams: dates `accepted-on:` on every entry that becomes accepted, moves out to `Archives/WORKSTREAMS_<YYYY-MM>.yaml` those accepted for 15 days (lossless, idempotent, `--dry-run`); `search` finds a workstream, living or archived | living-docs repository, run by the arbiter at every run, otherwise by the PL or the coordinator at their close-out |
+| `templates/check_living_docs.py` | checks the shared living docs (decision numbers, workstreams, reserved versions, workstreams in flight, board, log) when several PLs write to them; read-only; with `--archives <folder>`, checks 3 (identifiers) and 7 (log) also read the workstream archives; with `--domains <file>` (and `--root <folder>`), check 9 cross-checks each checkpoint's queue with `workstreams.yaml`, check 10 flags a checkpoint over 10 KB (`--checkpoint-cap`) | living-docs repository, run by the coordinator and the arbiter |
+| `templates/domains.yaml` | **modes B and C** — the domain table that check 9 of `check_living_docs.py` reads: per domain, its PL, its checkpoint, the title of its queue section (stable: `## §<n> · The queue`), its modules; the coordination has an entry of its own; kept by the coordinator | `Method/domains.yaml` in the living-docs repository, mirror in the project |
+| `templates/archive_workstreams.py` | archives the accepted workstreams: dates `accepted-on:` on every entry that becomes accepted, moves out to `Archives/WORKSTREAMS_<YYYY-MM>.yaml` those accepted for 7 days (lossless, idempotent, `--dry-run`); `search` finds a workstream, living or archived | living-docs repository, run by the arbiter at every run, otherwise by the PL or the coordinator at their close-out |
 | `templates/ARBITER.md` | **optional, mode C** — the living-docs arbiter, explained in full: what it is, why (the real cases), when, what it costs, how to read what it produces; its procedure (check of the living docs **and of the checkpoints**, reporting without correcting, archiving of the accepted workstreams, the Monday reading), its log, the set-up step by step with the “who does what” (time, prompt, notifications), the trial | `Method/ARBITER.md` in the living-docs repository, read by the scheduled task |
-| `templates/LOCAL_RUNNER.md` | the local Claude Code runner on the PC, driven by files (`sync\`) | used by the PL and the runner |
+| `templates/LOCAL_RUNNER.md` | **the fallback** — the local Claude Code runner on the PC, driven by files (`sync\`), for when the Claude app's bridge does not give your machine | used by the PL and the runner |
 | `templates/SERVER_RUNNER.md` | **optional** — the server runner: a deterministic program on the production server, driven by an orders repository; the PL deploys on your “go” (step-by-step guide); the same orders repository serves as the **file-exchange bridge**: data produced in a session reaches the server through `transfers/` (§2c). **No production server: skip it** | used by the PL, and by you at installation |
 | `templates/server-runner/` | **optional** — its reference implementation (Python, systemd, installer, tests), in French, with example values | the project's code repository, then the server |
 | `templates/living-docs-repo/` | `README.md` of the living-docs repository | living-docs repository |
@@ -117,6 +117,14 @@ docs and the checkpoints and reports without correcting. Useless in A, optional 
 what it costs, how to set it up and read it are in §2b. **Who archives** the accepted workstreams: the arbiter, if there
 is one; without it (modes A and B), the PL or the coordinator runs `archive_workstreams.py` at their close-out.
 
+**Three things the method fixes so that the tools find their way.** *The baton*: a session's short id is the last eight
+characters of its session identifier (the one in the attribution line of its commits); all the sessions of one account
+share the beginning. *The queue*: each checkpoint carries it under a stable title `## §<n> · The queue`, with the list
+itself; the domain table names that title, an empty `queue:` line is a gap, and the coordination has an entry of its own
+there. *Your machine*: when the project drives a game or an application on your PC, the PL's session uses it **through
+the Claude app's bridge** (linked folders, a terminal if one is offered, the screen, which you validate); the local
+runner is only the fallback, and a workstream that needs the machine stays in debt while you are not there.
+
 **How the PLs talk to each other**:
 
 | channel | what it carries | who writes | who reads |
@@ -161,9 +169,10 @@ dated trace even when all is well, and it corrects nothing — it cannot make an
 **When.** Useless in A; optional in B; recommended in C, as soon as several PLs write the same living docs on the same
 day.
 
-**Every morning, and on Mondays.** The check of the living docs (`check_living_docs.py --archives --domains`: nine
-checks, including check 9 “checkpoints”), the batons judged by their silence, one `for:` workstream per new gap (for
-check 9, a single one per domain), the archiving, a line in the log, a summary. **On Mondays**, in addition: the reading
+**Every morning, and on Mondays.** The check of the living docs (`check_living_docs.py --archives --domains`: ten
+checks, including check 9 “checkpoints” and check 10, the size of the checkpoints), the batons judged by their silence, one
+`for:` workstream per new gap (for checks 9 and 10, a single one per domain), the archiving of the workstreams accepted
+for seven days, a line in the log, a summary. **On Mondays**, in addition: the reading
 of the checkpoints against the decisions of the last seven days — it flags only what a decision or a workstream
 contradicts, quoting the sentence and the evidence, with no opinion.
 
@@ -185,7 +194,7 @@ or you create the scheduled task (off-the-hour time, prompt, push notifications)
 checks the log line and the commit.
 
 **The verdict after a week** (which includes a Monday): keep, adjust or stop, from the log (one line a day?), the
-findings (true?), what the PLs did with them, the archiving and check 9. A false positive is corrected in the
+findings (true?), what the PLs did with them, the archiving and checks 9 and 10. A false positive is corrected in the
 procedure, not case by case.
 
 ---
@@ -384,8 +393,8 @@ three modes.
 |---|---|---|---|---|
 | Project method | living-docs repository `Method/` | yes | PL | at a version, after a batch that caught it out |
 | Dev prompt | root of the code repository — **`<Project>-Batches` repository if the code is public** | yes | PL | at a version |
-| Checkpoint | living-docs repository | yes | PL | at every handover |
-| Decision log | living-docs repository | yes | PL | at every closed batch |
+| Checkpoint (10 KB at most, the history in the domain's archive) | living-docs repository | yes | PL | at every handover |
+| Decision log (an entry of about 800 characters; cut into slices of 50 numbers beyond about 150 KB) | living-docs repository | yes | PL | at every closed batch |
 | Plan + version log | living-docs repository | yes | PL | at every batch that takes a version |
 | `workstreams.yaml` and `workstreams.html` | living-docs repository | yes, and the page as an artifact | PL | at every write of the yaml |
 | Domain table `Method/domains.yaml` | living-docs repository | yes | coordinator | a domain opened or closed, a queue section renamed |
@@ -393,7 +402,7 @@ three modes.
 | Acceptance expected results | living-docs repository `expected/<version>/` | no | PL | at the brief |
 | The PL's throwaway scripts | living-docs repository `pl_tools/` | no | PL | as needed |
 | Code, test bench, `CHANGELOG` | code repository | no | dev | within a batch |
-| Brief, addenda, stops, report, mock-up | code repository `batches/<version>/` — **`<Project>-Batches` repository if the code is public** | **no** | PL (brief, addenda), dev (stops, report) | during the batch |
+| Brief, addenda, stops, report, mock-up | code repository `batches/<version>/` — **`<Project>-Batches` repository if the code is public** | **no** | PL (brief, addenda), dev (stops, report, `MOCKUP_<n>.md`, one line per image with its fingerprint) | during the batch |
 | Specs, style guide, studies | project, written once | — | PL | once, never rewritten |
 | Production data, logs | **no repository** | no | you | uploaded into the session that needs them |
 | Data produced in a session, to be served (a package, tiles) — with a server runner | orders repository, `transfers/<domain>/<edition>/` (§2c) | no | the PL who produces it, **never the dev** | at the edition; removed from the tree once the report has succeeded |
@@ -426,7 +435,7 @@ the living docs in the repository and their mirror; the fast-forward merge after
 ## 6 · The costs to expect (measured on a first project)
 
 - an ordinary batch: 5 to 20 minutes of dev, a few minutes of acceptance;
-- a screen with a PL mock-up: 15 minutes to 1 h 30 of dev, one or two mock-up passes with you;
+- a screen with a mock-up: 15 minutes to 1 h 30 of dev, one or two mock-up passes with you (made by the PL before the launch, or asked of the dev, who delivers it through a stop; the PL shows it to you and relays your verdict word for word);
 - an addendum launched by the PL: a few minutes, without a single action on your part;
 - a PL session: hand over before ~700,000 tokens of context, or at a natural end of the queue.
 
@@ -485,3 +494,10 @@ v16, 30 October 2026 — the orders repository, file-exchange bridge: how data g
 (`transfers/<domain>/<edition>/` of the orders repository, then a `fichiers` order), produced on the PC (`entree/`),
 published elsewhere (`telecharger`), never the history of a public code repository; why, the PL's step by step, limits
 (95 MiB per file, the runner's clone) (§2c; `templates/SERVER_RUNNER.md` v2).
+v17, 31 October 2026 — the dev stays a sub-agent of the PL up to the mock-up, which it delivers through a stop, and talks
+only to the PL (`templates/DEV_PROMPT.md`, `templates/DEV_COMMAND.md`); the baton defined (the last eight characters of
+the session identifier); a checkpoint's queue under a stable title `## §<n> · The queue`, an empty `queue:` line
+flagged, the coordination in the domain table; the owner's machine through the Claude app's bridge, the local runner as
+the fallback (`templates/LOCAL_RUNNER.md` v2); short living docs: entry caps, accepted workstreams archived at seven
+days, the log cut into slices of 50 numbers, a 10 KB checkpoint and check 10 (`templates/ARBITER.md` v4: ten checks);
+a project's method carries only its common part; the board republished by a light sub-agent; skill v16.

@@ -11,7 +11,7 @@
 #   statut     : a-venir | a-cadrer | en-vol | dette | recette
 #                (recette = livré et validé ; on garde l'entrée, pour l'historique)
 #   recette-le : la date d'entrée en recette, posée par archiver_chantiers.py (jamais écrite ni corrigée à la main) ;
-#                15 jours après, l'entrée sort vers Archives/CHANTIERS_<AAAA-MM>.yaml — la retrouver :
+#                sept jours après, l'entrée sort vers Archives/CHANTIERS_<AAAA-MM>.yaml — la retrouver :
 #                python3 -B archiver_chantiers.py chercher <id ou mot> --chantiers chantiers.yaml --archives Archives
 #   module     : <module-1> | <module-2> | socle | outillage | doc | exploitation
 #   categorie  : ecran | donnees | moteur | outillage | doc | exploitation
@@ -28,6 +28,9 @@
 #   cout       : ce que ça coûte (à venir) ou ce que ça a coûté (livré : version, dev, durée, arrêts, réception)
 #   mesure     : ce qui fonde le chantier — la demande du porteur, la mesure, le défaut vu
 #   refs       : R du registre · cadrage · rapport · autres chantiers
+#
+# Une entrée tient en ~1,5 Ko : l'état, la décision, le prochain geste. Un échange long va au dossier du lot ou dans une
+# note du domaine ; l'entrée n'en garde que le résumé et le chemin (méthode §6, « les plafonds »).
 #
 # Libellés affichés par la page (facultatifs ; sinon la valeur elle-même) :
 # libelle: <module-1> = <Libellé du module 1>

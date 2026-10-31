@@ -68,7 +68,7 @@ Les domaines en activité : <une ligne par CdP : son nom, son checkpoint, ses d�
 
 1. Lis la méthode du projet (§1 bis en entier), le README des vivants, chaque checkpoint de domaine (§0 et sa file), et LISEZ_MOI.md §2 bis, §2 ter et §3 bis du package.
 2. Crée ton checkpoint, Methode/CHECKPOINT_METHODE.md, avec son témoin, et pose-le par un push.
-3. Tiens la table des domaines au même pas en trois endroits : la méthode §1 bis, le README des vivants (avec la ligne fixe de chaque CdP, qui nomme tous ses dépôts) et Methode/domaines.yaml (modèle modeles/domaines.yaml du package). Vérifie que chaque checkpoint a une section de file et que chaque sujet de sa file a son chantier.
+3. Tiens la table des domaines au même pas en trois endroits : la méthode §1 bis, le README des vivants (avec la ligne fixe de chaque CdP, qui nomme tous ses dépôts) et Methode/domaines.yaml (modèle modeles/domaines.yaml du package). Vérifie que chaque checkpoint a sa section de file, qui porte la liste elle-même, que la coordination a sa propre entrée dans la table, et que chaque sujet de la file a son chantier.
 4. Si un produit a plusieurs CdP de modules, propose-moi sa fiche produit (le commun : rituel, banc, circuit, pièges ; jamais l'état).
 5. Propose-moi l'arbitre des vivants (modeles/ARBITRE.md du package) : ce qu'il apportera ici, ce qu'il coûte et sa mise en place, en options numérotées avec ta recommandation.
 6. Redonne-moi le texte complet des instructions du projet, version à plusieurs CdP (1_INSTRUCTIONS_PROJET.md), à coller.

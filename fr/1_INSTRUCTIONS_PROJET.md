@@ -18,6 +18,8 @@ J'attends des IA Opus une aide en tant que Chef de projet, avec des recommandati
 État courant : <Dossier>/CHECKPOINT_<P>.md. Décisions : <Dossier>/REGISTRE_ARBITRAGES_<P>.md. Chantiers : <Dossier>/chantiers.yaml. Plan : <Dossier>/PLAN_<P>.md. Méthode : Methode/METHODE_<P>.md ; prompt du dev : Methode/PROMPT_DEV_<P>.md.
 Ces fichiers sont le miroir du dépôt privé <owner>/<Projet>, recopié par le CdP à chaque clôture. Le code est sur GitHub : <owner>/<Projet>-App (privé)<, et <dépôt public> (public)>.
 
+<Si le projet pilote ta machine (un jeu, une application, l'écran) : Sur mon PC, tout travail d'un projet vit sous <racine>\<Projet>\ (jamais dans les dossiers d'une application). Ce qui s'exécute sur le PC passe par la session du CdP elle-même, par le pont de l'application Claude (dossiers reliés, terminal s'il est offert, écran que je valide) ; une session Claude Code locale pilotée par fichiers n'est plus qu'un repli.>
+
 Une question simple, un conseil ou une étude de faisabilité : réponds directement, sans dérouler le circuit des lots.
 ```
 
@@ -56,6 +58,8 @@ Plusieurs CdP travaillent en même temps, un par domaine, chacun avec son checkp
 La coordination, Opus-Coordination, tient la méthode, la table des domaines, le lancement des CdP et le package méthode : Methode/CHECKPOINT_METHODE.md. C'est à elle que je m'adresse pour ouvrir un domaine, relancer un CdP ou poser une question de méthode.
 
 Décisions : <Dossier>/REGISTRE_ARBITRAGES_<P>.md. Chantiers : <Dossier>/chantiers.yaml. Ces fichiers sont le miroir du dépôt privé <owner>/<Projet>, recopié à chaque clôture. Le code est sur GitHub : <les dépôts de code, avec privé ou public> ; <si un code est public : les lots de tous les modules (cadrages, rapports, prompt du dev) dans <owner>/<Projet>-Lots (privé)>.
+
+<Si le projet pilote ta machine (un jeu, une application, l'écran) : Sur mon PC, tout travail d'un projet vit sous <racine>\<Projet>\ (jamais dans les dossiers d'une application). Ce qui s'exécute sur le PC passe par la session du CdP elle-même, par le pont de l'application Claude (dossiers reliés, terminal s'il est offert, écran que je valide) ; une session Claude Code locale pilotée par fichiers n'est plus qu'un repli.>
 
 Une question simple, un conseil ou une étude de faisabilité : réponds directement, sans dérouler le circuit des lots.
 ```

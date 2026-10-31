@@ -8,7 +8,7 @@ qui s'en régénère (chantiers.html) et le journal des lots du plan.
 
     python3 -B verifier_vivants.py --chantiers <chantiers.yaml> --registre <registre.md> \\
         [--tableau <chantiers.html> --generateur <generer_tableau.py>] [--journal <plan.md>] \\
-        [--archives <dossier>] [--domaines <fichier> [--racine <dossier>]]
+        [--archives <dossier>] [--domaines <fichier> [--racine <dossier>] [--plafond-checkpoint <octets>]]
 
 « --tableau » et « --generateur » vont ensemble ; « --journal » est facultatif.
 « --archives » donne le dossier des archives de chantiers (les fichiers CHANTIERS_*.yaml,
@@ -16,10 +16,13 @@ même forme que chantiers.yaml, que fait archiver_chantiers.py) ; il doit existe
 option, rien ne change. Avec elle, deux contrôles s'étendent aux archives : le 3 et le 7.
 « --domaines » donne la table des domaines (voir le contrôle 9) et déclenche ce contrôle ;
 « --racine » est le dossier d'où se lisent les chemins de cette table (le dossier courant
-par défaut) ; il ne s'emploie qu'avec « --domaines ». Un contrôle dont les fichiers ne sont
+par défaut) ; il ne s'emploie qu'avec « --domaines ». « --plafond-checkpoint » donne le
+plafond de taille d'un checkpoint, en octets (un entier positif, 10240 par défaut) : un
+checkpoint se relit en entier à chaque reprise, il doit rester court (voir le contrôle 10) ;
+il ne s'emploie, lui aussi, qu'avec « --domaines ». Un contrôle dont les fichiers ne sont
 pas donnés s'affiche « non demandé ».
 
-Les neuf contrôles, dans cet ordre :
+Les dix contrôles, dans cet ordre :
   1. numéros du registre : les lignes « | **R<n>** | » n'ont aucun numéro en
      double et aucun trou entre le plus petit et le plus grand ;
   2. réservations : une ligne « | **R<n>** | *réservé … » encore présente est un
@@ -59,9 +62,10 @@ Les neuf contrôles, dans cet ordre :
      commence par « - domaine: », une clé par ligne, les lignes vides et « # » ignorées.
      Les clés : « domaine » (nom court), « cdp » (le chef de projet du domaine),
      « checkpoint » (chemin du checkpoint, relatif à « --racine »), « file » (le début exact
-     du titre de la section de file, une ligne qui commence par cette valeur ; vide : pas de
-     section de file), « modules » (les modules de chantiers.yaml du domaine, séparés par
-     des espaces, peut être vide) et « prefixes » (facultatif : des débuts d'id du domaine).
+     du titre de la section de file, une ligne qui commence par cette valeur ; vide : aucune
+     section de file déclarée, ce qui est un écart du domaine), « modules » (les modules de
+     chantiers.yaml du domaine, séparés par des espaces, peut être vide) et « prefixes »
+     (facultatif : des débuts d'id du domaine).
      Une entrée de chantiers.yaml est au premier domaine qui convient, selon cet ordre de
      règles : son « cdp: » égale celui du domaine, sinon son id commence par l'un des
      préfixes, sinon son « module: » est l'un des modules ; sinon elle n'est à aucun
@@ -71,14 +75,27 @@ Les neuf contrôles, dans cet ordre :
      clos, c'est-à-dire en « statut: recette » ou seulement archivé (les archives viennent
      de « --archives ») ; (c) chaque entrée du domaine en « statut » a-venir, a-cadrer,
      dette ou en-vol, sans clé « pour: » (un message, pas un sujet), est citée par le
-     checkpoint. Une table en défaut (checkpoint introuvable, section de file introuvable,
-     entrée sans « domaine » ou sans « checkpoint ») est un écart, et le domaine n'est pas
-     contrôlé plus avant. Le compte est « <n> domaines, <b> cités clos, <c> non cités ».
+     checkpoint. Un « file: » vide fait une ligne d'écart du domaine (« aucune section de file
+     déclarée »), placée avant ses lignes (c) ; (b) ne s'y applique pas, (c) oui. Une table en
+     défaut (checkpoint introuvable, section de file introuvable, entrée sans « domaine » ou
+     sans « checkpoint ») est un écart, et le domaine n'est pas contrôlé plus avant. Le compte
+     est « <n> domaines, <b> cités clos, <c> non cités, <v> sans section de file » ;
+ 10. taille des checkpoints : un checkpoint se relit en entier à chaque reprise de session ;
+     au-delà du plafond, il coûte à chaque reprise et son historique doit partir à une
+     archive. Le contrôle demande « --domaines ». Pour chaque domaine (dans l'ordre de la
+     table) qui a un « domaine » et un « checkpoint », il mesure la taille en octets du
+     fichier du checkpoint sur le disque ; strictement au-dessus de « --plafond-checkpoint »
+     (10240 par défaut), c'est une ligne d'écart « <domaine> : <chemin> pèse <n> octets,
+     plafond <p> » (le chemin tel qu'écrit dans la table). Un checkpoint introuvable ou une
+     entrée sans « domaine » ou sans « checkpoint » est ignoré ici : le contrôle 9 le
+     signale déjà. Le compte est « <n> domaines, <k> au-delà de <p> octets », <n> étant les
+     entrées qui ont un domaine et un checkpoint.
 
 Sortie : une ligne par contrôle (OK, ÉCART ou avertissement, avec un compte),
 le détail des écarts indenté dessous, puis une dernière ligne « VIVANTS · … ».
 Code de retour : 0 sans écart, 1 avec au moins un écart, 2 pour un appel
-invalide (argument manquant, fichier ou dossier introuvable, « --racine » sans « --domaines »).
+invalide (argument manquant, fichier ou dossier introuvable, « --racine » ou
+« --plafond-checkpoint » sans « --domaines », plafond qui n'est pas un entier positif).
 
 Python 3, bibliothèque standard seulement. Le lecteur YAML est volontairement
 pauvre, comme celui du générateur : « - id: » puis des « clé: valeur » sur une
@@ -98,6 +115,7 @@ RE_DATE = re.compile(rb"\d{2}/\d{2}/\d{4}")
 
 NON_DEMANDE = "—  non demandé"
 STATUTS_OUVERTS = ("a-venir", "a-cadrer", "dette", "en-vol")
+PLAFOND_DEFAUT = 10240  # octets : un checkpoint se relit en entier à chaque reprise
 
 
 def lire_texte(chemin: Path) -> str:
@@ -319,40 +337,63 @@ def citation(i: str) -> str:
 
 def controle_domaine(d: dict, chantiers: list[dict], clos: dict[str, str],
                      domaines: list[dict], racine: Path):
-    """Les défauts de la table, ou la file qui cite du clos (9b) puis les ouverts non cités (9c)."""
+    """Les défauts de la table, ou : file non déclarée, file qui cite du clos (9b), ouverts non cités (9c)."""
     nom_d, chemin = d["domaine"], racine / d["checkpoint"]
     if not chemin.is_file():
-        return [f"{nom_d} : checkpoint introuvable {d['checkpoint']}"], [], []
+        return [f"{nom_d} : checkpoint introuvable {d['checkpoint']}"], [], [], []
     try:
         texte = lire_texte(chemin)
     except (OSError, UnicodeDecodeError):
-        return [f"{nom_d} : checkpoint illisible {d['checkpoint']}"], [], []
+        return [f"{nom_d} : checkpoint illisible {d['checkpoint']}"], [], [], []
     titre = d.get("file", "")
     section = section_de_file(texte, titre) if titre else None
     if titre and section is None:
-        return [f"{nom_d} : section de file introuvable « {titre} »"], [], []
+        return [f"{nom_d} : section de file introuvable « {titre} »"], [], [], []
+    sans_file = [] if titre else [f"{nom_d} : aucune section de file déclarée (file: vide)"]
     positions = sorted((section.find(citation(i)), i) for i in clos if citation(i) in section) if section else []
     cites = [f"{nom_d} : la file cite {i}, clos ({clos[i]})" for _, i in positions]
     non_cites = [f"{nom_d} : {c['id']} ({c['statut']}) n'est pas cité au checkpoint"
                  for c in chantiers
                  if c.get("id") and c.get("statut") in STATUTS_OUVERTS and "pour" not in c
                  and domaine_de(c, domaines) == nom_d and citation(c["id"]) not in texte]
-    return [], cites, non_cites
+    return [], sans_file, cites, non_cites
 
 
 def controle_checkpoints(chantiers: list[dict], archives: list[dict] | None, table: list[dict], racine: Path):
     clos = ids_clos(chantiers, archives)
     valides = [d for d in table if d.get("domaine") and d.get("checkpoint")]
-    details, total_cites, total_non_cites = [], 0, 0
+    details, total_cites, total_non_cites, total_sans_file = [], 0, 0, 0
     for d in table:
         if d not in valides:
             details.append(f"entrée de la ligne {d['_ligne']} : domaine ou checkpoint manquant")
             continue
-        defauts, cites, non_cites = controle_domaine(d, chantiers, clos, valides, racine)
-        details += defauts + cites + non_cites
+        defauts, sans_file, cites, non_cites = controle_domaine(d, chantiers, clos, valides, racine)
+        details += defauts + sans_file + cites + non_cites
         total_cites += len(cites)
         total_non_cites += len(non_cites)
-    compte = f"{len(table)} domaines, {total_cites} cités clos, {total_non_cites} non cités"
+        total_sans_file += len(sans_file)
+    compte = (f"{len(table)} domaines, {total_cites} cités clos, {total_non_cites} non cités, "
+              f"{total_sans_file} sans section de file")
+    return ("ÉCART" if details else "OK"), compte, details
+
+
+def taille_checkpoint(chemin: Path) -> int | None:
+    """La taille en octets du fichier sur le disque ; None s'il est introuvable."""
+    try:
+        return chemin.stat().st_size if chemin.is_file() else None
+    except OSError:
+        return None
+
+
+def controle_taille(table: list[dict], racine: Path, plafond: int):
+    """Un checkpoint strictement plus lourd que le plafond est un écart ; les introuvables sont ignorés."""
+    valides = [d for d in table if d.get("domaine") and d.get("checkpoint")]
+    details = []
+    for d in valides:
+        taille = taille_checkpoint(racine / d["checkpoint"])
+        if taille is not None and taille > plafond:
+            details.append(f"{d['domaine']} : {d['checkpoint']} pèse {taille} octets, plafond {plafond}")
+    compte = f"{len(valides)} domaines, {len(details)} au-delà de {plafond} octets"
     return ("ÉCART" if details else "OK"), compte, details
 
 
@@ -373,6 +414,7 @@ def lire_arguments(argv: list[str]):
     p = Analyseur(prog="verifier_vivants.py", allow_abbrev=False, add_help=False)
     for option in ("chantiers", "registre", "tableau", "generateur", "journal", "archives", "domaines", "racine"):
         p.add_argument(f"--{option}")
+    p.add_argument("--plafond-checkpoint")
     a, inconnus = p.parse_known_args(argv)
     if inconnus:
         raise ValueError(f"argument inconnu : {inconnus[0]}")
@@ -383,18 +425,25 @@ def lire_arguments(argv: list[str]):
         raise ValueError("--tableau et --generateur vont ensemble")
     if a.racine and not a.domaines:
         raise ValueError("--racine ne va qu'avec --domaines")
+    if a.plafond_checkpoint is not None and not a.domaines:
+        raise ValueError("--plafond-checkpoint ne va qu'avec --domaines")
+    plafond = PLAFOND_DEFAUT
+    if a.plafond_checkpoint is not None:
+        if not re.fullmatch(r"[0-9]+", a.plafond_checkpoint) or int(a.plafond_checkpoint) < 1:
+            raise ValueError(f"--plafond-checkpoint : un entier positif est attendu ({a.plafond_checkpoint})")
+        plafond = int(a.plafond_checkpoint)
     chemins = {option: Path(getattr(a, option)) for option in
                ("chantiers", "registre", "tableau", "generateur", "journal", "archives", "domaines", "racine")
                if getattr(a, option)}
     for option, chemin in chemins.items():
         if not (chemin.is_dir() if option in ("archives", "racine") else chemin.is_file()):
             raise ValueError(f"fichier introuvable : --{option} {chemin}")
-    return chemins
+    return chemins, plafond
 
 
 def main(argv: list[str]) -> int:
     try:
-        f = lire_arguments(argv)
+        f, plafond = lire_arguments(argv)
         chantiers = lire_chantiers(f["chantiers"])
         archives = lire_archives(f["archives"]) if "archives" in f else None
         table = lire_chantiers(f["domaines"]) if "domaines" in f else None
@@ -417,15 +466,17 @@ def main(argv: list[str]) -> int:
         ("livrables et ressources", lambda: controle_livrables(chantiers)),
         ("checkpoints", (lambda: controle_checkpoints(chantiers, archives, table, f.get("racine", Path("."))))
          if table is not None else None),
+        ("taille des checkpoints", (lambda: controle_taille(table, f.get("racine", Path(".")), plafond))
+         if table is not None else None),
     ]
     ecarts = 0
     for rang, (libelle, controle) in enumerate(controles, start=1):
         if controle is None:
-            print(f"{rang}  {libelle:<26} {NON_DEMANDE}")
+            print(f"{rang:<2} {libelle:<26} {NON_DEMANDE}")
             continue
         verdict, compte, details = controle()
         ecarts += verdict == "ÉCART"
-        print(f"{rang}  {libelle:<26} {verdict:<13}  {compte}")
+        print(f"{rang:<2} {libelle:<26} {verdict:<13}  {compte}")
         for detail in details:
             print(f"      {detail}")
     print("VIVANTS · aucun écart" if not ecarts else f"VIVANTS · {ecarts} écart(s)")

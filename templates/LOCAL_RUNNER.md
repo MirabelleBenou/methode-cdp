@@ -1,5 +1,11 @@
-# The local runner — Claude Code on the PC, driven by files · v1
+# The local runner, the fallback — Claude Code on the PC, driven by files · v2
 ### 25 October 2026 · proven on a real project (screenshots of a game installed on the PC)
+
+> **The bridge first.** Since the Claude app offers a **bridge** when the owner's machine is linked — linked folders
+> (read, write), a terminal if one is offered, the screen through computer use, the owner validating the access in the
+> PL's conversation —, **the PL's session works on the machine itself** (method §1, skill §5a). **This document now
+> describes the fallback**, for when the bridge is not offered. Reason for this rank: driven by files, the runner got stuck
+> when the owner was away from their machine — screen-access requests refused, endless waiting.
 
 *For work that must run **on the owner's PC** (a game, an installed application, the screen, a piece of hardware) and
 that the PL, in the cloud, cannot execute. The rest of the method does not change: the PL briefs and accepts, the runner
@@ -9,19 +15,21 @@ executes, the owner decides.*
 
 ## 1. When to use it
 
-- The PL sees the PC's folders (folders connected to the conversation: list, read, write files), but **has no
-  terminal there**: they launch nothing on the machine.
+- **When the bridge is offered**, the PL works on the machine itself: this document is not needed.
+- **When the bridge is not offered** (the machine is not linked, or its terminal is not offered), the PL sees at best the
+  PC's folders (folders connected to the conversation: list, read, write files), but **has no terminal there**: they
+  launch nothing on the machine.
 - The PL's control of the screen does not replace a shell: terminals and editors there are click-only (no
   typing).
-- As soon as something must be **executed** on the PC (a Python script, a program, a full-resolution screenshot), it
-  goes through a **local Claude Code session**: Desktop app, Code tab, **Local** environment. That is the runner.
+- As soon as something must be **executed** on the PC (a Python script, a program, a full-resolution screenshot) and the
+  bridge does not allow it, it goes through a **local Claude Code session**: Desktop app, Code tab, **Local** environment. That is the runner.
 - A batch that only touches code in a repository stays with the dev as a sub-agent, in the cloud (method §5).
 
 ## 2. The roles
 
 | | does | does not |
 |---|---|---|
-| **PL** (cloud) | writes briefs and addenda in the project space; reads the outputs; gives the green light; answers the questions; re-measures cold; files into the repository | executes nothing on the PC |
+| **PL** (cloud) | writes briefs and addenda in the project space; reads the outputs; gives the green light; answers the questions; re-measures cold; files into the repository | executes nothing on the PC, at the fallback |
 | **Runner** (local Claude Code, Sonnet) | reads the brief, executes, writes its state and its questions as files, writes the report | decides nothing outside the brief; does not talk to the owner in its chat once the sync is started |
 | **The owner** | pastes **one line** per brief or addendum; accepts the permissions; makes the physical moves asked for (launch the game, a setting on screen) | does not relay messages between the two |
 

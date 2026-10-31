@@ -75,8 +75,8 @@ owner's requests, then the rules that follow from them.*
 - **C1** — met / not met — <measurement>.
 
 ## 4 · The mock-up (if there is one)
-Images shown; the owner's words of validation; each request word for word and what I did with it; rounds; fingerprint
-noted at validation.
+Images shown; the owner's verdict, passed on by the PL word for word; each request word for word and what I did with it;
+rounds; fingerprint noted at validation.
 
 ## 5 · The raw outputs
 <ritual, tests, lint, syntax, migration, fingerprint — as is>

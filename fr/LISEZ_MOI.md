@@ -1,5 +1,5 @@
-# PACKAGE MÉTHODE CdP · v16
-### 30 octobre 2026 · pour démarrer un nouveau projet sous la méthode CdP
+# PACKAGE MÉTHODE CdP · v17
+### 31 octobre 2026 · pour démarrer un nouveau projet sous la méthode CdP
 
 *Ce package reproduit une façon de travailler éprouvée lot après lot : un **chef de projet** (CdP, Opus) qui décide
 avec toi, cadre, lance le dev et réceptionne ; un **dev** (Sonnet par défaut) qui construit un lot à la fois ; **toi**,
@@ -29,11 +29,11 @@ qui décides et valides à l'écran. Tout circule par GitHub ; tu ne téléverse
 | `modeles/chantiers.yaml` | la source unique des chantiers (à venir, dettes, livrés) | dépôt des vivants, miroir au projet |
 | `modeles/contexte.py` | mesure le contexte de la session du CdP : prévenir à 600 000 jetons, passer la main à 700 000 | `outils_cdp/` du dépôt des vivants |
 | `modeles/generer_tableau.py` | fabrique `chantiers.html`, la page lisible des chantiers, à chaque écriture du yaml | dépôt des vivants, miroir au projet |
-| `modeles/verifier_vivants.py` | contrôle les vivants partagés (numéros de décision, chantiers, versions réservées, chantiers en vol, tableau, journal) quand plusieurs CdP y écrivent ; lecture seule ; avec `--archives <dossier>`, les contrôles 3 (identifiants) et 7 (journal) lisent aussi les archives de chantiers ; avec `--domaines <fichier>` (et `--racine <dossier>`), le contrôle 9 recoupe la file de chaque checkpoint et `chantiers.yaml` | dépôt des vivants, lancé par le coordinateur et l'arbitre |
-| `modeles/domaines.yaml` | **modes B et C** — la table des domaines que lit le contrôle 9 de `verifier_vivants.py` : par domaine, son CdP, son checkpoint, le titre de la section de sa file, ses modules ; tenue par le coordinateur | `Methode/domaines.yaml` du dépôt des vivants, miroir au projet |
-| `modeles/archiver_chantiers.py` | archive les chantiers en recette : date `recette-le:` toute entrée qui entre en recette, sort vers `Archives/CHANTIERS_<AAAA-MM>.yaml` celles qui y sont depuis 15 jours (sans perte, idempotent, `--a-blanc`) ; `chercher` retrouve un chantier, vivant ou archivé | dépôt des vivants, lancé par l'arbitre à chaque passage, sinon par le CdP ou le coordinateur à sa clôture |
+| `modeles/verifier_vivants.py` | contrôle les vivants partagés (numéros de décision, chantiers, versions réservées, chantiers en vol, tableau, journal) quand plusieurs CdP y écrivent ; lecture seule ; avec `--archives <dossier>`, les contrôles 3 (identifiants) et 7 (journal) lisent aussi les archives de chantiers ; avec `--domaines <fichier>` (et `--racine <dossier>`), le contrôle 9 recoupe la file de chaque checkpoint et `chantiers.yaml`, le contrôle 10 signale un checkpoint de plus de 10 Ko (`--plafond-checkpoint`) | dépôt des vivants, lancé par le coordinateur et l'arbitre |
+| `modeles/domaines.yaml` | **modes B et C** — la table des domaines que lit le contrôle 9 de `verifier_vivants.py` : par domaine, son CdP, son checkpoint, le titre de la section de sa file (stable : `## §<n> · La file`), ses modules ; la coordination y a sa propre entrée ; tenue par le coordinateur | `Methode/domaines.yaml` du dépôt des vivants, miroir au projet |
+| `modeles/archiver_chantiers.py` | archive les chantiers en recette : date `recette-le:` toute entrée qui entre en recette, sort vers `Archives/CHANTIERS_<AAAA-MM>.yaml` celles qui y sont depuis 7 jours (sans perte, idempotent, `--a-blanc`) ; `chercher` retrouve un chantier, vivant ou archivé | dépôt des vivants, lancé par l'arbitre à chaque passage, sinon par le CdP ou le coordinateur à sa clôture |
 | `modeles/ARBITRE.md` | **facultatif, mode C** — l'arbitre des vivants, expliqué en entier : ce qu'il est, pourquoi (les cas vécus), quand, ce qu'il coûte, comment lire ce qu'il produit ; sa procédure (contrôle des vivants **et des checkpoints**, signalement sans correction, archivage des chantiers en recette, lecture du lundi), son journal, la mise en place pas à pas avec le « qui fait quoi » (heure, prompt, notifications), l'essai | `Methode/ARBITRE.md` du dépôt des vivants, lu par la tâche planifiée |
-| `modeles/EXECUTANT_LOCAL.md` | l'exécutant Claude Code local sur le PC, piloté par fichiers (`sync\`) | sert au CdP et à l'exécutant |
+| `modeles/EXECUTANT_LOCAL.md` | **le repli** — l'exécutant Claude Code local sur le PC, piloté par fichiers (`sync\`), quand le pont de l'application Claude ne donne pas ta machine | sert au CdP et à l'exécutant |
 | `modeles/EXECUTANT_SERVEUR.md` | **facultatif** — l'exécutant serveur : un programme déterministe sur le serveur de production, piloté par un dépôt d'ordres ; le CdP déploie sur ton « go » (guide pas à pas) ; le même dépôt d'ordres sert de **pont d'échange de fichiers** : une donnée produite en session arrive sur le serveur par `transferts/` (§2 quater). **Pas de serveur de production : sautez-le** | sert au CdP et à toi, à l'installation |
 | `../templates/server-runner/` (à la racine du dépôt public, non traduit) | **facultatif** — son implémentation de référence (Python, systemd, installateur, tests), en français, valeurs d'exemple | dépôt de code du projet, puis le serveur |
 | `modeles/depot-vivants/` | `README.md` du dépôt des vivants | dépôt des vivants |
@@ -116,6 +116,14 @@ partagés et les checkpoints et signale sans corriger. Inutile en A, facultatif 
 pourquoi, ce qu'il coûte, comment l'installer et le lire sont au §2 ter. **Qui archive** les chantiers en recette :
 l'arbitre, s'il existe ; sans lui (modes A et B), le CdP ou le coordinateur lance `archiver_chantiers.py` à sa clôture.
 
+**Trois choses que la méthode fixe pour que les outils s'y retrouvent.** *Le témoin* : l'identifiant court d'une session est
+les huit derniers caractères de son identifiant de session (celui de la ligne d'attribution de ses commits) ; toutes les
+sessions d'un même compte en partagent le début. *La file* : chaque checkpoint la porte sous un titre stable
+`## §<n> · La file`, avec la liste elle-même ; la table des domaines nomme ce titre, une ligne `file:` vide est un trou, et la
+coordination y a sa propre entrée. *Ta machine* : quand le projet pilote un jeu ou une application sur ton PC, la session du
+CdP s'en sert **par le pont de l'application Claude** (dossiers reliés, terminal s'il est offert, écran que tu valides) ;
+l'exécutant local n'est plus que le repli, et un chantier qui a besoin de la machine reste en dette tant que tu n'y es pas.
+
 **Comment les CdP se parlent** :
 
 | canal | ce qu'il porte | qui écrit | qui lit |
@@ -160,9 +168,10 @@ erreur.
 
 **Quand.** Inutile en A ; facultatif en B ; recommandé en C, dès que plusieurs CdP écrivent les mêmes vivants le même jour.
 
-**Chaque matin, et le lundi.** Le contrôle des vivants (`verifier_vivants.py --archives --domaines` : neuf contrôles,
-dont le contrôle 9 « checkpoints »), les témoins jugés à leur silence, un chantier `pour:` par écart nouveau (pour le
-contrôle 9, un seul par domaine), l'archivage, une ligne au journal, un résumé. **Le lundi**, en plus : la lecture des
+**Chaque matin, et le lundi.** Le contrôle des vivants (`verifier_vivants.py --archives --domaines` : dix contrôles,
+dont le contrôle 9 « checkpoints » et le contrôle 10, la taille des checkpoints), les témoins jugés à leur silence, un
+chantier `pour:` par écart nouveau (pour les contrôles 9 et 10, un seul par domaine), l'archivage des chantiers en recette
+depuis sept jours, une ligne au journal, un résumé. **Le lundi**, en plus : la lecture des
 checkpoints face aux décisions des sept derniers jours — elle ne relève que ce qu'une décision ou un chantier contredit,
 en citant la phrase et la preuve, sans avis.
 
@@ -184,7 +193,7 @@ son checkpoint une section de file qui ne cite que des chantiers inscrits (méth
 (5) Premier passage à la main : le coordinateur vérifie la ligne du journal et le commit.
 
 **Le jugement après une semaine** (qui compte un lundi) : garder, régler ou arrêter, d'après le journal (une ligne par
-jour ?), les constats (vrais ?), ce que les CdP en ont fait, l'archivage et le contrôle 9. Un faux positif se corrige
+jour ?), les constats (vrais ?), ce que les CdP en ont fait, l'archivage et les contrôles 9 et 10. Un faux positif se corrige
 dans la procédure, pas au cas par cas.
 
 ---
@@ -383,8 +392,8 @@ déjà les trois modes.
 |---|---|---|---|---|
 | Méthode du projet | dépôt des vivants `Methode/` | oui | CdP | à une version, après un lot qui l'a prise en défaut |
 | Prompt du dev | racine du dépôt de code — **dépôt `<Projet>-Lots` si le code est public** | oui | CdP | à une version |
-| Checkpoint | dépôt des vivants | oui | CdP | à chaque passation |
-| Registre des arbitrages | dépôt des vivants | oui | CdP | à chaque lot clos |
+| Checkpoint (10 Ko au plus, l'historique en archive du domaine) | dépôt des vivants | oui | CdP | à chaque passation |
+| Registre des arbitrages (une entrée de 800 caractères environ ; coupé par tranches de 50 numéros au-delà de 150 Ko environ) | dépôt des vivants | oui | CdP | à chaque lot clos |
 | Plan + journal | dépôt des vivants | oui | CdP | à chaque lot qui prend une version |
 | `chantiers.yaml` et `chantiers.html` | dépôt des vivants | oui, et la page en artefact | CdP | à chaque écriture du yaml |
 | Table des domaines `Methode/domaines.yaml` | dépôt des vivants | oui | coordinateur | un domaine ouvert ou fermé, une section de file renommée |
@@ -392,7 +401,7 @@ déjà les trois modes.
 | Attendus de réception | dépôt des vivants `attendus/<version>/` | non | CdP | au cadrage |
 | Scripts jetables du CdP | dépôt des vivants `outils_cdp/` | non | CdP | au besoin |
 | Code, banc, `CHANGELOG` | dépôt de code | non | dev | dans un lot |
-| Cadrage, addenda, arrêts, rapport, maquette | dépôt de code `lots/<version>/` — **dépôt `<Projet>-Lots` si le code est public** | **non** | CdP (cadrage, addenda), dev (arrêts, rapport) | pendant le lot |
+| Cadrage, addenda, arrêts, rapport, maquette | dépôt de code `lots/<version>/` — **dépôt `<Projet>-Lots` si le code est public** | **non** | CdP (cadrage, addenda), dev (arrêts, rapport, `MAQUETTE_<n>.md`, une ligne par image avec son empreinte) | pendant le lot |
 | Specs, guide de style, études | projet, écrits une fois | — | CdP | une fois, jamais réécrits |
 | Données de production, journaux | **aucun dépôt** | non | toi | téléversés dans la session qui en a besoin |
 | Donnée produite en session, à servir (un paquet, des tuiles) — avec un exécutant serveur | dépôt d'ordres, `transferts/<domaine>/<édition>/` (§2 quater) | non | le CdP qui la produit, **jamais le dev** | à l'édition ; retirée de l'arbre au compte rendu réussi |
@@ -425,7 +434,7 @@ les vivants au dépôt et leur miroir ; la fusion en avance rapide après ta val
 ## 6 · Les coûts à attendre (mesurés sur un premier projet)
 
 - un lot ordinaire : 5 à 20 minutes de dev, quelques minutes de réception ;
-- un écran avec maquette du CdP : 15 minutes à 1 h 30 de dev, une ou deux passes de maquette avec toi ;
+- un écran avec maquette : 15 minutes à 1 h 30 de dev, une ou deux passes de maquette avec toi (faite par le CdP avant le lancement, ou demandée au dev, qui la livre par un arrêt ; le CdP te la montre et relaie ton verdict mot pour mot) ;
 - un addendum lancé par le CdP : quelques minutes, sans un geste de ta part ;
 - une session de CdP : passer la main avant ~700 000 jetons de contexte, ou à une fin de file naturelle.
 
@@ -484,3 +493,11 @@ v16, le 30 octobre 2026 — le dépôt d'ordres, pont d'échange de fichiers : p
 produite en session (`transferts/<domaine>/<édition>/` du dépôt d'ordres, puis un ordre `fichiers`), produite sur le PC
 (`entree/`), publiée ailleurs (`telecharger`), jamais l'historique d'un dépôt de code public ; pourquoi, pas à pas du
 CdP, limites (95 Mio par fichier, le clone de l'exécutant) (§2 quater ; `modeles/EXECUTANT_SERVEUR.md` v2).
+v17, le 31 octobre 2026 — le dev reste un sous-agent du CdP jusqu'à la maquette, qu'il livre par un arrêt, et ne parle
+qu'au CdP (`modeles/PROMPT_DEV.md`, `modeles/COMMANDE_DEV.md`) ; le témoin défini (les huit derniers caractères de
+l'identifiant de session) ; la file d'un checkpoint sous un titre stable `## §<n> · La file`, une ligne `file:` vide
+signalée, la coordination dans la table des domaines ; la machine du porteur par le pont de l'application Claude,
+l'exécutant local en repli (`modeles/EXECUTANT_LOCAL.md` v2) ; des vivants courts : plafonds d'entrée, archivage des
+chantiers en recette à sept jours, registre coupé par tranches de 50 numéros, checkpoint de 10 Ko et contrôle 10
+(`modeles/ARBITRE.md` v4 : dix contrôles) ; la méthode d'un projet ne porte que sa part commune ; le tableau republié par
+un sous-agent léger ; skill v16.

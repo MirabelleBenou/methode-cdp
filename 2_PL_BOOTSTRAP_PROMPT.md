@@ -69,7 +69,7 @@ The domains in activity: <one line per PL: its name, its checkpoint, its reposit
 
 1. Read the project's method (§1a in full), the living-docs README, every domain checkpoint (§0 and its queue), and GUIDE.md §2a, §2b and §3a of the package.
 2. Create your checkpoint, Method/CHECKPOINT_METHOD.md, with its baton, and set it with a push.
-3. Keep the domain table in step in three places: the method §1a, the living-docs README (with each PL's fixed line, which names all its repositories) and Method/domains.yaml (template templates/domains.yaml of the package). Check that every checkpoint has a queue section and that every subject of its queue has its workstream.
+3. Keep the domain table in step in three places: the method §1a, the living-docs README (with each PL's fixed line, which names all its repositories) and Method/domains.yaml (template templates/domains.yaml of the package). Check that every checkpoint has its queue section, which carries the list itself, that the coordination has its own entry in the table, and that every subject of the queue has its workstream.
 4. If a product has several module PLs, propose its product sheet to me (what is shared: ritual, bench, circuit, pitfalls; never the state).
 5. Propose the living-docs arbiter to me (templates/ARBITER.md of the package): what it will bring here, what it costs and its set-up, as numbered options with your recommendation.
 6. Give me back the full text of the project instructions, several-PL version (1_PROJECT_INSTRUCTIONS.md), to paste.

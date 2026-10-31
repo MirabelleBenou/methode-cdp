@@ -15,7 +15,7 @@ batch at a time; you, who decide and validate on screen. Everything flows throug
 | `1_PROJECT_INSTRUCTIONS.md` | the text of a claude.ai project's instructions |
 | `2_PL_BOOTSTRAP_PROMPT.md` | the first message of the first PL session |
 | `3_GITHUB.md` | the repositories, the circuit of a batch by branch, the session pitfalls |
-| `templates/` | method, dev prompt, brief, dev command, local runner, living docs and their scripts (board, checker, workstream archiving and search), repository skeletons; optional: the server runner (`SERVER_RUNNER.md`, including the file-exchange bridge of the orders repository) and its reference implementation (`server-runner/`, in French), the living-docs arbiter (`ARBITER.md`, mode C: role, why, set-up, reading) and the domain table it reads (`domains.yaml`) |
+| `templates/` | method, dev prompt, brief, dev command, local runner (the fallback), living docs and their scripts (board, checker, workstream archiving and search), repository skeletons; optional: the server runner (`SERVER_RUNNER.md`, including the file-exchange bridge of the orders repository) and its reference implementation (`server-runner/`, in French), the living-docs arbiter (`ARBITER.md`, mode C: role, why, set-up, reading) and the domain table it reads (`domains.yaml`) |
 | `skill/SKILL.md` | the personal skill `methode-cdp`, to customize (§1 and §8) then install |
 
-*Package v16, 30 October 2026 — history in `GUIDE.md` §7. MIT License.*
+*Package v17, 31 October 2026 — history in `GUIDE.md` §7. MIT License.*

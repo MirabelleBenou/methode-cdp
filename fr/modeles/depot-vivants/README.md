@@ -11,7 +11,7 @@ code, `<owner>/<Projet>-App`.
 | `<Dossier>/PLAN_<P>.md` | la feuille de route et le journal des versions |
 | `<Dossier>/chantiers.yaml` | la source unique des chantiers |
 | `<Dossier>/chantiers.html` | la page lisible, régénérée par `generer_tableau.py` à chaque écriture du yaml |
-| `<Dossier>/archiver_chantiers.py` | date les chantiers en recette et sort vers `Archives/` ceux qui y sont depuis 15 jours ; `chercher` retrouve un chantier, vivant ou archivé |
+| `<Dossier>/archiver_chantiers.py` | date les chantiers en recette et sort vers `Archives/` ceux qui y sont depuis sept jours ; `chercher` retrouve un chantier, vivant ou archivé |
 | `<Dossier>/verifier_vivants.py` | ⟨plusieurs CdP⟩ le contrôle en lecture seule des vivants partagés ; avec `--domaines`, le contrôle 9 recoupe la file de chaque checkpoint et `chantiers.yaml` |
 | `Methode/domaines.yaml` | ⟨plusieurs CdP⟩ la table des domaines que lit le contrôle 9 : par domaine, son CdP, son checkpoint, le titre de la section de sa file, ses modules ; tenue par le coordinateur au pas de la table de la méthode §1 bis |
 | `<Dossier>/attendus/<version>/` | les attendus de réception, calculés au cadrage — jamais lus par le dev |

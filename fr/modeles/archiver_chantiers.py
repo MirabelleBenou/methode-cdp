@@ -7,7 +7,7 @@ sort automatiquement les chantiers en recette depuis assez longtemps vers des ar
 figées (une par mois), et permet de retrouver un chantier archivé.
 
     python3 -B archiver_chantiers.py archiver --chantiers <chantiers.yaml> --archives <dossier> \\
-        [--delai <jours, 15 par défaut>] [--date AAAA-MM-JJ] [--a-blanc]
+        [--delai <jours, 7 par défaut>] [--date AAAA-MM-JJ] [--a-blanc]
     python3 -B archiver_chantiers.py chercher <motif> --chantiers <chantiers.yaml> \\
         --archives <dossier> [--partout]
 
@@ -70,7 +70,7 @@ RE_DATE = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
 MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août",
         "septembre", "octobre", "novembre", "décembre"]
 
-DELAI_DEFAUT = 15
+DELAI_DEFAUT = 7
 
 
 @dataclass

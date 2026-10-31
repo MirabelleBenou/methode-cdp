@@ -6,8 +6,10 @@
 # its domain (method §6).
 #
 # WHO KEEPS IT: the coordinator, in step with the domain table of the method (§1a) and the living-docs README.
-# WHEN TO CHANGE IT: a domain opened (one more entry), a domain closed (one entry less), or a queue section renamed in a
-# checkpoint (`queue:` follows the title). A table that lags makes a gap in check 9.
+# WHEN TO CHANGE IT: a domain opened (one more entry), a domain closed (one entry less). A queue section renamed in a
+# checkpoint: the domain's PL changes `queue:` itself in the same commit — the only line of the table it touches. A table
+# that lags makes a gap in check 9.
+# THE COORDINATION HAS ITS ENTRY, like a domain: it has a queue like the others.
 #
 # The same poor form as workstreams.yaml (not standard YAML): an entry starts with “- domain:”, each key fits on ONE
 # line “key: value”, blank lines and those that start with “#” are ignored. No comment at the end of a line: it would be
@@ -16,8 +18,10 @@
 #   domain    : the short name of the domain (required)
 #   pl        : the name of the domain's PL; an entry of workstreams.yaml that carries this `pl:` is its own
 #   checkpoint: the path of the domain's checkpoint (required)
-#   queue     : the exact start of the title of the checkpoint section that carries its queue — the “## …” line; empty if
-#               the checkpoint has no queue section. The title is copied from the checkpoint, character for character
+#   queue     : the exact start of the title of the checkpoint section that carries its queue — the “## …” line (for
+#               example “## §3 · The queue”). Every checkpoint has this section, and it carries the list itself, never a
+#               pointer. EMPTY = A GAP OF THE DOMAIN: the checker reports “no queue section declared”. The title is
+#               copied from the checkpoint, character for character
 #   modules   : the workstreams.yaml modules that are its own, separated by spaces (may be empty)
 #   prefixes  : optional — the starts of workstream ids that are its own, separated by spaces; they take precedence over
 #               the modules
@@ -38,3 +42,9 @@
   queue: ## §3 · The queue
   modules: <module-2> <module-3>
   prefixes: <prefix->
+
+- domain: coordination
+  pl: Opus-Coordination
+  checkpoint: Method/CHECKPOINT_METHOD.md
+  queue: ## §3 · The queue
+  modules: method

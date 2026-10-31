@@ -1,4 +1,4 @@
-# L'ARBITRE DES VIVANTS — <Projet> · v3
+# L'ARBITRE DES VIVANTS — <Projet> · v4
 ### <date> · <session de coordination> · lu par la tâche planifiée quotidienne · tiré du package méthode CdP
 
 *Une session neuve, lancée chaque matin par une tâche planifiée, qui contrôle les vivants partagés **et les checkpoints**
@@ -37,8 +37,8 @@ ne corrige rien**, le propriétaire corrige. Une seule écriture, mécanique : l
 - **Ce qu'elle voit** : des numéros de décision en double ou un trou, des identifiants de chantier en double (vivants
   ou archivés), un chantier en vol sans `cdp:`, deux lots en vol sur un même livrable ou une même ressource, un tableau
   qui ne correspond plus au yaml, un journal du plan en avance sur les chantiers (`verifier_vivants.py`, contrôles 1
-  à 8) ; **un checkpoint en retard sur les chantiers** (contrôle 9, et la lecture du lundi) ; **les sessions oubliées**
-  qui gardent un témoin.
+  à 8) ; **un checkpoint en retard sur les chantiers** (contrôle 9, et la lecture du lundi) ; **un checkpoint trop gros**
+  (contrôle 10) ; **les sessions oubliées** qui gardent un témoin.
 - **Ce qu'elle ne voit pas** : la qualité d'une décision, l'état du code, la production. Elle ne juge que la forme des
   vivants partagés.
 
@@ -62,7 +62,13 @@ des cas vécus, sur le premier projet mené ainsi :
 7. **Les checkpoints ont pris du retard sur les chantiers.** Dix sujets n'existaient que dans des checkpoints — que le
    porteur ne lit pas —, dont une fonctionnalité annoncée « pour la suite » et jamais inscrite ; d'autres files
    annonçaient comme à faire des chantiers déjà finis. → la règle « la file d'un checkpoint ne porte que des chantiers
-   inscrits » (méthode §6), le contrôle 9 et la lecture du lundi.
+   inscrits » (méthode §6), le contrôle 9 et la lecture du lundi. Le contrôle 9 lui-même avait ses angles morts : deux
+   domaines lui échappaient, l'un dont la section de file ne portait qu'un renvoi (« tout est au §0 »), l'autre qui n'en
+   déclarait aucune (`file:` vide). → la section `## §<n> · La file` qui porte la liste elle-même, et le `file:` vide
+   devenu un écart du domaine.
+8. **Les vivants ont regrossi en quelques jours** : un fichier de chantiers est passé de 95 à 146 Ko en un jour, un
+   registre a atteint 206 Ko, un checkpoint 47 Ko — les messages entre CdP s'empilaient dans les entrées, et chaque CdP
+   relit tout à chaque reprise. → les plafonds (méthode §6), l'archivage au bout de sept jours, le contrôle 10.
 
 **Pourquoi une session neuve et planifiée, plutôt qu'un CdP qui s'en charge** : elle n'a **aucun enjeu dans un
 domaine**, donc aucune raison de minimiser un écart ; elle passe **quand personne ne travaille**, donc sans conflit
@@ -75,7 +81,7 @@ elle **ne corrige rien**, donc elle ne peut pas aggraver une erreur — le propr
 |---|---|---|
 | **A** — un projet, un CdP | **inutile** | un seul CdP écrit, il voit ce qu'il écrit ; pas de table des domaines à tenir |
 | **B** — modules indépendants, un CdP chacun | **facultatif** | utile si les vivants partagés grossissent, ou dès le premier écart (un numéro en double, un tableau désaligné) ; la table des domaines compte alors un domaine par module |
-| **C** — modules liés, un coordinateur | **recommandé** | dès que plusieurs CdP écrivent les mêmes vivants le même jour : c'est là que les sept cas ci-dessus arrivent |
+| **C** — modules liés, un coordinateur | **recommandé** | dès que plusieurs CdP écrivent les mêmes vivants le même jour : c'est là que les huit cas ci-dessus arrivent |
 
 Le signe qu'il est temps : le premier numéro de décision en double, ou la première session oubliée qui garde un témoin.
 
@@ -83,11 +89,12 @@ Le signe qu'il est temps : le premier numéro de décision en double, ou la prem
 
 **Chaque matin** (le détail est au §1) :
 1. il clone les vivants ;
-2. il lance `verifier_vivants.py` avec `--archives` **et `--domaines`** : neuf contrôles, dont le contrôle 9 des
-   checkpoints ;
+2. il lance `verifier_vivants.py` avec `--archives` **et `--domaines`** : dix contrôles, dont le contrôle 9 des
+   checkpoints et le contrôle 10, leur taille ;
 3. il juge les témoins à leur silence ;
-4. il dépose **un chantier `pour:` par écart nouveau** — sauf le contrôle 9, **groupé en un seul chantier par domaine** ;
-5. il archive les chantiers en recette depuis quinze jours ;
+4. il dépose **un chantier `pour:` par écart nouveau** — sauf le contrôle 9, **groupé en un seul chantier par domaine**
+   (le contrôle 10 n'a qu'une ligne par domaine, donc un chantier par domaine aussi) ;
+5. il archive les chantiers en recette depuis sept jours ;
 6. il ajoute une ligne au journal, même sans écart ;
 7. il pousse un seul commit et résume.
 
@@ -131,16 +138,17 @@ Cinq gestes, tous au §4 (le tableau « qui fait quoi » est au §4.9) :
   - 2026-11-02 06:42 · 1 écart(s) · 2 constat(s) nouveau(x) · témoins frais · archivage : 0 daté(s), 3 archivé(s) · checkpoints : <domaine-1> · lecture : <domaine-2>
   ```
   la date et l'heure du passage ; le nombre de contrôles en écart ; le nombre de chantiers déposés ce jour ; le premier
-  témoin silencieux (ou « témoins frais ») ; l'archivage ; les domaines signalés au contrôle 9 (« à jour » quand il n'y
+  témoin silencieux (ou « témoins frais ») ; l'archivage ; les domaines signalés aux contrôles 9 et 10 (« à jour » quand il n'y
   en a aucun) ; et **le lundi seulement**, les domaines relevés à la lecture (« rien » sinon). Un jour sans écart :
   `… · 0 écart(s) · 0 constat(s) nouveau(x) · témoins frais · archivage : 0 daté(s), 0 archivé(s) · checkpoints : à jour`.
 - **Le résumé** : la réponse finale de la session, visible dans la session de la tâche planifiée. Sans écart, une ligne :
   « Vivants conformes au <date> ».
 - **Les chantiers** : un constat est un chantier `statut: a-cadrer`, `pour:` le CdP concerné (ou le coordinateur), à
   l'id reconnaissable — `arbitre-c<n>-<clé>` (contrôle `<n>`), `arbitre-c9-checkpoint-<domaine>-<date>` (le retard d'un
-  checkpoint, un seul par domaine), `arbitre-lecture-<domaine>-<date>` (la lecture du lundi). Ils apparaissent dans le
+  checkpoint, un seul par domaine), `arbitre-c10-checkpoint-court-<domaine>-<date>` (un checkpoint au-delà de 10 Ko, un
+  seul par domaine), `arbitre-lecture-<domaine>-<date>` (la lecture du lundi). Ils apparaissent dans le
   tableau (`chantiers.html`) ; le CdP visé les lit après son `pull`, corrige, passe le chantier en recette ; il sort
-  vers `Archives/` quinze jours plus tard.
+  vers `Archives/` sept jours plus tard.
 - **Les notifications** : le push n'arrive que si la plateforme juge le passage « notable » ; **pas de notification ne
   veut pas dire pas de passage** — le journal fait foi (§4.6).
 
@@ -169,9 +177,13 @@ au pas. **Un faux positif se corrige dans la procédure, pas au cas par cas.**
    jours après le dernier lot). Avec `--domaines`, le **contrôle 9 « checkpoints »** lit la table des domaines : pour
    chaque domaine, il ouvre le checkpoint, en prend la section de file et la recoupe avec `chantiers.yaml`. Deux
    écarts : **9b**, la file cite un chantier clos (en recette ou archivé) ; **9c**, un chantier ouvert du domaine (à
-   venir, à cadrer, dette, en vol — hors messages `pour:`) que le checkpoint ne cite pas entre accents graves. Un défaut
+   venir, à cadrer, dette, en vol — hors messages `pour:`) que le checkpoint ne cite pas entre accents graves. Un
+   `file:` vide dans la table est aussi un écart **du domaine** (« aucune section de file déclarée ») : le CdP donne à son
+   checkpoint sa section `## §<n> · La file` et la ligne `file:` qui la nomme. Un défaut
    de la table elle-même (checkpoint ou section de file introuvable, entrée sans domaine ou sans checkpoint) est aussi un
-   écart. Les chemins de la table se lisent depuis la racine du clone : lancé d'ailleurs, ajouter `--racine <le clone>`.
+   écart. Le **contrôle 10** mesure la taille de chaque checkpoint : au-delà de 10 240 octets (le plafond par défaut,
+   `--plafond-checkpoint`), une ligne « <domaine> : <chemin> pèse <n> octets, plafond <p> ». Les chemins de la table se
+   lisent depuis la racine du clone : lancé d'ailleurs, ajouter `--racine <le clone>`.
    Code 0 : rien à signaler par ce contrôle. Code 1 : des écarts, une ligne indentée par cas sous le contrôle en
    ÉCART. Code 2 : un fichier manque ou a changé de nom — le dire au journal (§1.5) et dans le résumé, rien d'autre.
 3. **Les témoins**, en plus : la ligne « Session en activité » de chaque checkpoint de domaine (table de
@@ -181,14 +193,16 @@ au pas. **Un faux positif se corrige dans la procédure, pas au cas par cas.**
    git fetch --depth 300 origin main
    git log origin/main -1 --format=%cI --grep=<identifiant du témoin>
    ```
-   `--grep` lit tout le message du commit, lignes d'attribution comprises : ⟨l'identifiant court du témoin y figure
-   quand la plateforme ajoute un lien de session à chaque commit ; sinon, convenir d'une marque que chaque CdP met dans
-   ses messages⟩. **Aucun commit de cette session depuis plus de 24 heures** — ou aucun du tout, et un témoin posé il y
+   `--grep` lit tout le message du commit, lignes d'attribution comprises : ⟨**le témoin est les huit derniers caractères
+   de l'identifiant de la session** — celui de la ligne d'attribution de session de ses commits, quand la plateforme en
+   ajoute une à chaque commit ; on cherche **cette suite entière, jamais le début** de l'identifiant, que toutes les
+   sessions d'un même compte partagent ; sans ligne d'attribution, convenir d'une marque que chaque CdP met dans ses
+   messages⟩. **Aucun commit de cette session depuis plus de 24 heures** — ou aucun du tout, et un témoin posé il y
    a plus de 24 heures — est un **constat** (une session oubliée ou morte), adressé au coordinateur ; la mesure s'écrit
    dans le chantier, avec la date du dernier commit (« dernier commit le … »). Un témoin libre (« aucune — libre
    depuis … ») ne se contrôle pas.
 4. **Un chantier par écart nouveau** : pour chaque cas (une ligne indentée sous un contrôle en ÉCART — **sauf le
-   contrôle 9, groupé plus bas** — et chaque témoin silencieux), une entrée **en fin** de `<Dossier>/chantiers.yaml` :
+   contrôle 9, groupé plus bas, et le contrôle 10, qui a son propre id** — et chaque témoin silencieux), une entrée **en fin** de `<Dossier>/chantiers.yaml` :
    ```
    - id: arbitre-c<n>-<clé>
      titre: <le cas, en une ligne>
@@ -221,6 +235,13 @@ au pas. **Un faux positif se corrige dans la procédure, pas au cas par cas.**
    coordinateur, jamais redéposé tant qu'un `arbitre-c9-table-*` est ouvert (le CdP a peut-être renommé son checkpoint ou
    sa section : le coordinateur aligne la table, ou demande au CdP de revenir au titre convenu).
 
+   **Le contrôle 10, un chantier par domaine** : pour chaque ligne « <domaine> : <chemin> pèse <n> octets, plafond <p> »,
+   un chantier `arbitre-c10-checkpoint-court-<domaine>-<AAAAMMJJ>`, `pour:` le `cdp` du domaine dans
+   `Methode/domaines.yaml`, module `methode`, titre « Le checkpoint de <domaine> dépasse son plafond de 10 Ko », la
+   `mesure` portant la ligne telle quelle puis « faire partir l'historique à une archive du domaine pour revenir sous
+   10 Ko (méthode §6) ». **Si un chantier `arbitre-c10-checkpoint-court-<domaine>-*` existe déjà sans être en recette, ne
+   rien ajouter** pour ce domaine : le CdP n'a pas encore repris.
+
    Puis régénérer le tableau (`python3 -B <Dossier>/generer_tableau.py <Dossier>/chantiers.yaml <Dossier>/chantiers.html`)
    et relancer le contrôle : le contrôle du tableau doit être OK. Le commit se fait au §1.5.
 4 bis. **L'archivage, après les constats** — la seule écriture mécanique de l'arbitre, jamais une correction à la main :
@@ -230,7 +251,7 @@ au pas. **Un faux positif se corrige dans la procédure, pas au cas par cas.**
    ```
    La commande date `recette-le: <date du jour>` toute entrée qui vient d'entrer en recette, retire la date d'une entrée
    rouverte, et sort vers `Archives/CHANTIERS_<AAAA-MM>.yaml` (le mois du jour : on n'y fait qu'ajouter, figé à la fin du
-   mois) toute entrée en recette depuis 15 jours ou plus ; elle contrôle l'absence de perte avant d'écrire, et relancée à
+   mois) toute entrée en recette depuis sept jours ou plus (le délai par défaut : **ne pas passer `--delai`**) ; elle contrôle l'absence de perte avant d'écrire, et relancée à
    la même date elle ne change rien. Code 0 : fait, avec ou sans changement. Code 1 : fait, avec un avertissement — une
    date `recette-le:` illisible, que la commande n'archive ni ne modifie : un chantier `pour:` le coordinateur, comme au 4
    (⟨`a`⟩ pour le contrôle, `archivage-<id>` pour la clé, la ligne de la commande telle quelle). Code 2 : appel invalide,
@@ -255,7 +276,7 @@ au pas. **Un faux positif se corrige dans la procédure, pas au cas par cas.**
 5. **Le journal, à chaque passage, même sans écart** : une ligne ajoutée **en fin** de `Methode/ARBITRE_JOURNAL.md`,
    jamais une ligne réécrite :
    ```
-   - <AAAA-MM-JJ HH:MM> · <n> écart(s) · <n> constat(s) nouveau(x) · <le premier témoin silencieux depuis plus de 24 h, ou « témoins frais »> · archivage : <n> daté(s), <m> archivé(s) · checkpoints : <domaines signalés au contrôle 9, ou « à jour »>
+   - <AAAA-MM-JJ HH:MM> · <n> écart(s) · <n> constat(s) nouveau(x) · <le premier témoin silencieux depuis plus de 24 h, ou « témoins frais »> · archivage : <n> daté(s), <m> archivé(s) · checkpoints : <domaines signalés aux contrôles 9 et 10, ou « à jour »>
    ```
    `<n> écart(s)` est le nombre que donne la dernière ligne du contrôle (« VIVANTS · <n> écart(s) »). Le lundi, la ligne ajoute **à la fin** ` · lecture : <domaines relevés, ou « rien »>` ; les autres jours, rien. Un
    « constat nouveau » est un chantier déposé ce jour (les entrées que l'archivage date ou sort ne comptent pas). L'heure est celle
@@ -268,7 +289,7 @@ au pas. **Un faux positif se corrige dans la procédure, pas au cas par cas.**
    le résumé. **C'est ce journal qui prouve que l'arbitre a tourné** — pas la notification (§4.6).
 6. **Le résumé** : la réponse finale de la session, courte — la date, le nombre d'écarts, les constats nouveaux (un par
    ligne, avec le CdP visé), ceux déjà signalés et toujours là, l'archivage (« <n> daté(s), <m> archivé(s) »), les
-   domaines signalés au contrôle 9 et, le lundi, ceux relevés à la lecture, le commit poussé. Sans écart : « Vivants
+   domaines signalés aux contrôles 9 et 10 et, le lundi, ceux relevés à la lecture, le commit poussé. Sans écart : « Vivants
    conformes au <date> », une ligne.
 
 ---
@@ -280,7 +301,7 @@ au pas. **Un faux positif se corrige dans la procédure, pas au cas par cas.**
 | un chantier d'un domaine (son `module:`) | le CdP de ce domaine (table de la méthode §1 bis) ⟨une ligne par domaine, au besoin⟩ |
 | un chantier en vol | le `cdp:` qu'il porte, s'il en porte un ; sinon le CdP de son module |
 | un écart sur un livrable ou une ressource partagée (deux lots en vol) | les CdP des lots en cause, un chantier chacun |
-| le retard d'un checkpoint (contrôle 9) ; la lecture du lundi | le `cdp` du domaine dans `Methode/domaines.yaml`, un chantier par domaine |
+| le retard d'un checkpoint (contrôle 9) ; sa taille (contrôle 10) ; la lecture du lundi | le `cdp` du domaine dans `Methode/domaines.yaml`, un chantier par domaine |
 | un module sans CdP ouvert | le coordinateur |
 | tout le reste : registre, tableau, journal du plan, journal de l'arbitre, témoins, table des domaines, `methode` | le coordinateur |
 
@@ -306,8 +327,8 @@ au pas. **Un faux positif se corrige dans la procédure, pas au cas par cas.**
 *Pour le coordinateur et le porteur ; la session de l'arbitre ne lit pas ce §.*
 
 1. **Avant** : `verifier_vivants.py`, `archiver_chantiers.py` et `generer_tableau.py` copiés dans les vivants ;
-   **la table des domaines `Methode/domaines.yaml` créée** (modèle `modeles/domaines.yaml` : une entrée par CdP, le
-   début exact du titre de la section de file de chaque checkpoint dans `file:`) et **chaque checkpoint pourvu de cette
+   **la table des domaines `Methode/domaines.yaml` créée** (modèle `modeles/domaines.yaml` : une entrée par CdP,
+   **la coordination comprise**, le début exact du titre de la section de file de chaque checkpoint dans `file:`) et **chaque checkpoint pourvu de cette
    section** (modèle `modeles/CHECKPOINT.md`) ; `Archives/` créé (git ne suit pas un dossier vide : un fichier vide
    `Archives/.gitkeep`) ; ce fichier copié en `Methode/ARBITRE.md` et adapté ; `Methode/ARBITRE_JOURNAL.md` amorcé,
    poussé :
@@ -355,8 +376,9 @@ au pas. **Un faux positif se corrige dans la procédure, pas au cas par cas.**
 7. **Le premier passage** se lance à la main, le jour de la création ; le coordinateur vérifie la ligne du journal et
    le commit. **Sur un projet déjà avancé, le premier contrôle 9 est bavard** : tous les chantiers ouverts que les
    checkpoints ne citent pas encore tombent d'un coup (quinze lignes sur le premier essai, dans six domaines : six chantiers —
-   un par domaine, d'où le groupement). Prévenir les CdP avant, ou accepter ce premier lot de chantiers : ensuite, le
-   contrôle 9 ne signale plus que le nouveau. Ensuite, chaque matin, une ligne de plus.
+   un par domaine, d'où le groupement). Le premier contrôle 10 l'est aussi : les checkpoints déjà au-delà de 10 Ko tombent d'un coup, un
+   chantier par domaine. Prévenir les CdP avant, ou accepter ce premier lot de chantiers : ensuite, les contrôles 9 et 10
+   ne signalent plus que le nouveau. Ensuite, chaque matin, une ligne de plus.
 8. **Un passage manqué** (pas de ligne au journal) : une limite d'utilisation peut faire échouer un passage matinal ;
    si ça se répète, déplacer l'heure. Un échec isolé ne se rattrape pas : le passage suivant contrôle tout.
 9. **Qui fait quoi** — la liste de contrôle :
@@ -364,7 +386,7 @@ au pas. **Un faux positif se corrige dans la procédure, pas au cas par cas.**
    | geste | qui | fait quand | preuve que c'est fait |
    |---|---|---|---|
    | copier `verifier_vivants.py`, `archiver_chantiers.py`, `generer_tableau.py` dans les vivants ; créer `Archives/` | coordinateur | avant | les fichiers au dépôt, `Archives/.gitkeep` |
-   | écrire `Methode/domaines.yaml`, une entrée par CdP | coordinateur | avant | le contrôle 9 se lance sans défaut de table |
+   | écrire `Methode/domaines.yaml`, une entrée par CdP, la coordination comprise | coordinateur | avant | le contrôle 9 se lance sans défaut de table |
    | donner à chaque checkpoint sa section de file, chaque sujet cité par son id | chaque CdP | avant le premier passage, puis à chaque reprise et passation | le contrôle 9 ne signale plus son domaine |
    | copier et adapter `Methode/ARBITRE.md` ; amorcer `Methode/ARBITRE_JOURNAL.md` ; pousser | coordinateur | avant | les deux fichiers au dépôt |
    | créer la tâche planifiée (nom, heure décalée, prompt, session neuve) ; régler l'approbation automatique | coordinateur ou porteur | le jour 1 | la tâche dans la liste des tâches planifiées |
@@ -385,7 +407,8 @@ au pas. **Un faux positif se corrige dans la procédure, pas au cas par cas.**
   entrées sorties étaient-elles bien finies, rien ne manque-t-il aux vivants — `archiver_chantiers.py chercher` —, le
   contrôle reste-t-il sans écart avec `--archives` ?), **le contrôle 9** (les lignes étaient-elles vraies : un chantier
   ouvert réellement absent du checkpoint, un chantier clos réellement cité ? les CdP ont-ils remis leur file au pas, le
-  contrôle tombe-t-il à « à jour » ?) **et la première lecture du lundi** (chaque relevé portait-il une citation et une
+  contrôle tombe-t-il à « à jour » ?), **le contrôle 10** (les checkpoints signalés étaient-ils vraiment au-delà de
+  10 Ko, et sont-ils revenus dessous une fois leur historique archivé ?) **et la première lecture du lundi** (chaque relevé portait-il une citation et une
   preuve ? y a-t-il eu un avis déguisé ou un faux relevé ?).
 - **Un faux positif se corrige dans la procédure, pas au cas par cas.** Exemple vécu : la première règle des témoins
   jugeait leur âge (« pris depuis plus de 24 heures ») ; elle a signalé deux sessions bien vivantes qui attendaient le

@@ -1,4 +1,4 @@
-# THE LIVING-DOCS ARBITER — <Project> · v3
+# THE LIVING-DOCS ARBITER — <Project> · v4
 ### <date> · <coordination session> · read by the daily scheduled task · drawn from the PL method package
 
 *A fresh session, started every morning by a scheduled task, that checks the shared living docs **and the checkpoints**
@@ -36,7 +36,8 @@ nothing**, whoever holds the file corrects. A single write, mechanical: the arch
 - **What it sees**: duplicate decision numbers or a gap, duplicate workstream ids (living or archived), a workstream in
   flight without `pl:`, two batches in flight on the same deliverable or the same resource, a board that no longer
   matches the yaml, a plan log ahead of the workstreams (`check_living_docs.py`, checks 1 to 8); **a checkpoint that
-  lags behind the workstreams** (check 9, and the Monday reading); **forgotten sessions** that keep a baton.
+  lags behind the workstreams** (check 9, and the Monday reading); **a checkpoint that is too big** (check 10);
+  **forgotten sessions** that keep a baton.
 - **What it does not see**: the quality of a decision, the state of the code, production. It only judges the form of
   the shared living docs.
 
@@ -60,7 +61,12 @@ cases, on the first project run this way:
 7. **Checkpoints fell behind the workstreams.** Ten subjects existed only in checkpoints — which the owner does not
    read —, among them a feature announced “for later” and never registered; other queues announced as to do
    workstreams that were already finished. → the rule “a checkpoint's queue carries only registered workstreams”
-   (method §6), check 9 and the Monday reading.
+   (method §6), check 9 and the Monday reading. Check 9 itself had its blind spots: two domains escaped it, one whose queue
+   section only carried a pointer (“everything is in §0”), the other which declared none (empty `queue:`). → the
+   `## §<n> · The queue` section that carries the list itself, and the empty `queue:` made a gap of the domain.
+8. **The living docs grew back within days**: a workstreams file went from 95 to 146 KB in one day, a decision log
+   reached 206 KB, a checkpoint 47 KB — the messages between PLs piled up in the entries, and every PL re-reads everything
+   at every resume. → the caps (method §6), the archiving after seven days, check 10.
 
 **Why a fresh, scheduled session, rather than a PL taking it on**: it has **no stake in any domain**, so no reason to
 play a gap down; it runs **when nobody is working**, so no write conflict; it leaves **a dated trace even when all is
@@ -73,7 +79,7 @@ whoever holds the file corrects.
 |---|---|---|
 | **A** — one project, one PL | **useless** | a single PL writes, and sees what they write; no domain table to keep |
 | **B** — independent modules, one PL each | **optional** | useful if the shared living docs grow, or from the first gap (a duplicate number, a board out of step); the domain table then has one domain per module |
-| **C** — linked modules, a coordinator | **recommended** | as soon as several PLs write the same living docs on the same day: that is where the seven cases above happen |
+| **C** — linked modules, a coordinator | **recommended** | as soon as several PLs write the same living docs on the same day: that is where the eight cases above happen |
 
 The sign that it is time: the first duplicate decision number, or the first forgotten session that keeps a baton.
 
@@ -81,11 +87,12 @@ The sign that it is time: the first duplicate decision number, or the first forg
 
 **Every morning** (the detail is in §1):
 1. it clones the living docs;
-2. it runs `check_living_docs.py` with `--archives` **and `--domains`**: nine checks, including check 9 on the
-   checkpoints;
+2. it runs `check_living_docs.py` with `--archives` **and `--domains`**: ten checks, including check 9 on the
+   checkpoints and check 10, their size;
 3. it judges the batons by their silence;
-4. it files **one `for:` workstream per new gap** — except check 9, **grouped into a single workstream per domain**;
-5. it archives the workstreams accepted for fifteen days;
+4. it files **one `for:` workstream per new gap** — except check 9, **grouped into a single workstream per domain**
+   (check 10 has one line per domain, so one workstream per domain too);
+5. it archives the workstreams accepted for seven days;
 6. it adds a line to the log, even without a gap;
 7. it pushes a single commit and summarizes.
 
@@ -128,16 +135,17 @@ Five moves, all in §4 (the “who does what” table is in §4.9):
   - 2026-11-02 06:42 · 1 gap(s) · 2 new finding(s) · batons fresh · archiving: 0 dated, 3 archived · checkpoints: <domain-1> · reading: <domain-2>
   ```
   the date and time of the run; the number of checks in gap; the number of workstreams filed that day; the first silent
-  baton (or “batons fresh”); the archiving; the domains reported by check 9 (“up to date” when there is none); and **on
+  baton (or “batons fresh”); the archiving; the domains reported by checks 9 and 10 (“up to date” when there is none); and **on
   Mondays only**, the domains flagged by the reading (“nothing” otherwise). A day without a gap:
   `… · 0 gap(s) · 0 new finding(s) · batons fresh · archiving: 0 dated, 0 archived · checkpoints: up to date`.
 - **The summary**: the session's final reply, visible in the scheduled task's session. Without a gap, one line: “Living
   docs compliant on <date>”.
 - **The workstreams**: a finding is a `status: to-brief` workstream, `for:` the PL concerned (or the coordinator), with a
   recognizable id — `arbiter-c<n>-<key>` (check `<n>`), `arbiter-c9-checkpoint-<domain>-<date>` (a checkpoint lagging,
-  a single one per domain), `arbiter-reading-<domain>-<date>` (the Monday reading). They show up on the board
+  a single one per domain), `arbiter-c10-short-checkpoint-<domain>-<date>` (a checkpoint beyond 10 KB, a single one per
+  domain), `arbiter-reading-<domain>-<date>` (the Monday reading). They show up on the board
   (`workstreams.html`); the PL addressed reads them after their `pull`, corrects, moves the workstream to accepted; it
-  moves out to `Archives/` fifteen days later.
+  moves out to `Archives/` seven days later.
 - **The notifications**: the push only arrives if the platform judges the run “notable”; **no notification does not mean
   no run** — the log is authoritative (§4.6).
 
@@ -162,13 +170,16 @@ step. **A false positive is corrected in the procedure, not case by case.**
      --generator <Folder>/make_board.py --plan <Folder>/PLAN_<P>.md --archives <Folder>/Archives \
      --domains Method/domains.yaml
    ```
-   With `--archives`, checks 3 and 7 also read the archives (otherwise the archiving would make a false gap fifteen days
+   With `--archives`, checks 3 and 7 also read the archives (otherwise the archiving would make a false gap seven days
    after the last batch). With `--domains`, **check 9 “checkpoints”** reads the domain table: for each domain, it opens
    the checkpoint, takes its queue section and cross-checks it with `workstreams.yaml`. Two gaps: **9b**, the queue
    cites a closed workstream (accepted or archived); **9c**, an open workstream of the domain (upcoming, to brief, debt,
-   in flight — except `for:` messages) that the checkpoint does not cite between backticks. A fault in the table itself
-   (checkpoint or queue section not found, entry with no domain or no checkpoint) is also a gap. The table's paths are
-   read from the root of the clone: run from elsewhere, add `--root <the clone>`.
+   in flight — except `for:` messages) that the checkpoint does not cite between backticks. An empty `queue:` in the table is
+   also a gap **of the domain** (“no queue section declared”): the PL gives its checkpoint its `## §<n> · The queue`
+   section and the `queue:` line that names it. A fault in the table itself
+   (checkpoint or queue section not found, entry with no domain or no checkpoint) is also a gap. **Check 10** measures the
+   size of each checkpoint: beyond 10,240 bytes (the default cap, `--checkpoint-cap`), a line “<domain>: <path> weighs <n>
+   bytes, cap <p>”. The table's paths are read from the root of the clone: run from elsewhere, add `--root <the clone>`.
    Code 0: nothing to report from this check. Code 1: gaps, one indented line per case under the check marked GAP.
    Code 2: a file is missing or has been renamed — say so in the log (§1.5) and in the summary, nothing else.
 3. **The batons**, in addition: the “Session active” line of each domain checkpoint (table in
@@ -178,14 +189,16 @@ step. **A false positive is corrected in the procedure, not case by case.**
    git fetch --depth 300 origin main
    git log origin/main -1 --format=%cI --grep=<baton id>
    ```
-   `--grep` reads the whole commit message, attribution lines included: ⟨the baton's short id appears there when the
-   platform adds a session link to every commit; otherwise, agree on a mark every PL puts in their messages⟩. **No
+   `--grep` reads the whole commit message, attribution lines included: ⟨**the baton is the last eight characters of the
+   session's identifier** — the one in the session attribution line of its commits, when the platform adds one to every
+   commit; look for **that whole sequence, never the beginning** of the identifier, which all the sessions of one account
+   share; with no attribution line, agree on a mark every PL puts in their messages⟩. **No
    commit from that session for more than 24 hours** — or none at all, and a baton set more than 24 hours ago — is a
    **finding** (a forgotten or dead session), addressed to the coordinator; the measurement is written in the
    workstream, with the date of the last commit (“last commit on …”). A free baton (“none — free since …”) is not
    checked.
 4. **One workstream per new gap**: for each case (an indented line under a check marked GAP — **except check 9, grouped
-   below** — and each silent baton), an entry **at the end** of `<Folder>/workstreams.yaml`:
+   below, and check 10, which has its own id** — and each silent baton), an entry **at the end** of `<Folder>/workstreams.yaml`:
    ```
    - id: arbiter-c<n>-<key>
      title: <the case, in one line>
@@ -218,6 +231,13 @@ step. **A false positive is corrected in the procedure, not case by case.**
    `arbiter-c9-table-*` is open (the PL may have renamed the checkpoint or its section: the coordinator aligns the table,
    or asks the PL to return to the agreed title).
 
+   **Check 10, one workstream per domain**: for each line “<domain>: <path> weighs <n> bytes, cap <p>”, a workstream
+   `arbiter-c10-short-checkpoint-<domain>-<YYYYMMDD>`, `for:` the `pl` of the domain in `Method/domains.yaml`, module
+   `method`, title “The <domain> checkpoint exceeds its 10 KB cap”, the `basis` carrying the line as it is, then “move the
+   history to a domain archive to get back under 10 KB (method §6)”. **If a workstream
+   `arbiter-c10-short-checkpoint-<domain>-*` already exists without being accepted, add nothing** for that domain: the PL
+   has not resumed yet.
+
    Then regenerate the board (`python3 -B <Folder>/make_board.py <Folder>/workstreams.yaml <Folder>/workstreams.html`)
    and run the check again: the board check must be OK. The commit is made at §1.5.
 4a. **The archiving, after the findings** — the arbiter's only mechanical write, never a correction by hand:
@@ -227,7 +247,7 @@ step. **A false positive is corrected in the procedure, not case by case.**
    ```
    The command dates `accepted-on: <today's date>` on every entry that has just become accepted, removes the date from a
    reopened entry, and moves out to `Archives/WORKSTREAMS_<YYYY-MM>.yaml` (the month of today: things are only appended
-   to it, frozen at the end of the month) every entry accepted for 15 days or more; it checks that nothing is lost before
+   to it, frozen at the end of the month) every entry accepted for seven days or more (the default delay: **do not pass `--delay`**); it checks that nothing is lost before
    writing, and run again at the same date it changes nothing. Code 0: done, with or without change. Code 1: done, with a
    warning — an unreadable `accepted-on:` date, which the command neither archives nor modifies: a `for:` workstream
    addressed to the coordinator, as in 4 (⟨`a`⟩ for the check, `archiving-<id>` for the key, the command's line as is).
@@ -252,7 +272,7 @@ step. **A false positive is corrected in the procedure, not case by case.**
 5. **The log, at every run, even without a gap**: one line appended **at the end** of `Method/ARBITER_LOG.md`, never a
    line rewritten:
    ```
-   - <YYYY-MM-DD HH:MM> · <n> gap(s) · <n> new finding(s) · <the first baton silent for more than 24 h, or “batons fresh”> · archiving: <n> dated, <m> archived · checkpoints: <domains reported by check 9, or “up to date”>
+   - <YYYY-MM-DD HH:MM> · <n> gap(s) · <n> new finding(s) · <the first baton silent for more than 24 h, or “batons fresh”> · archiving: <n> dated, <m> archived · checkpoints: <domains reported by checks 9 and 10, or “up to date”>
    ```
    `<n> gap(s)` is the number given by the last line of the check (“LIVING DOCS · <n> gap(s)”). On Mondays, the line adds **at the end** ` · reading: <domains flagged, or “nothing”>`; on other days, nothing. A “new
    finding” is a workstream filed that day (entries the archiving dates or moves out do not count). The time is the
@@ -265,7 +285,7 @@ step. **A false positive is corrected in the procedure, not case by case.**
    what proves the arbiter ran** — not the notification (§4.6).
 6. **The summary**: the session's final reply, short — the date, the number of gaps, the new findings (one per line,
    with the PL addressed), those already reported and still there, the archiving (“<n> dated, <m> archived”), the
-   domains reported by check 9 and, on Mondays, those flagged by the reading, the commit pushed. Without a gap: “Living
+   domains reported by checks 9 and 10 and, on Mondays, those flagged by the reading, the commit pushed. Without a gap: “Living
    docs compliant on <date>”, one line.
 
 ---
@@ -277,7 +297,7 @@ step. **A false positive is corrected in the procedure, not case by case.**
 | a workstream of a domain (its `module:`) | that domain's PL (table in the method §1a) ⟨one line per domain, if needed⟩ |
 | a workstream in flight | the `pl:` it carries, if it carries one; otherwise the PL of its module |
 | a gap on a deliverable or a shared resource (two batches in flight) | the PLs of the batches at issue, one workstream each |
-| a checkpoint lagging (check 9); the Monday reading | the `pl` of the domain in `Method/domains.yaml`, one workstream per domain |
+| a checkpoint lagging (check 9); its size (check 10); the Monday reading | the `pl` of the domain in `Method/domains.yaml`, one workstream per domain |
 | a module with no PL opened | the coordinator |
 | everything else: decision log, board, plan log, arbiter's log, batons, domain table, `method` | the coordinator |
 
@@ -304,8 +324,8 @@ step. **A false positive is corrected in the procedure, not case by case.**
 *For the coordinator and the owner; the arbiter's session does not read this §.*
 
 1. **Before**: `check_living_docs.py`, `archive_workstreams.py` and `make_board.py` copied into the living docs;
-   **the domain table `Method/domains.yaml` created** (template `templates/domains.yaml`: one entry per PL, the exact
-   start of the title of each checkpoint's queue section in `queue:`) and **every checkpoint given that section**
+   **the domain table `Method/domains.yaml` created** (template `templates/domains.yaml`: one entry per PL,
+   **the coordination included**, the exact start of the title of each checkpoint's queue section in `queue:`) and **every checkpoint given that section**
    (template `templates/CHECKPOINT.md`); `Archives/` created (git does not track an empty folder: an empty file
    `Archives/.gitkeep`); this file copied to `Method/ARBITER.md` and adapted; `Method/ARBITER_LOG.md` seeded, pushed:
    ```
@@ -351,8 +371,9 @@ step. **A false positive is corrected in the procedure, not case by case.**
 7. **The first run** is started by hand, on the day of creation; the coordinator checks the log line and the commit.
    **On a project already under way, the first check 9 is chatty**: all the open workstreams the checkpoints do not
    cite yet come in at once (fifteen lines on the first trial, across six domains: six workstreams — one per domain,
-   hence the grouping). Warn the PLs beforehand, or accept this first batch of workstreams: afterwards, check 9 only
-   reports what is new. Then, every morning, one more line.
+   hence the grouping). The first check 10 is too: the checkpoints already beyond 10 KB come in at once, one
+   workstream per domain. Warn the PLs beforehand, or accept this first batch of workstreams: afterwards, checks 9 and 10
+   only report what is new. Then, every morning, one more line.
 8. **A missed run** (no line in the log): a usage limit can make an early-morning run fail; if it happens again, move
    the time. An isolated failure is not made up: the next run checks everything.
 9. **Who does what** — the checklist:
@@ -360,7 +381,7 @@ step. **A false positive is corrected in the procedure, not case by case.**
    | move | who | done when | proof it is done |
    |---|---|---|---|
    | copy `check_living_docs.py`, `archive_workstreams.py`, `make_board.py` into the living docs; create `Archives/` | coordinator | before | the files in the repository, `Archives/.gitkeep` |
-   | write `Method/domains.yaml`, one entry per PL | coordinator | before | check 9 runs with no table fault |
+   | write `Method/domains.yaml`, one entry per PL, the coordination included | coordinator | before | check 9 runs with no table fault |
    | give each checkpoint its queue section, each subject cited by its id | each PL | before the first run, then at every resume and handover | check 9 no longer reports their domain |
    | copy and adapt `Method/ARBITER.md`; seed `Method/ARBITER_LOG.md`; push | coordinator | before | both files in the repository |
    | create the scheduled task (name, off-the-hour time, prompt, fresh session); set automatic approval | coordinator or owner | day 1 | the task in the list of scheduled tasks |
@@ -381,7 +402,8 @@ step. **A false positive is corrected in the procedure, not case by case.**
   moved out really finished, does anything go missing from the living docs — `archive_workstreams.py search` —, does the
   check stay free of gaps with `--archives`?), **check 9** (were the lines true: an open workstream really absent from
   the checkpoint, a closed workstream really cited? did the PLs bring their queue back in step, does the check fall to
-  “up to date”?) **and the first Monday reading** (did each flag carry a quotation and evidence? was there a disguised
+  “up to date”?), **check 10** (were the checkpoints reported really beyond 10 KB, and did they come back under it once
+  their history was archived?) **and the first Monday reading** (did each flag carry a quotation and evidence? was there a disguised
   opinion or a false flag?).
 - **A false positive is corrected in the procedure, not case by case.** A real example: the first baton rule judged
   their age (“taken for more than 24 hours”); it reported two very much alive sessions that were waiting for the owner.

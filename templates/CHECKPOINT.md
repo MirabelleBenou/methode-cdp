@@ -1,6 +1,7 @@
 # CHECKPOINT — <Project> · <domain> · `v<X.Y>`
 
-**Session active: none — free since <date, time>.** *(or: `<short id>`, since <time>)*
+**Session active: none — free since <date, time>.** *(or: `<short id>`, since <time> — the last eight characters of the
+session's identifier, the one in the session attribution line of its commits)*
 
 > **Resume** — the owner pastes into a new conversation of the project, with Opus: “You are Opus-PL-<Domain>.
 > Resume: attach with push access the repositories <owner> <Project>, <Project>-App⟨, <Project>-Batches, the domain's
@@ -13,7 +14,10 @@
 > *Source: private repository `<owner>/<Project>`, `<Folder>/CHECKPOINT_<P>.md`. The claude.ai project holds a mirror of
 > it under the same name, copied over by the PL.*
 >
-> *The checkpoint states the **real** state, measured — not the hoped-for state. It is rewritten in full at each handover.*
+> *The checkpoint states the **real** state, measured — not the hoped-for state. It is rewritten in full at each handover.
+> **It fits in 10 KB** (10,240 bytes): the fixed line, the baton, the state, the queue, what is needed to resume; the
+> history goes to a domain archive (`<Folder>/Archives/CHECKPOINT_<DOMAIN>_ARCHIVE_<date>.md`). Check 10 of the checker
+> flags it.*
 
 ---
 
@@ -60,11 +64,13 @@ changed since last time in bold.>
 
 ## §3 · The queue — to decide with the owner
 
-*The queue carries only **registered workstreams** (method §6): each subject is cited by its `workstreams.yaml` id,
+*This section — `## §<n> · The queue`, §3 here — **carries the list itself**, never a pointer (“everything is in §0”).
+The queue carries only **registered workstreams** (method §6): each subject is cited by its `workstreams.yaml` id,
 between backticks. A subject that has no workstream yet is registered **first** (upcoming, to brief or debt), then
 cited; a closed workstream (accepted or archived) leaves the queue. At every resume and every handover, re-read this
 queue against `workstreams.yaml`. The start of this title is the one `queue:` carries in the domain table
-(`Method/domains.yaml`): the coordinator keeps it up to date if it is renamed.*
+(`Method/domains.yaml`): if it is renamed, the `queue:` line of its domain changes in the same commit — the only line of
+the table a PL touches.*
 
 - **Decided, to brief first** (D<n>): `<id>` — <…>.
 - **Next**: `<id>` — <…>.

@@ -8,7 +8,7 @@ log, the workstreams source (workstreams.yaml), the page regenerated from it
 
     python3 -B check_living_docs.py --workstreams <workstreams.yaml> --log <decision_log.md> \\
         [--board <workstreams.html> --generator <make_board.py>] [--plan <plan.md>] \\
-        [--archives <folder>] [--domains <file> [--root <folder>]]
+        [--archives <folder>] [--domains <file> [--root <folder>] [--checkpoint-cap <bytes>]]
 
 "--board" and "--generator" go together; "--plan" is optional.
 "--archives" gives the folder of the workstream archives (the WORKSTREAMS_*.yaml files, same
@@ -16,10 +16,12 @@ form as workstreams.yaml, which archive_workstreams.py makes); it must exist. Wi
 option, nothing changes. With it, two checks extend to the archives: 3 and 7.
 "--domains" gives the domain table (see check 9) and triggers that check;
 "--root" is the folder the paths of that table are read from (the current folder
-by default); it is only used with "--domains". A check whose files are not given
-shows "not requested".
+by default); it is only used with "--domains". "--checkpoint-cap" gives the size cap of a
+checkpoint, in bytes (a positive integer, 10240 by default): a checkpoint is re-read in full at
+every resumption, so it must stay short (see check 10); it too is only used with "--domains".
+A check whose files are not given shows "not requested".
 
-The nine checks, in this order:
+The ten checks, in this order:
   1. decision numbers: the lines "| **D<n>** |" have no duplicated number and
      no gap between the smallest and the largest;
   2. reservations: a line "| **D<n>** | *reserved …" still present is a
@@ -59,8 +61,8 @@ The nine checks, in this order:
      The keys: "domain" (short name), "pl" (the domain's project lead),
      "checkpoint" (path of the checkpoint, relative to "--root"), "queue" (the exact
      start of the queue section's title, a line that starts with this value; empty: no
-     queue section), "modules" (the workstreams.yaml modules of the domain, separated
-     by spaces, may be empty) and "prefixes" (optional: starts of the domain's ids).
+     queue section declared, which is a gap of the domain), "modules" (the workstreams.yaml
+     modules of the domain, separated by spaces, may be empty) and "prefixes" (optional: starts of the domain's ids).
      An entry of workstreams.yaml belongs to the first domain that fits, following this
      order of rules: its "pl:" equals the domain's, otherwise its id starts with one of
      the prefixes, otherwise its "module:" is one of the modules; otherwise it belongs to
@@ -70,14 +72,26 @@ The nine checks, in this order:
      workstream, that is one in "status: accepted" or only archived (the archives come
      from "--archives"); (c) every entry of the domain in "status" upcoming, to-brief,
      debt or in-flight, with no "for:" key (a message, not a subject), is cited by the
-     checkpoint. A faulty table (checkpoint not found, queue section not found, entry
-     with no "domain" or no "checkpoint") is a gap, and the domain is not checked any
-     further. The count is "<n> domains, <b> cited closed, <c> not cited".
+     checkpoint. An empty "queue:" makes one gap line of the domain ("no queue section
+     declared"), placed before its (c) lines; (b) does not apply to it, (c) does. A faulty
+     table (checkpoint not found, queue section not found, entry with no "domain" or no
+     "checkpoint") is a gap, and the domain is not checked any further. The count is
+     "<n> domains, <b> cited closed, <c> not cited, <v> without a queue section";
+ 10. checkpoint size: a checkpoint is re-read in full at every session resumption; above
+     the cap, it costs at every resumption and its history must go to an archive. The
+     check needs "--domains". For each domain (in the order of the table) that has a
+     "domain" and a "checkpoint", it measures the size in bytes of the checkpoint file on
+     disk; strictly above "--checkpoint-cap" (10240 by default), that is one gap line
+     "<domain>: <path> weighs <n> bytes, cap <p>" (the path as written in the table). A
+     checkpoint not found, or an entry with no "domain" or no "checkpoint", is ignored here:
+     check 9 already reports it. The count is "<n> domains, <k> above <p> bytes", <n> being
+     the entries that have a domain and a checkpoint.
 
 Output: one line per check (OK, GAP or warning, with a count), the details of
 the gaps indented below, then a last line "LIVING DOCS · …".
 Exit code: 0 with no gap, 1 with at least one gap, 2 for an invalid call
-(missing argument, file or folder not found, "--root" without "--domains").
+(missing argument, file or folder not found, "--root" or "--checkpoint-cap" without
+"--domains", a cap that is not a positive integer).
 
 Python 3, standard library only. The YAML reader is deliberately poor, like
 the generator's: "- id:" then "key: value" on a single line.
@@ -96,6 +110,7 @@ RE_DATE = re.compile(rb"\d{2}/\d{2}/\d{4}")
 
 NOT_REQUESTED = "—  not requested"
 OPEN_STATUSES = ("upcoming", "to-brief", "debt", "in-flight")
+DEFAULT_CAP = 10240  # bytes: a checkpoint is re-read in full at every resumption
 
 
 def read_text(path: Path) -> str:
@@ -317,40 +332,63 @@ def citation(i: str) -> str:
 
 def check_domain(d: dict, workstreams: list[dict], closed: dict[str, str],
                  domains: list[dict], root: Path):
-    """The table's faults, or the queue that cites closed ones (9b) then the open ones not cited (9c)."""
+    """The table's faults, or: undeclared queue, queue that cites closed ones (9b), open ones not cited (9c)."""
     domain_name, path = d["domain"], root / d["checkpoint"]
     if not path.is_file():
-        return [f"{domain_name}: checkpoint not found {d['checkpoint']}"], [], []
+        return [f"{domain_name}: checkpoint not found {d['checkpoint']}"], [], [], []
     try:
         text = read_text(path)
     except (OSError, UnicodeDecodeError):
-        return [f"{domain_name}: checkpoint unreadable {d['checkpoint']}"], [], []
+        return [f"{domain_name}: checkpoint unreadable {d['checkpoint']}"], [], [], []
     title = d.get("queue", "")
     section = queue_section(text, title) if title else None
     if title and section is None:
-        return [f"{domain_name}: queue section not found “{title}”"], [], []
+        return [f"{domain_name}: queue section not found “{title}”"], [], [], []
+    no_queue = [] if title else [f"{domain_name}: no queue section declared (queue: empty)"]
     positions = sorted((section.find(citation(i)), i) for i in closed if citation(i) in section) if section else []
     cited = [f"{domain_name}: the queue cites {i}, closed ({closed[i]})" for _, i in positions]
     not_cited = [f"{domain_name}: {c['id']} ({c['status']}) is not cited in the checkpoint"
                  for c in workstreams
                  if c.get("id") and c.get("status") in OPEN_STATUSES and "for" not in c
                  and domain_of(c, domains) == domain_name and citation(c["id"]) not in text]
-    return [], cited, not_cited
+    return [], no_queue, cited, not_cited
 
 
 def check_checkpoints(workstreams: list[dict], archives: list[dict] | None, table: list[dict], root: Path):
     closed = closed_ids(workstreams, archives)
     valid = [d for d in table if d.get("domain") and d.get("checkpoint")]
-    details, total_cited, total_not_cited = [], 0, 0
+    details, total_cited, total_not_cited, total_no_queue = [], 0, 0, 0
     for d in table:
         if d not in valid:
             details.append(f"entry on line {d['_line']}: domain or checkpoint missing")
             continue
-        faults, cited, not_cited = check_domain(d, workstreams, closed, valid, root)
-        details += faults + cited + not_cited
+        faults, no_queue, cited, not_cited = check_domain(d, workstreams, closed, valid, root)
+        details += faults + no_queue + cited + not_cited
         total_cited += len(cited)
         total_not_cited += len(not_cited)
-    count = f"{len(table)} domains, {total_cited} cited closed, {total_not_cited} not cited"
+        total_no_queue += len(no_queue)
+    count = (f"{len(table)} domains, {total_cited} cited closed, {total_not_cited} not cited, "
+             f"{total_no_queue} without a queue section")
+    return ("GAP" if details else "OK"), count, details
+
+
+def checkpoint_size(path: Path) -> int | None:
+    """The size in bytes of the file on disk; None if it is not found."""
+    try:
+        return path.stat().st_size if path.is_file() else None
+    except OSError:
+        return None
+
+
+def check_size(table: list[dict], root: Path, cap: int):
+    """A checkpoint strictly heavier than the cap is a gap; those not found are ignored."""
+    valid = [d for d in table if d.get("domain") and d.get("checkpoint")]
+    details = []
+    for d in valid:
+        size = checkpoint_size(root / d["checkpoint"])
+        if size is not None and size > cap:
+            details.append(f"{d['domain']}: {d['checkpoint']} weighs {size} bytes, cap {cap}")
+    count = f"{len(valid)} domains, {len(details)} above {cap} bytes"
     return ("GAP" if details else "OK"), count, details
 
 
@@ -371,6 +409,7 @@ def read_arguments(argv: list[str]):
     p = Parser(prog="check_living_docs.py", allow_abbrev=False, add_help=False)
     for option in ("workstreams", "log", "board", "generator", "plan", "archives", "domains", "root"):
         p.add_argument(f"--{option}")
+    p.add_argument("--checkpoint-cap")
     a, unknown = p.parse_known_args(argv)
     if unknown:
         raise ValueError(f"unknown argument: {unknown[0]}")
@@ -381,17 +420,24 @@ def read_arguments(argv: list[str]):
         raise ValueError("--board and --generator go together")
     if a.root and not a.domains:
         raise ValueError("--root only goes with --domains")
+    if a.checkpoint_cap is not None and not a.domains:
+        raise ValueError("--checkpoint-cap only goes with --domains")
+    cap = DEFAULT_CAP
+    if a.checkpoint_cap is not None:
+        if not re.fullmatch(r"[0-9]+", a.checkpoint_cap) or int(a.checkpoint_cap) < 1:
+            raise ValueError(f"--checkpoint-cap: a positive integer is expected ({a.checkpoint_cap})")
+        cap = int(a.checkpoint_cap)
     paths = {option: Path(getattr(a, option)) for option in
              ("workstreams", "log", "board", "generator", "plan", "archives", "domains", "root") if getattr(a, option)}
     for option, path in paths.items():
         if not (path.is_dir() if option in ("archives", "root") else path.is_file()):
             raise ValueError(f"file not found: --{option} {path}")
-    return paths
+    return paths, cap
 
 
 def main(argv: list[str]) -> int:
     try:
-        f = read_arguments(argv)
+        f, cap = read_arguments(argv)
         workstreams = read_workstreams(f["workstreams"])
         archives = read_archives(f["archives"]) if "archives" in f else None
         table = read_workstreams(f["domains"]) if "domains" in f else None
@@ -414,15 +460,17 @@ def main(argv: list[str]) -> int:
         ("deliverables and resources", lambda: check_deliverables(workstreams)),
         ("checkpoints", (lambda: check_checkpoints(workstreams, archives, table, f.get("root", Path("."))))
          if table is not None else None),
+        ("checkpoint size", (lambda: check_size(table, f.get("root", Path(".")), cap))
+         if table is not None else None),
     ]
     gaps = 0
     for rank, (label, check) in enumerate(checks, start=1):
         if check is None:
-            print(f"{rank}  {label:<26} {NOT_REQUESTED}")
+            print(f"{rank:<2} {label:<26} {NOT_REQUESTED}")
             continue
         verdict, count, details = check()
         gaps += verdict == "GAP"
-        print(f"{rank}  {label:<26} {verdict:<13}  {count}")
+        print(f"{rank:<2} {label:<26} {verdict:<13}  {count}")
         for detail in details:
             print(f"      {detail}")
     print("LIVING DOCS · no gap" if not gaps else f"LIVING DOCS · {gaps} gap(s)")

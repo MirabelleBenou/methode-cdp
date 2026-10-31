@@ -6,6 +6,10 @@
   it.*
 - *The dev's side is in `DEV_PROMPT_<P>.md`, at the root of the `<Project>-App` repository.*
 - *It takes precedence over the `methode-cdp` skill, which carries the part common to all projects.*
+- *It carries only what holds for all the domains: every PL re-reads it, and on the first project 40% of its text served
+  only a single product (measurements, mock-up, test bench, screen pitfalls). **What is specific to a product goes to its
+  product sheet** (the one the coordination keeps when a product has several PLs) **or to the checkpoint of its
+  domain** — a paragraph is enough here to point to it.*
 
 > **How to use this template** — what is in plain text is generic: keep it. What is between `⟨…⟩` is specific to the
 > project: fill it in at bootstrap, or at the first batch that decides it. Delete this box.
@@ -26,7 +30,7 @@
 
 ## §1 · Who does what
 
-- **The owner** decides and validates: on screen when the batch shows a mock-up, otherwise in production. ⟨With a server
+- **The owner** decides and validates: on screen when the batch has a mock-up (the PL shows it to them), otherwise in production. ⟨With a server
   runner: they no longer drop anything; they say “go” naming the action, then validate (§4a).⟩
   - ⟨If they read on a tablet or phone, without Python: **every file is regenerated on Claude's side**; they are
     never asked to run a script or a command⟩.
@@ -47,11 +51,18 @@
   calculation engine, a delicate migration, writing…⟩.
   - **The PL launches them themselves, as a sub-agent of their session**: the dev starts **without the PL's context**,
     with the command of §2 as their only instruction. Their report and stops come back to the PL. **The owner talks
-    only to the PL.**
+    only to the PL, and the dev too: it talks only to the PL**, through what it pushes and through its final reply; the
+    owner does not read it.
 - **Tooling is code**: a missing tool is ordered through a **tooling batch**, with a short brief. The test bench is
   maintained by the dev.
 - **Several PLs can work at the same time**, one per domain, on the same living docs: §1a.
 - ⟨**The server runner** (a program on the production server) deploys the PL's orders; it decides nothing (§4a).⟩
+- **The owner's machine** (a game, an application, the screen): **the PL's session works on it itself, through the
+  bridge** of the Claude app — linked folders (read, write), a terminal if one is offered, the screen through computer
+  use, the owner validating the access in the PL's conversation. **The local runner**, driven by files
+  (`templates/LOCAL_RUNNER.md` of the package), **is now only the fallback**, when the bridge is not offered: it got stuck
+  when the owner was away from their machine. Everything stays under the project folder, never in an application's; **a
+  workstream that needs the machine is a debt as long as the owner is not there**.
 - The **mechanical checks** belong to the PL and the dev; the **visual checks** to the owner.
 
 ---
@@ -77,8 +88,11 @@ package's `GUIDE.md` §2a.*
 PLs), what it carries, its checkpoint (`<Folder>/CHECKPOINT_<PRODUCT>_<MODULE>.md`); plus the coordinator and its
 checkpoint⟩. The living-docs README holds the same table, with each one's resume line;
 **`Method/domains.yaml`** (template `templates/domains.yaml` of the package) holds it in the form the checker reads
-(check 9): a domain, its PL, its checkpoint, the title of its queue section (§6), its modules. **The coordinator keeps
-the three in step**: a domain opened or closed, a queue section renamed change all three.
+(check 9): a domain, its PL, its checkpoint, the title of its queue section (§6), its modules. **The coordination has
+its line in all three, like a domain**: it has a queue like the others (`Method/CHECKPOINT_METHOD.md`). **The coordinator
+keeps the three in step**: a domain opened or closed changes all three. **A renamed queue section changes the domain's
+`queue:` line in the same commit, by the PL that renames it** — the only line of the table it touches; an empty `queue:`
+is a gap of the domain, which the checker flags.
 
 **Opening a domain**: the owner tells the coordinator what they want to do; the coordinator gives the fixed line of an
 existing domain with a free baton, or opens the domain (line here, in the README and in `Method/domains.yaml`, seeded checkpoint, workstreams
@@ -120,7 +134,10 @@ released when the runner has returned its last report and the PL has accepted it
 workstream `module: method`, `for:` the method session.
 
 **The baton**: each checkpoint carries at the top `Session active: <short id>, since <time>` (or “none — free since
-<time>”). The resuming session sets it by a push, its first move; a session that finds another id than its own after a
+<time>”). **The short id is the last eight characters of the session's identifier**, the one in the session attribution
+line of its commits: it was defined nowhere, three forms coexisted, and all the sessions of one account share the same
+beginning of identifier — which can mislead the arbiter looking for the baton in the commits. The resuming session sets
+it by a push, its first move; a session that finds another id than its own after a
 `pull` stops writing to the living docs and tells the owner; a session waiting for the owner keeps the baton. **A baton
 is judged by its silence, not by its age**: a session can live several days waiting for the owner; it is the absence
 of any commit from that session for more than 24 hours that signals a forgotten session (the arbiter's check, if there
@@ -144,14 +161,26 @@ top of its reply.
      only one more commit, `batches/v<X.Y>/BRIEF.md` (and its mock-up). The brief names this base commit.
    - **The PL launches the dev**: `Agent` tool, in the background, **the model and effort mode of the brief**, and a
      command in four parts (template: `DEV_COMMAND.md`) — who they are and what they execute; the practical
-     conditions, which take precedence over the brief; the stops; their final answer.
+     conditions, which take precedence over the brief; the stops; their final answer. **The standing conditions are in
+     the dev prompt** (repositories already attached; clones in `/home/claude/dev_<batch>/`, never at the paths of the
+     PL's copies; push to the batch's branches only; no process left running in the background): **the command only
+     repeats what changes from one batch to the next**. While the dev works, **the PL does not touch the paths it
+     occupies**. **The dev talks only to the PL.**
    - **Fallback**: if the PL cannot launch a sub-agent, they give the owner a line to paste word for word, with above
-     it “**Sonnet · Medium · new conversation**” (model, effort, session).
+     it “**Sonnet · Medium · new conversation**” (model, effort, session); the dev prompt then tells the dev to tell the
+     owner only, in one sentence, when it stops or delivers.
    - **Safeguard**: a sub-agent consumes the credit of the PL's session; the handover is always measured.
 3. **A dev stop**: the dev pushes their branch and the reason (`STOP_<n>.md`). The PL reads it in the repository,
-   pushes `ADDENDUM_<n>.md` on the same branch and relaunches the dev (the same sub-agent if it can be reached,
-   otherwise a new one, which also reads the previous reports). **An addendum never reopens a batch handed over to the
-   owner** (step 6).
+   pushes `ADDENDUM_<n>.md` on the same branch and relaunches the dev **by message** (the same sub-agent if it can be
+   reached, otherwise a new one, which also reads the previous stops and reports). **An addendum never reopens a batch
+   handed over to the owner** (step 6).
+   - **A mock-up requested from the dev goes through a stop**: it renders, pushes the images and
+     `batches/v<X.Y>/MOCKUP_<n>.md` (one line per image, the fingerprint of the rendered code) to the brief's branch, and
+     stops. **The PL looks at the images, shows them to the owner, then relaunches the same sub-agent by message with the
+     owner's verdict, word for word.** A requested change that stays within the brief makes a new round
+     (`MOCKUP_<n+1>.md`); a change that would touch what the brief says is immovable goes back through the brief.
+     Once validated, the mock-up fixes the code's fingerprint: the dev touches it no more, not a line. *(The dev prompt
+     still told the dev to show the mock-up to the owner: every launch had to correct it by hand.)*
 4. **The delivery**: the delivery commit, then `DEV_REPORT.md` in a separate commit.
 5. **The acceptance** (§4), then the verdict to the owner, with the prediction for production, and **the deliverable
    handed over as is**, under its exact name, with its sha256 — ⟨with a server runner: **deployed by an order** (§4a),
@@ -219,7 +248,7 @@ routes, a calculation engine, cascading steps; Low for a one-line fix.
   mock-up, yes.
 - **Images only if the visual is worth seeing before production**: three to six, designated by name; otherwise
   the owner validates in production. **A placed piece** (photo, stamp, badge) **is shown in crops at scale 1**,
-  never in a reduced page.
+  never in a reduced page. These images are rendered by the dev, through a stop (§2, step 3).
 - **Functional proof goes through the tests**; a purely screen batch is proven by a screen check (presence, absence,
   DOM texts and counts), with no capture reviewed by the dev.
 - **No over-engineering**: no test beyond what proves the batch; tooling does not eat the batch's budget.
@@ -361,23 +390,38 @@ Two batches accepted the same day can be closed together.
 **The living docs**:
 - live in the living-docs repository **under stable names**; the version is in the header, the history in git;
 - are modified by targeted replacements, or replaced in full while removing what is obsolete;
-- **stay short**: when one grows long again, what no longer lives goes into a **new archive**
+- **stay short**, under caps (below): when one grows long again, what no longer lives goes into a **new archive**
   (`Archives/<NAME>_ARCHIVE_<range>.md`), frozen, never rewritten; for `workstreams.yaml`, the archiving is automatic
   (below) and `search` finds an entry;
 - **the project carries a mirror of them**, copied at each close-out by `project_write` with `local_path` from the
   clone; **never from the text served by the project tool**.
 
+**The caps** — *every PL re-reads everything at every resume, and the messages between PLs piled up in the entries: on the
+first project, a workstreams file went from 95 to 146 KB in one day, a decision log reached 206 KB, a checkpoint 47 KB*:
+- **a workstream entry fits in ~1.5 KB**: the state, the decision, the next move; a long exchange goes to the batch
+  folder or into a domain note, the entry only keeps the summary and the path;
+- **a decision log entry fits in ~800 characters**;
+- **a workstream accepted leaves for the archive seven days later** (below);
+- **the decision log is cut into slices of fifty numbers** when it exceeds ~150 KB: one frozen archive per slice
+  (`Archives/DECISION_LOG_ARCHIVE_D<a>_to_D<b>.md`), and the “execution is right” counts are carried over into a base at
+  the cut (§1a of the log);
+- **a checkpoint fits in 10 KB** (10,240 bytes): the fixed line, the baton, the state, the queue, what is needed to
+  resume; the history goes to a domain archive (`<Folder>/Archives/CHECKPOINT_<DOMAIN>_ARCHIVE_<date>.md`). **Check 10**
+  of `check_living_docs.py --domains` flags it (cap adjustable with `--checkpoint-cap`); the arbiter, if there is one,
+  turns it into **one workstream per domain**, without filing a new one when its message already exists; without an
+  arbiter, the coordinator runs the checker at their close-out.
+
 **Accepted workstreams — the archiving**:
 - at close-out, the entry goes to `status: accepted`, then **is no longer touched by hand**: the line
   `accepted-on: <date>` is set by `archive_workstreams.py` (it is neither written nor corrected by hand), and removed by
   it from a reopened entry;
-- an entry accepted for 15 days moves out to `<Folder>/Archives/WORKSTREAMS_<YYYY-MM>.yaml` (the month of the run;
+- an entry accepted for seven days moves out to `<Folder>/Archives/WORKSTREAMS_<YYYY-MM>.yaml` (the month of the run;
   things are only appended to it, frozen at the end of the month); the script checks that nothing is lost before
   writing;
 - **who archives**: the arbiter, if there is one, at every run (`Method/ARBITER.md` §1.4a); **without an arbiter**, the
   PL or the coordinator runs, at their close-out,
-  `python3 -B <Folder>/archive_workstreams.py archive --workstreams <Folder>/workstreams.yaml --archives <Folder>/Archives`,
-  then regenerates the board and commits;
+  `python3 -B <Folder>/archive_workstreams.py archive --workstreams <Folder>/workstreams.yaml --archives <Folder>/Archives`
+  (without `--delay`: the default delay is seven days), then regenerates the board and commits;
 - **an archived id is not reused**;
 - the checker is run with `--archives <Folder>/Archives`: an id both living and archived is a gap, and the last version
   of the log is also looked for in the archives.
@@ -390,11 +434,15 @@ Two batches accepted the same day can be closed together.
 - **At every resume and every handover**, the PL re-reads their queue against `workstreams.yaml`: they **register what
   is missing** (then cite it) and **remove from the queue what is closed** (accepted or archived) — a closed workstream
   is no longer announced.
-- **The queue section has a stable title**: the exact start of that title is what `queue:` carries in the domain table
-  (`Method/domains.yaml`, kept by the coordinator in step with the table of §1a); renaming the section is told to the
-  coordinator.
+- **Every checkpoint has its `## §<n> · The queue` section, which carries the list itself** — never a pointer
+  (“everything is in §0”), which the check cannot read: two domains escaped it, one through a section that only carried
+  a pointer, the other for want of declaring one. **The title is stable**: the exact start of that title is what `queue:`
+  carries in the domain table (`Method/domains.yaml`, kept by the coordinator in step with the table of §1a); **a PL that
+  renames this title changes, in the same commit, the `queue:` line of its domain**; an empty `queue:` is a gap of the
+  domain.
 - **Who checks**: check 9 of `check_living_docs.py --domains Method/domains.yaml` reports the queue that cites a closed
-  workstream and every open workstream of the domain that its checkpoint does not cite; the arbiter, if there is one,
+  workstream, every open workstream of the domain that its checkpoint does not cite, and a domain with no declared queue
+  section; the arbiter, if there is one,
   runs it at every run and, **on Mondays, re-reads the checkpoints against the week's decisions** (`Method/ARBITER.md`
   §1.4b); **without an arbiter**, the coordinator runs the checker with `--domains` at their close-out.
 
@@ -406,8 +454,11 @@ Two batches accepted the same day can be closed together.
 - They commit both together in the living-docs repository, copy both to the project as a mirror, **publish the page
   as an artifact at the same link** (the link is recorded in §6 of the checkpoint) and **hand it over as an `.html`
   file** in the conversation.
-- Republishing an artifact from a previous conversation requires reading it first (the tool asks for it): the PL
-  reads it once per session, compares it with the regeneration, then republishes the same file at the same link.
+- **The board is republished by a subagent.** The artifact tool requires reading the whole page before republishing it
+  (80,000 to 90,000 tokens for a board of a hundred workstreams; a reading “by file” does not count). The PL therefore
+  does not read it: **they launch a light subagent (Haiku)**, which reads the page at the link, republishes it at the
+  same link from the regenerated file, changing nothing, and answers only “published”. Its reading stays outside the
+  PL's context, whose handover recedes by as much.
 - `make_board.py` is not modified for a project: title and labels are read from the header of
   `workstreams.yaml`.
 
@@ -458,7 +509,7 @@ handover prompt** (the handover, below). **Images** go through the conversation,
   owner opens the session in their task list. When the owner is not there to open it, the fixed line is enough.
 - **At the first sign of saturation** before the threshold (losing the thread, contradictions, a forgotten decision):
   same handover, right away.
-- A dev sub-agent's context does not count in the PL's; its credit does.
+- The context of a sub-agent (the dev, or the one that republishes the board) does not count in the PL's; its credit does.
 
 ---
 
@@ -485,7 +536,9 @@ access: a session's safeguard refuses an attachment the owner has not asked for 
 paste stands for that request. One more repository along the way: the session asks the owner for it in a ready line
 (“tell me “attach X””).
 
-⟨**Specific to the project**: to be completed batch after batch — each trap paid for once is written here.⟩
+⟨**Specific to the project, common to all its domains**: to be completed batch after batch — each trap paid for once is
+written here. A trap that touches only one product goes to its product sheet or to the checkpoint of its domain (at the
+top of this method).⟩
 
 ---
 
