@@ -116,7 +116,7 @@ tête de ce que tu ajoutes.
 - ⛔ **Hors du code, tu n'écris que dans `lots/v<X.Y>/`.**
 
 **5 — Contrôle ton travail, sur l'archive d'un commit.** Commite sur la branche du lot (autant que tu veux) **et
-pousse-la à chaque étape** (la mort de la session du CdP ne doit pas emporter ton travail), puis
+pousse-la à chaque étape** (la mort de la session du CdP ne doit pas emporter ton travail ; **pousser prime** : un push pas encore vert porte `[skip ci]` quand la commande le dit), puis
 déballe hors du clone (`git archive HEAD | tar -x -C <dossier>/livre`) et contrôle là : tests, lint, syntaxe.
 *Un contrôle de bout en bout hors archive est permis s'il prouve un critère que les tests ne couvrent pas : il vit dans
 `/tmp`, jamais dans le dépôt, et sa sortie va au rapport.*
@@ -168,19 +168,20 @@ prédiction.
 | P9 | écart `base` → `mesure` : **la liste exacte** des fichiers modifiés, ajoutés, retirés = celle du cadrage | ⟨…⟩ |
 | P10 | l'empreinte du code de `mesure/` ; avec une maquette, égale à celle notée à la validation | ⟨commande d'empreinte⟩ |
 | P11 | **hors du code, rien ne bouge** sauf `lots/v<X.Y>/` : `git diff --stat <base> HEAD -- banc PROMPT_DEV_<P>.md .gitattributes` est vide | le clone |
-| P12 | **Secrets** : le diff du lot (`git diff <base> HEAD`) passé au motif ci-dessous : **0 ligne** ; **un `git diff` qui échoue fait échouer la porte**, il ne la laisse pas à 0 | le clone |
+| P12 | **Secrets** : les lignes ajoutées par le lot, lues deux fois — le diff net (`git diff <base> HEAD`), puis chaque commit fait dans le clone (`git log -p <base>..HEAD`) — passées au motif ci-dessous : **0 ligne** ; **une commande `git` qui échoue fait échouer la porte**, elle ne la laisse pas à 0 | le clone |
 
-**Le motif de P12**, sans dépendance, sur les seules lignes ajoutées (`<base>` : le commit de la base que nomme le cadrage, que l'étape 1 a récupéré dans le clone, peu profond : un `git diff <base>...HEAD` à trois points y échoue faute de point commun) :
+**Le motif de P12**, sans dépendance, sur les seules lignes ajoutées (`<base>` : le commit de la base que nomme le cadrage, que l'étape 1 a récupéré dans le clone, peu profond : un `git diff <base>...HEAD` à trois points y échoue faute de point commun ; les deux points de `<base>..HEAD` n'en demandent pas). Deux lectures : le diff net voit le travail de toutes les passes du lot ; `git log -p`, chaque commit, un secret ajouté puis retiré compris ; `log.showRoot=false` écarte le commit de tête du clone, greffé comme racine, que `git log -p` relirait avec tout l'arbre du projet :
 
 ```sh
-diff=$(git diff <base> HEAD) || { echo "P12 : diff impossible"; exit 1; }
-ajoutees=$(printf '%s\n' "$diff" | grep '^+')
+net=$(git diff <base> HEAD) || { echo "P12 : diff impossible"; exit 1; }
+pas=$(git -c log.showRoot=false log -p --format= <base>..HEAD) || { echo "P12 : historique illisible"; exit 1; }
+ajoutees=$(printf '%s\n%s\n' "$net" "$pas" | grep '^+')
 { printf '%s\n' "$ajoutees" | grep -E 'AKIA[0-9A-Z]{16}|ghp_|gho_|github_pat_|sk-ant-|xox[abprs]-|-----BEGIN [A-Z ]*PRIVATE KEY-----'
-  printf '%s\n' "$ajoutees" | grep -iE "(password|secret|token|api[-_]?key)[[:space:]]*[:=][[:space:]]*['\"][^'\"]{8,}"; } | wc -l
+  printf '%s\n' "$ajoutees" | grep -iE "(password|secret|token|api[-_]?key)[[:space:]]*[:=][[:space:]]*(['\"][^'\"]{8,}|[^[:space:]\$<{'\"][^[:space:]]{7,})"; } | wc -l
 ```
 
 (clés AWS, jetons GitHub, clés Anthropic, jetons Slack, clés privées, puis un mot de passe, secret, jeton ou clé d'API
-affecté à une chaîne de huit caractères ou plus.) **Une fausse alerte se justifie au rapport, ligne par ligne** ; un lot qui touche ce prompt fait sonner la porte sur le motif lui-même : fausse alerte attendue, à justifier de même.
+affecté à une chaîne de huit caractères ou plus, entre guillemets ou non ; une valeur nue ne commence ni par `$`, ni par `<`, ni par `{` : variable ou gabarit.) **Une ligne comptée deux fois ne change rien : la porte attend 0.** **Un secret poussé puis retiré compte : seule une réécriture de la branche l'efface, ce que tu ne fais pas — tu t'arrêtes.** **Limite** : un secret ajouté puis retiré par une passe précédente (avant un arrêt) échappe à la seconde lecture, qui ne voit que les commits de ce clone ; d'où la règle existante : on ne pousse jamais un secret, même un instant. **Une fausse alerte se justifie au rapport, ligne par ligne** ; un lot qui touche ce prompt fait sonner la porte sur le motif lui-même : fausse alerte attendue, à justifier de même.
 
 **Un lot de complexité faible** (son cadrage le dit, dans sa forme courte : méthode §3) ne passe que **P0, P1, P5, P7, P8, P9, P11 et
 P12** (P12 vaut pour tout lot : c'est le seul garde des secrets en mode A) ; les autres portes ne s'appliquent que si son cadrage les nomme. Ton rapport donne celles-là, et dit « non
@@ -217,7 +218,7 @@ appelée » pour les autres.
 - un outil du banc échoue ;
 - un `push` est refusé.
 
-**Pousse ta branche à chaque étape** (§3), et avant de t'arrêter une dernière fois, avec la raison dans
+**Pousse ta branche à chaque étape** (§3 ; **pousser prime** : un push pas encore vert, un arrêt compris, porte `[skip ci]` quand la commande le dit), et avant de t'arrêter une dernière fois, avec la raison dans
 `lots/v<X.Y>/ARRET_<n>.md` : le CdP lit ton travail sur le dépôt, et dis-le dans ta réponse finale, en une phrase. **Ne laisse aucun processus tourner en arrière-plan** quand tu
 t'arrêtes ou livres. **Un arrêt se lève par un addendum du CdP** (`ADDENDUM_<n>.md`) sur la même branche ; le CdP te le dit
 par message (ou te relance neuf, avec tes arrêts et rapports précédents à lire) : `git pull --rebase origin lot/v<X.Y>`,

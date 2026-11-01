@@ -116,7 +116,7 @@ reformatting, no “improvement”. Write like the surrounding code; the batch n
 - ⛔ **Outside the code, you write only in `batches/v<X.Y>/`.**
 
 **5 — Check your work, on the archive of a commit.** Commit on the batch branch (as much as you like) **and push it at
-every step** (the death of the PL's session must not take your work with it), then unpack
+every step** (the death of the PL's session must not take your work with it; **pushing comes first**: a push that is not yet green carries `[skip ci]` when the command says so), then unpack
 outside the clone (`git archive HEAD | tar -x -C <folder>/delivered`) and check there: tests, lint, syntax.
 *An end-to-end check outside the archive is allowed if it proves a criterion the tests do not cover: it lives in
 `/tmp`, never in the repository, and its output goes in the report.*
@@ -168,19 +168,20 @@ prediction.
 | P9 | `base` → `measure` gap: **the exact list** of modified, added, removed files = the brief's | ⟨…⟩ |
 | P10 | the fingerprint of the code in `measure/`; with a mock-up, equal to the one noted at validation | ⟨fingerprint command⟩ |
 | P11 | **outside the code, nothing moves** except `batches/v<X.Y>/`: `git diff --stat <base> HEAD -- bench DEV_PROMPT_<P>.md .gitattributes` is empty | the clone |
-| P12 | **Secrets**: the batch's diff (`git diff <base> HEAD`) run through the pattern below: **0 lines**; **a `git diff` that fails fails the gate**, it does not leave it at 0 | the clone |
+| P12 | **Secrets**: the lines the batch added, read twice — the net diff (`git diff <base> HEAD`), then every commit made in the clone (`git log -p <base>..HEAD`) — run through the pattern below: **0 lines**; **a `git` command that fails fails the gate**, it does not leave it at 0 | the clone |
 
-**The P12 pattern**, with no dependency, on the added lines only (`<base>`: the base commit the brief names, which step 1 fetched into the shallow clone: a three-dot `git diff <base>...HEAD` fails there for want of a common ancestor):
+**The P12 pattern**, with no dependency, on the added lines only (`<base>`: the base commit the brief names, which step 1 fetched into the shallow clone: a three-dot `git diff <base>...HEAD` fails there for want of a common ancestor; the two dots of `<base>..HEAD` need none). Two readings: the net diff sees the work of every pass of the batch; `git log -p`, every commit, a secret added then removed included; `log.showRoot=false` leaves out the clone's head commit, grafted as a root, which `git log -p` would read with the project's entire tree:
 
 ```sh
-diff=$(git diff <base> HEAD) || { echo "P12: diff impossible"; exit 1; }
-added=$(printf '%s\n' "$diff" | grep '^+')
+net=$(git diff <base> HEAD) || { echo "P12: diff impossible"; exit 1; }
+steps=$(git -c log.showRoot=false log -p --format= <base>..HEAD) || { echo "P12: history unreadable"; exit 1; }
+added=$(printf '%s\n%s\n' "$net" "$steps" | grep '^+')
 { printf '%s\n' "$added" | grep -E 'AKIA[0-9A-Z]{16}|ghp_|gho_|github_pat_|sk-ant-|xox[abprs]-|-----BEGIN [A-Z ]*PRIVATE KEY-----'
-  printf '%s\n' "$added" | grep -iE "(password|secret|token|api[-_]?key)[[:space:]]*[:=][[:space:]]*['\"][^'\"]{8,}"; } | wc -l
+  printf '%s\n' "$added" | grep -iE "(password|secret|token|api[-_]?key)[[:space:]]*[:=][[:space:]]*(['\"][^'\"]{8,}|[^[:space:]\$<{'\"][^[:space:]]{7,})"; } | wc -l
 ```
 
 (AWS keys, GitHub tokens, Anthropic keys, Slack tokens, private keys, then a password, secret, token or API key assigned
-to a string of eight characters or more.) **A false alarm is justified in the report, line by line**; a batch that touches this prompt makes the gate ring on the pattern itself: an expected false alarm, justified the same way.
+to a string of eight characters or more, quoted or not; a bare value does not start with `$`, `<` or `{`: variable or template.) **A line counted twice changes nothing: the gate expects 0.** **A secret pushed then removed counts: only rewriting the branch erases it, which you do not do — you stop.** **Limit**: a secret added then removed by an earlier pass (before a stop) escapes the second reading, which sees only this clone's commits; hence the existing rule: a secret is never pushed, not even for a moment. **A false alarm is justified in the report, line by line**; a batch that touches this prompt makes the gate ring on the pattern itself: an expected false alarm, justified the same way.
 
 **A low-complexity batch** (its brief says so, in its short form: method §3) passes only **P0, P1, P5, P7, P8, P9, P11 and P12** (P12 applies to every batch: it is the only secrets safeguard in mode A); the
 other gates apply only if its brief names them. Your report gives those, and says “not called” for the others.
@@ -216,7 +217,7 @@ other gates apply only if its brief names them. Your report gives those, and say
 - a test-bench tool fails;
 - a `push` is refused.
 
-**Push your branch at every step** (§3), and once more before stopping, with the reason in `batches/v<X.Y>/STOP_<n>.md`:
+**Push your branch at every step** (§3; **pushing comes first**: a push that is not yet green, a stop included, carries `[skip ci]` when the command says so), and once more before stopping, with the reason in `batches/v<X.Y>/STOP_<n>.md`:
 the PL reads your work on the repository, and say so in your final reply, in one sentence. **Leave no process running in the background** when you stop
 or deliver. **A stop is lifted by an addendum from the PL** (`ADDENDUM_<n>.md`) on the same branch; the PL tells you by
 message (or relaunches you new, with your previous stops and reports to read): `git pull --rebase origin batch/v<X.Y>`,

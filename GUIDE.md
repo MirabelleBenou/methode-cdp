@@ -1,4 +1,4 @@
-# PL METHOD PACKAGE · v21
+# PL METHOD PACKAGE · v22
 ### 1 November 2026 · to start a new project under the PL method
 
 *This package reproduces a way of working proven batch after batch: a **project lead** (PL, Opus) who decides
@@ -389,6 +389,7 @@ the first product batch.*
   parity (`templates/tests/test_links.py`, `templates/tests/test_parity.py`, and their French counterparts) pass on
   this public copy as on the source.
 - **The templates and the skill stay generic**: no project name, no decision number from a project.
+- **The package is frozen** (v22, 1 November 2026): more than twenty versions in ten days, and the latest reviews find little more than defects of the previous pass — what is left to learn comes from measurements, not from a re-read. **No new version before two to three weeks of real batches, except to fix a proven defect.** The measurements expected: the `Context:` line of the close-outs (the handover thresholds); the controller's cost; the false alarms of the arbiter and of P12; the share of the method a PL uses.
 
 **History**: v1, 23 October 2026. v2, 26 October 2026 — the workstreams board regenerated at every
 write; a private `-Batches` repository when the code is public; the local runner (Claude Code on the PC,
@@ -459,3 +460,4 @@ their caps (method §6), one workstream per domain for the arbiter; gap (b) of c
 handover thresholds are counted above the fixed load measured at the first turn, one rule for all (`context.py` shows it);
 the skill stays v19.
 v21, 1 November 2026 — the follow-ups to the external review of package v20: “owner” now means only you, the person who decides; the file's holder is “holder”; no more “§n bis” cross-reference in the English, and a test that guards it; the secrets protection stated for what it covers (public repositories; for a private one, a paid organization, and nothing for a personal account) and a diff scan at gate P12 of the bench, which works in step 1's shallow clone and applies to every batch; a fix's number obtained on the dev side (the fix starts from the handed-over batch's branch, and the dev prompt fetches that base); the expected results, which the dev does not read: a rule of its prompt and not a wall; §1a of the method made an extension, the version rule moved to §2 and the baton to §6; the controller's cost measured in its log; what the fixed load is; three more figures in the table of §6 (a baton's silence, the controller's findings, the reading of the decision log); the public-copy builder, which refuses a `README.md` left at another package or skill version; the right to push under `.github/workflows/` in the dependency survey; the workflows on Node 24 (`checkout@v7`, `setup-python@v7`); a green commit at every push; the arbiter dates a late checkpoint by the workstream's move to acceptance; the skill moves to v21.
+v22, 1 November 2026 — the complete secrets scan: gate P12 also reads unquoted values (`POSTGRES_PASSWORD: …`) and every commit of the clone, besides the net diff (a secret added then removed counts); the green commit reconciled with the push at every step (an intermediate push not yet green carries `[skip ci]`, the delivery commit never); the references to several PLs in the workstreams template marked `⟨several PLs⟩`; the package frozen; the skill stays v21.

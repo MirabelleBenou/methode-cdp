@@ -1,4 +1,4 @@
-# PACKAGE MÉTHODE CdP · v21
+# PACKAGE MÉTHODE CdP · v22
 ### 1er novembre 2026 · pour démarrer un nouveau projet sous la méthode CdP
 
 *Ce package reproduit une façon de travailler éprouvée lot après lot : un **chef de projet** (CdP, Opus) qui décide
@@ -385,6 +385,7 @@ le premier lot de produit.*
 - Version du package dans l'en-tête de ce fichier ; l'historique dans git ; ni tag ni release nécessaires. **La skill
   prend la version du package qui la publie** : une version du package qui change la skill la republie sous son numéro.
 - **Les modèles et la skill restent génériques** : aucun nom de projet, aucun numéro d'arbitrage d'un projet.
+- **Le package est gelé** (v22, 1er novembre 2026) : plus de vingt versions en dix jours, et les dernières revues ne trouvent plus guère que des défauts de la passe précédente — ce qui reste à apprendre vient de mesures, pas d'une relecture. **Aucune version nouvelle avant deux à trois semaines de lots réels, sauf correctif d'un défaut prouvé.** Les mesures attendues : la ligne `Contexte :` des clôtures (les seuils de passation) ; le coût du contrôleur ; les fausses alertes de l'arbitre et de P12 ; la part de la méthode qu'un CdP utilise.
 
 **Historique** : v1, le 23 octobre 2026. v2, le 26 octobre 2026 — le tableau des chantiers régénéré à chaque
 écriture ; un dépôt `-Lots` privé quand le code est public ; l'exécutant local (Claude Code sur le PC, piloté
@@ -457,3 +458,4 @@ registre contre leurs plafonds (méthode §6), un chantier par domaine pour l'ar
 que soit la version ; les seuils de passation se comptent au-dessus de la charge fixe mesurée au premier tour, une règle
 pour tous (`contexte.py` l'affiche) ; la skill reste v19.
 v21, le 1er novembre 2026 — les suites de la revue externe du package v20 : « owner » ne désigne plus que le porteur en anglais (« holder » pour celui qui tient un fichier) ; plus de renvoi « §n bis » dans l'anglais, et un test qui le garde ; la protection contre les secrets dite pour ce qu'elle couvre (les dépôts publics ; pour un dépôt privé, une organisation payante, et rien pour un compte personnel) et un scan du diff à la porte P12 du banc, qui tient dans le clone peu profond de l'étape 1 et vaut pour tout lot ; le numéro d'un correctif obtenu côté dev (le correctif part de la branche du lot remis, et le prompt du dev récupère cette base) ; les attendus, que le dev ne lit pas : une règle de son prompt et non un mur ; le §1 bis de la méthode devenu une extension, la règle de version rangée au §2 et le témoin au §6 ; le coût du contrôleur mesuré à son journal ; ce qu'est la charge fixe ; trois chiffres de plus à la table du §6 (silence d'un témoin, constats du contrôleur, lecture du registre) ; la fabrique de la copie publique qui refuse un `README.md` resté à une autre version du package ou de la skill ; le droit de pousser sous `.github/workflows/` au relevé des dépendances ; les workflows en Node 24 (`checkout@v7`, `setup-python@v7`) ; un commit vert à chaque push ; l'arbitre date le checkpoint en retard par le passage du chantier en recette ; la skill passe à v21.
+v22, le 1er novembre 2026 — le scan des secrets complet : la porte P12 lit aussi les valeurs sans guillemets (`POSTGRES_PASSWORD: …`) et chaque commit du clone, en plus du diff net (un secret ajouté puis retiré compte) ; le commit vert réconcilié avec le push à chaque étape (un push intermédiaire pas encore vert porte `[skip ci]`, le commit de livraison jamais) ; les renvois à plusieurs CdP du modèle de chantiers marqués `⟨plusieurs CdP⟩` ; le package gelé ; la skill reste v21.

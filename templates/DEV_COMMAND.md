@@ -25,7 +25,7 @@ Expected report: batches/v<X.Y>/<DEV_REPORT.md | DEV_REPORT_<n>.md>.
 - Your working folder: /home/claude/dev_<batch>/; never <the paths of the PL's copies>, which it occupies itself.
 - You push only to batch/v<X.Y> <public code: and to batch/<batch> of the public repository, where you push the code alone>.
 - End of every commit message, these lines: <the attribution lines imposed by the PL's session, copied as they are>.
-- The code and its tests go in the same commit: every pushed commit keeps the test suite green (every push runs the CI, and a failure alerts the owner by e-mail).
+- ⟨Project whose CI runs on the batch branches: the code and its tests go in the same commit. An intermediate push that is not yet green (a step, a stop) carries `[skip ci]` in its message: the CI does not run and nobody is alerted wrongly. **The delivery commit is green and never carries `[skip ci]`.**⟩
 - <The tools already present: browser at such path, do not reinstall it; interpreter version.>
 <The attached repositories, the separate clones, the batch branches only, no background process: in the dev prompt, which carries them. A project with no dev prompt repeats them here.>
 

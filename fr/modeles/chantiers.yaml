@@ -27,16 +27,16 @@
 #   priorite   : haut | moyen | faible
 #   complexite : forte | moyenne | faible
 #   rang       : ordre de valeur à l'intérieur d'un statut (facultatif)
-#   cdp        : le CdP qui tient le chantier en vol — obligatoire en en-vol (méthode §1 bis)
-#   livrable   : le dépôt de code d'où sort la release ; un seul lot en vol par livrable, pousser l'entrée en-vol le prend
-#   attend     : l'id du lot en vol dont ce lot suspendu attend la fin (même livrable ou même ressource)
-#   ressource  : une ressource partagée occupée pendant le vol (la machine du porteur, un jeu…) ; un seul lot en vol par ressource
+#   cdp        : ⟨plusieurs CdP⟩ le CdP qui tient le chantier en vol — obligatoire en en-vol (méthode §1 bis)
+#   livrable   : ⟨plusieurs CdP⟩ le dépôt de code d'où sort la release ; un seul lot en vol par livrable, pousser l'entrée en-vol le prend
+#   attend     : ⟨plusieurs CdP⟩ l'id du lot en vol dont ce lot suspendu attend la fin (même livrable ou même ressource)
+#   ressource  : ⟨plusieurs CdP⟩ une ressource partagée occupée pendant le vol (la machine du porteur, un jeu…) ; un seul lot en vol par ressource
 #   version    : calculée quand le lot prend le livrable (la règle de la méthode §2, étape 6, jamais `main` plus un),
 #                annoncée au cadrage — seulement pour un livrable déployé à chaque lot ; un lot d'un livrable
 #                publié par release n'a pas de `version:` (il complète la section « Unreleased » du CHANGELOG ; la
 #                release se fait à la demande du porteur)
-#   pour       : le CdP à qui s'adresse un chantier venu d'un autre domaine, lu après chaque pull
-#   touche     : les fichiers ou modules d'un autre domaine que le lot va toucher
+#   pour       : ⟨plusieurs CdP⟩ le CdP à qui s'adresse un chantier venu d'un autre domaine, lu après chaque pull
+#   touche     : ⟨plusieurs CdP⟩ les fichiers ou modules d'un autre domaine que le lot va toucher
 #   cout       : ce que ça coûtera (à venir) ; livré, le coût du lot est au journal des versions du plan, pas ici
 #   fait       : à la clôture, une ligne : la date et la version (ou le nom du lot) — le détail du lot (dev, durée,
 #                arrêts, réception, empreinte) s'écrit une fois, au journal des versions du plan (méthode §6)

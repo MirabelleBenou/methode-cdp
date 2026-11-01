@@ -25,7 +25,7 @@ Rapport attendu : lots/v<X.Y>/<RAPPORT_DEV.md | RAPPORT_DEV_<n>.md>.
 - Ton dossier de travail : /home/claude/dev_<lot>/ ; jamais <les chemins des copies du CdP>, qu'il occupe lui-même.
 - Tu ne pousses que sur lot/v<X.Y> <code public : et sur lot/<lot> du dépôt public, où tu pousses le code seul>.
 - Fin de chaque message de commit, ces lignes : <les lignes d'attribution imposées par la session du CdP, recopiées telles quelles>.
-- Le code et ses tests partent dans le même commit : chaque commit poussé garde la suite de tests verte (chaque push lance la CI, et un échec prévient le porteur par e-mail).
+- ⟨Projet dont la CI tourne sur les branches de lot : le code et ses tests partent dans le même commit. Un push intermédiaire qui n'est pas encore vert (une étape, un arrêt) porte `[skip ci]` dans son message : la CI ne tourne pas et personne n'est prévenu à tort. **Le commit de livraison est vert et ne porte jamais `[skip ci]`.**⟩
 - <Les outils déjà présents : navigateur à tel chemin, ne pas le réinstaller ; version de l'interpréteur.>
 <Les dépôts rattachés, les clones à part, les branches seules, aucun processus en arrière-plan : au prompt du dev, qui les porte. Un projet sans prompt du dev les redit ici.>
 

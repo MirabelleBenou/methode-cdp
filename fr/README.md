@@ -25,4 +25,4 @@ indépendants ou des modules liés avec un coordinateur : `LISEZ_MOI.md` §2 bis
 | `modeles/` | méthode, prompt du dev, cadrage, commande du dev, fichiers d'un lot, vivants et leurs scripts (tableau, vérificateur, archivage et recherche des chantiers), squelettes de dépôts, exécutant local (le repli) ; facultatifs : l'exécutant serveur ([`EXECUTANT_SERVEUR.md`](modeles/EXECUTANT_SERVEUR.md)), dont l'implémentation de référence est publiée une seule fois, à la racine, en `templates/server-runner/`, l'arbitre des vivants ([`ARBITRE.md`](modeles/ARBITRE.md), une action GitHub quotidienne), le contrôleur des documents ([`CONTROLEUR.md`](modeles/CONTROLEUR.md), une session hebdomadaire) et la table des domaines qu'ils lisent (`domaines.yaml`) ; les tests des scripts, des liens et de la parité (`tests/`) |
 | [`skill/SKILL.md`](skill/SKILL.md) | la skill personnelle `methode-cdp`, à personnaliser (§1 et §8) puis installer |
 
-*Package v21 (skill v21) — historique dans `LISEZ_MOI.md` §7. Licence MIT.*
+*Package v22 (skill v21) — historique dans `LISEZ_MOI.md` §7. Licence MIT.*
