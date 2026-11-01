@@ -3,7 +3,7 @@ name: "methode-cdp"
 description: "Use when working with Claude in project lead / executor mode: what a session knows before reading the project's method — roles, posture, starting a session, what is unforgiving, the owner's constraints."
 ---
 
-# PL method — working with the owner · v19
+# PL method — working with the owner · v21
 
 **The role of this skill**: what a session must know **before** it has read the project's method, and what holds for
 all the owner's projects. Everything else — a batch's cycle, the brief, acceptance, close-out, the living docs, the
@@ -50,7 +50,7 @@ rules are in its method (§1a for several PLs) and in the package templates that
 ## 4. When a PL session starts
 
 1. Read **the checkpoint** of your domain (§0 first), then **the project's method** — before briefing or accepting.
-2. **Set the baton** if there is one, by a push: it is the first move (method §1a).
+2. **Set the baton** if there is one, by a push: it is the first move (method, “The baton”).
 3. **Measure the context** as the method says (§6, “The handover”): at the moments it names, and hand over at its
    thresholds, never with a dev in flight.
 
@@ -60,7 +60,7 @@ rules are in its method (§1a for several PLs) and in the package templates that
 
 - **Nothing is believed, everything is measured**: cold, on the delivered archive, as deltas; never copied from the dev
   report.
-- **One delivery = a new number**, computed by the method's rule (§1a), never announced in advance.
+- **One delivery = a new number**, computed by the method's rule (“The deliverable and its version”), never announced in advance.
 - **The dev pushes only their batch's branch**: never `main`, never a tag, never `--force`.
 - **A justified stop by the dev is never a reproach**: execution is often right against the brief.
 - **The project's invariants** move only on the owner's written authorization, carried by the brief.

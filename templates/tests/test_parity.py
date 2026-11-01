@@ -23,7 +23,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 # In the public copy, the neutralizer replaces this line with its map (a dictionary): see `pairs()`.
-PUBLIC_MAP = {'.gitignore': '.gitignore', 'README.md': 'README.md', 'NOYAU.md': 'CORE.md', 'GLOSSAIRE.md': 'GLOSSARY.md', 'DEPENDANCES_CLAUDE.md': 'CLAUDE_DEPENDENCIES.md', 'LISEZ_MOI.md': 'GUIDE.md', '1_INSTRUCTIONS_PROJET.md': '1_PROJECT_INSTRUCTIONS.md', '2_PROMPT_AMORCAGE_CDP.md': '2_PL_BOOTSTRAP_PROMPT.md', '3_GITHUB.md': '3_GITHUB.md', 'modeles/METHODE.md': 'templates/METHOD.md', 'modeles/PROMPT_DEV.md': 'templates/DEV_PROMPT.md', 'modeles/CADRAGE.md': 'templates/BRIEF.md', 'modeles/LOT_FICHIERS.md': 'templates/BATCH_FILES.md', 'modeles/COMMANDE_DEV.md': 'templates/DEV_COMMAND.md', 'modeles/CHECKPOINT.md': 'templates/CHECKPOINT.md', 'modeles/REGISTRE_ARBITRAGES.md': 'templates/DECISION_LOG.md', 'modeles/PLAN.md': 'templates/PLAN.md', 'modeles/chantiers.yaml': 'templates/workstreams.yaml', 'modeles/contexte.py': 'templates/context.py', 'modeles/generer_tableau.py': 'templates/make_board.py', 'modeles/verifier_vivants.py': 'templates/check_living_docs.py', 'modeles/archiver_chantiers.py': 'templates/archive_workstreams.py', 'modeles/ARBITRE.md': 'templates/ARBITER.md', 'modeles/CONTROLEUR.md': 'templates/CONTROLLER.md', 'modeles/arbitre.py': 'templates/arbiter.py', 'modeles/domaines.yaml': 'templates/domains.yaml', 'modeles/tests/__init__.py': 'templates/tests/__init__.py', 'modeles/tests/outils_tests.py': 'templates/tests/test_tools.py', 'modeles/tests/test_arbitre.py': 'templates/tests/test_arbiter.py', 'modeles/tests/test_contexte.py': 'templates/tests/test_context.py', 'modeles/tests/test_liens.py': 'templates/tests/test_links.py', 'modeles/tests/test_parite.py': 'templates/tests/test_parity.py', 'modeles/tests/test_verifier_vivants.py': 'templates/tests/test_check_living_docs.py', 'modeles/tests/test_archiver_chantiers.py': 'templates/tests/test_archive_workstreams.py', 'modeles/tests/test_generer_tableau.py': 'templates/tests/test_make_board.py', 'modeles/EXECUTANT_LOCAL.md': 'templates/LOCAL_RUNNER.md', 'modeles/EXECUTANT_SERVEUR.md': 'templates/SERVER_RUNNER.md', 'modeles/depot-vivants/README.md': 'templates/living-docs-repo/README.md', 'modeles/depot-vivants/arbitre.yml': 'templates/living-docs-repo/arbiter.yml', 'modeles/depot-app/.gitattributes': 'templates/code-repo/.gitattributes', 'modeles/depot-app/.gitignore': 'templates/code-repo/.gitignore', 'modeles/depot-app/CHANGELOG.md': 'templates/code-repo/CHANGELOG.md', 'skill/SKILL.md': 'skill/SKILL.md'}
+PUBLIC_MAP = {'.gitignore': '.gitignore', 'README.md': 'README.md', 'NOYAU.md': 'CORE.md', 'GLOSSAIRE.md': 'GLOSSARY.md', 'DEPENDANCES_CLAUDE.md': 'CLAUDE_DEPENDENCIES.md', 'LISEZ_MOI.md': 'GUIDE.md', '1_INSTRUCTIONS_PROJET.md': '1_PROJECT_INSTRUCTIONS.md', '2_PROMPT_AMORCAGE_CDP.md': '2_PL_BOOTSTRAP_PROMPT.md', '3_GITHUB.md': '3_GITHUB.md', 'modeles/METHODE.md': 'templates/METHOD.md', 'modeles/PROMPT_DEV.md': 'templates/DEV_PROMPT.md', 'modeles/CADRAGE.md': 'templates/BRIEF.md', 'modeles/LOT_FICHIERS.md': 'templates/BATCH_FILES.md', 'modeles/COMMANDE_DEV.md': 'templates/DEV_COMMAND.md', 'modeles/CHECKPOINT.md': 'templates/CHECKPOINT.md', 'modeles/REGISTRE_ARBITRAGES.md': 'templates/DECISION_LOG.md', 'modeles/PLAN.md': 'templates/PLAN.md', 'modeles/chantiers.yaml': 'templates/workstreams.yaml', 'modeles/contexte.py': 'templates/context.py', 'modeles/generer_tableau.py': 'templates/make_board.py', 'modeles/verifier_vivants.py': 'templates/check_living_docs.py', 'modeles/archiver_chantiers.py': 'templates/archive_workstreams.py', 'modeles/ARBITRE.md': 'templates/ARBITER.md', 'modeles/CONTROLEUR.md': 'templates/CONTROLLER.md', 'modeles/arbitre.py': 'templates/arbiter.py', 'modeles/domaines.yaml': 'templates/domains.yaml', 'modeles/tests/__init__.py': 'templates/tests/__init__.py', 'modeles/tests/outils_tests.py': 'templates/tests/test_tools.py', 'modeles/tests/test_arbitre.py': 'templates/tests/test_arbiter.py', 'modeles/tests/test_contexte.py': 'templates/tests/test_context.py', 'modeles/tests/test_liens.py': 'templates/tests/test_links.py', 'modeles/tests/test_parite.py': 'templates/tests/test_parity.py', 'modeles/tests/test_renvois_en.py': 'templates/tests/test_cross_refs.py', 'modeles/tests/test_verifier_vivants.py': 'templates/tests/test_check_living_docs.py', 'modeles/tests/test_archiver_chantiers.py': 'templates/tests/test_archive_workstreams.py', 'modeles/tests/test_generer_tableau.py': 'templates/tests/test_make_board.py', 'modeles/EXECUTANT_LOCAL.md': 'templates/LOCAL_RUNNER.md', 'modeles/EXECUTANT_SERVEUR.md': 'templates/SERVER_RUNNER.md', 'modeles/depot-vivants/README.md': 'templates/living-docs-repo/README.md', 'modeles/depot-vivants/arbitre.yml': 'templates/living-docs-repo/arbiter.yml', 'modeles/depot-app/.gitattributes': 'templates/code-repo/.gitattributes', 'modeles/depot-app/.gitignore': 'templates/code-repo/.gitignore', 'modeles/depot-app/CHANGELOG.md': 'templates/code-repo/CHANGELOG.md', 'skill/SKILL.md': 'skill/SKILL.md'}
 FRENCH = ROOT.parent if PUBLIC_MAP is None else ROOT / "fr"
 
 SOURCE = "templates/METHOD.md"
@@ -42,6 +42,9 @@ FIGURES = {
     "cut of the decision log": rf"\bfifty numbers\b|\b50{S}numbers\b|\b150{S}kb\b",
     "archiving delay of an accepted workstream": rf"\b(?:seven|7){S}days\b",
     "default model and effort of the dev": rf"Sonnet{S}·{S}Medium|\b(?:Sonnet|Medium) by default\b",
+    "silence of a baton": rf"\b24{S}(?:h|hours)\b|\btwenty-four hours\b",
+    "controller findings": rf"\b(?:five|5){S}findings\b|\bfive times a week\b|\bwithin the limit of five\b",
+    "controller's reading of the decision log": rf"\b(?:fourteen|14){S}(?:last{S})?days\b",
 }
 # The exceptions: (path, start of the excepted zone — None for the whole file) -> the reason.
 EXCEPTIONS = {
@@ -184,11 +187,15 @@ class ParityCase(unittest.TestCase):
             "cut of the decision log": ["150\u202fkb", "Fifty numbers"],
             "archiving delay of an accepted workstream": ["Seven\u00a0days", "7\u202fdays"],
             "default model and effort of the dev": ["sonnet\u00a0·\u00a0medium", "Sonnet by default"],
+            "silence of a baton": ["24 hours", "24 h", "24\u00a0H", "Twenty-four hours"],
+            "controller findings": ["five findings", "5\u00a0findings", "at most five times a week", "within the limit of five"],
+            "controller's reading of the decision log": ["fourteen days", "14\u202fdays", "last fourteen days"],
         }
         for key, forms in seen.items():
             for form in forms:
                 self.assertTrue(re.search(FIGURES[key], form, re.IGNORECASE), f"{key}: {form!r}")
-        for form in ("1,250 tokens", "10 kilometres", "v1.10", "D250", "2500 k"):
+        for form in ("1,250 tokens", "10 kilometres", "v1.10", "D250", "2500 k", "24 hectares", "five categories of finding",
+                     "the first 14 numbers"):
             self.assertFalse(any(re.search(p, form, re.IGNORECASE) for p in FIGURES.values()), form)
 
     def test_the_test_sees_a_heading_that_differs(self):

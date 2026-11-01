@@ -1,7 +1,7 @@
 # <Projet> — les documents vivants
 
-Dépôt privé. **Seules les sessions de chef de projet (CdP) y écrivent.** Le dev n'y a pas accès : il lit le dépôt de
-code, `<owner>/<Projet>-App`.
+Dépôt privé. **Seules les sessions de chef de projet (CdP) y écrivent.** Le dev n'y écrit jamais et ne le lit pas — une règle de son
+prompt, pas un mur : il hérite des dépôts de la session. Il lit le dépôt de code, `<owner>/<Projet>-App`.
 
 | chemin | porte |
 |---|---|
@@ -15,11 +15,11 @@ code, `<owner>/<Projet>-App`.
 | `<Dossier>/archiver_chantiers.py` | date les chantiers en recette et sort vers `<Dossier>/Archives/` ceux qui y sont depuis le délai de la méthode §6 ; `chercher` retrouve un chantier, vivant ou archivé ; `normaliser` met les `.yaml` au format YAML strict |
 | `<Dossier>/verifier_vivants.py` | ⟨plusieurs CdP⟩ le contrôle en lecture seule des vivants partagés (douze contrôles, dont le 11 : les `.yaml` sont du YAML valide) ; avec `--domaines`, le contrôle 9 recoupe la file de chaque checkpoint et `chantiers.yaml` |
 | `Methode/domaines.yaml` | ⟨plusieurs CdP⟩ la table des domaines que lit le contrôle 9 : par domaine, son CdP, son checkpoint, le titre de la section de sa file, ses modules ; tenue par le coordinateur au pas de la table de la méthode §1 bis |
-| `<Dossier>/attendus/<version>/` | les attendus de réception, calculés au cadrage — jamais lus par le dev |
+| `<Dossier>/attendus/<version>/` | les attendus de réception, calculés au cadrage — que le dev ne lit pas (une règle de son prompt) |
 | `<Dossier>/outils_cdp/` | les scripts jetables du CdP (sondes, mesures) et `contexte.py`, la mesure du contexte (seuils : méthode §6) |
 | `<Dossier>/Archives/` | les archives figées des vivants devenus longs, dont `CHANTIERS_<AAAA-MM>.yaml` (écrit par l'archivage : on n'y fait qu'ajouter, figé à la fin du mois) |
 | `<Dossier>/arbitre.py`, `.github/workflows/arbitre.yml`, `Methode/ARBITRE.md`, `Methode/ARBITRE_JOURNAL.md` | ⟨facultatif, plusieurs CdP⟩ l'arbitre des vivants : une **action GitHub** quotidienne, sans session (le script, son workflow, ce qu'il fait et ne fait pas, son journal d'une ligne par passage) ; elle échoue quand elle a déposé un chantier, et l'e-mail de GitHub prévient |
-| `Methode/CONTROLEUR.md`, `Methode/CONTROLEUR_JOURNAL.md` | ⟨facultatif, plusieurs CdP⟩ le contrôleur : une session Opus hebdomadaire, par tâche planifiée, qui juge la forme des documents (contradiction, oubli, doublon, historique inutile) et rend au plus cinq constats en chantiers ; son journal, une ligne par lundi |
+| `Methode/CONTROLEUR.md`, `Methode/CONTROLEUR_JOURNAL.md` | ⟨facultatif, plusieurs CdP⟩ le contrôleur : une session Opus hebdomadaire, par tâche planifiée, qui juge la forme des documents (contradiction, oubli, doublon, historique inutile) et rend ses constats (plafond : méthode §6) en chantiers ; son journal, une ligne par lundi |
 
 **Règles** : noms stables (la version est dans l'en-tête, l'historique dans git) ; `git pull` avant d'écrire ; un commit
 « Lot v<X.Y> clos » à chaque clôture, avec la ligne `Contexte : <N> jetons, dont <F> de charge fixe` (méthode §6) ⟨; avec l'extension du miroir,

@@ -38,8 +38,11 @@ Un passage fait, dans l'ordre :
   4. les témoins : la ligne « Session en activité » de chaque checkpoint de domaine et le dernier commit qui porte
      son identifiant — une information (le journal et la sortie), jamais un chantier ; la coordination (le domaine
      dont le « cdp » contient « Coordination ») est exclue ;
-  5. le checkpoint en retard : un chantier du domaine, en recette et sans « pour: », dont « recette-le: » est
-     postérieur à la date du dernier commit du checkpoint, est une ligne du chantier du contrôle 9 de ce domaine ;
+  5. le checkpoint en retard : un chantier du domaine, en recette et sans « pour: », dont la date d'acceptation est
+     postérieure à la date du dernier commit du checkpoint, est une ligne du chantier du contrôle 9 de ce domaine ;
+     la date d'acceptation est celle du commit qui l'a fait passer en recette (le plus ancien commit de
+     chantiers.yaml d'où il est en recette sans interruption jusqu'à HEAD), pas « recette-le: », que l'arbitre pose
+     lui-même à son passage ; sans cette preuve dans l'historique disponible, pas de ligne ;
   6. archiver (archiver_chantiers.py archiver) ;
   7. si chantiers.yaml a changé : régénérer le tableau (avec « --tableau »), puis contrôler de nouveau ;
   8. ajouter une ligne en fin de « --journal-arbitre » ;
@@ -79,6 +82,7 @@ RE_ENTETE = re.compile(r"^(\d+)\s+(.+?)\s+(ÉCART|avertissement|OK)\s+(.*)$")
 RE_NON_DEMANDE = re.compile(r"^(\d+)\s+(.+?)\s+—\s+non demandé$")
 RE_DEFAUT_TABLE = re.compile(r"checkpoint introuvable|checkpoint illisible|section de file introuvable"
                              r"|domaine ou checkpoint manquant")
+RE_JOUR = re.compile(r"\d{4}-\d{2}-\d{2}")
 RE_TEMOIN = re.compile(r"^\**\s*Session en activité\s*:")
 RE_IDENTIFIANT = re.compile(r"^\**\s*Session en activité\s*:\s*\**\s*([A-Za-z0-9]{8})(?=\s*,|\s+depuis\b)")
 ACTIONS = {
@@ -128,9 +132,10 @@ def derniere_ligne(processus: subprocess.CompletedProcess) -> str:
     return texte.splitlines()[-1]
 
 
-def git(racine: Path, *arguments) -> tuple[int, str]:
+def git(racine: Path, *arguments, erreurs: str = "strict") -> tuple[int, str]:
     processus = subprocess.run(["git", "-C", str(racine), *arguments], capture_output=True, text=True,
-                               encoding="utf-8", env={**os.environ, "LC_ALL": "C", "GIT_TERMINAL_PROMPT": "0"})
+                               encoding="utf-8", errors=erreurs,
+                               env={**os.environ, "LC_ALL": "C", "GIT_TERMINAL_PROMPT": "0"})
     return processus.returncode, processus.stdout.strip()
 
 
@@ -582,25 +587,91 @@ def texte_du_temoin(maintenant: datetime, silencieux: list[Temoin]) -> str:
     return f"{t.domaine} ({t.identifiant}, {precision})"
 
 
-def lire_retards(ctx: Contexte, racine: Path) -> dict[str, list[str]]:
-    """Par domaine, les chantiers en recette dont la date recette-le: suit le dernier commit du checkpoint."""
+def statuts_du_texte(verifier, texte: str) -> dict[str, str]:
+    """Le statut de chaque entrée d'un chantiers.yaml, par id (même lecteur que le vérificateur)."""
+    entrees: list[dict] = []
+    for _, debut, cle, brut in verifier.analyser(texte):
+        if debut:
+            entrees.append({})
+        if cle is not None:
+            entrees[-1][cle] = verifier.lire_valeur(brut)
+    return {e["id"]: e.get("statut", "") for e in entrees if e.get("id")}
+
+
+def dates_d_acceptation(ctx: Contexte, racine: Path, chantiers: Path) -> dict[str, str]:
+    """Par id, la date (%cs) du commit qui a fait passer l'entrée en recette ; sans preuve, l'id n'y est pas.
+
+    Les entrées lues sont celles du domaine, en recette et sans « pour: ». La date est celle du plus ancien commit de
+    chantiers.yaml d'où l'entrée est en recette sans interruption jusqu'à HEAD. Une seule lecture de l'historique :
+    chaque version du fichier se lit une fois au plus, pour toutes les entrées, de la plus récente à la plus
+    ancienne, et la lecture s'arrête quand chaque entrée est jugée. Sans preuve (entrée déjà en recette à la
+    plus ancienne version lisible, fichier ou historique introuvable), l'id n'est pas rendu."""
+    domaines = {d["domaine"] for d in ctx.valides}
+    restantes = {c["id"] for c in ctx.chantiers
+                 if c.get("id") and c.get("statut") == "recette" and "pour" not in c and ctx.domaine_de(c) in domaines}
+    try:
+        relatif = Path(chantiers).resolve().relative_to(Path(racine).resolve()).as_posix()
+    except ValueError:
+        return {}
+    if not restantes:
+        return {}
+    code, sortie = git(racine, "log", "--topo-order", "--format=%H %cs", "--", relatif)
+    commits = [ligne.split() for ligne in sortie.split("\n") if ligne.strip()]
+    if code != 0 or not commits or any(len(c) != 2 or not RE_JOUR.fullmatch(c[1]) for c in commits):
+        return {}
+
+    def statuts_a(revision: str) -> dict[str, str] | None:
+        code, texte = git(racine, "show", f"{revision}:./{relatif}", erreurs="replace")
+        return statuts_du_texte(ctx.verifier, texte) if code == 0 else None
+
+    depuis: dict[str, str] = {}     # id -> la date du plus ancien commit lu d'où l'entrée est en recette sans interruption
+    preuves: dict[str, str] = {}
+    for hachage, jour in commits:   # de la version la plus récente à la plus ancienne
+        statuts = statuts_a(hachage)
+        if statuts is None:         # une version illisible : rien de plus ne se prouve
+            return preuves
+        for i in list(restantes):
+            if statuts.get(i) == "recette":
+                depuis[i] = jour
+            else:                   # la série s'arrête ici : la version plus récente est celle du passage en recette
+                if i in depuis:
+                    preuves[i] = depuis[i]
+                restantes.discard(i)
+        if not restantes:
+            return preuves
+    # il reste les entrées en recette jusqu'à la plus ancienne version qui touche le fichier : la version d'avant
+    # (le parent) dit si elles y étaient déjà ; sans parent ni fichier, c'est l'origine de l'historique lisible
+    parent = statuts_a(f"{commits[-1][0]}^")
+    if parent is not None:
+        for i in restantes:
+            if parent.get(i) != "recette":
+                preuves[i] = depuis[i]
+    return preuves
+
+
+def lire_retards(ctx: Contexte, racine: Path, chantiers: Path) -> dict[str, list[str]]:
+    """Par domaine, les chantiers en recette dont la date d'acceptation suit le dernier commit du checkpoint.
+
+    La date d'acceptation est celle du commit qui a fait passer l'entrée en recette (dates_d_acceptation), pas
+    « recette-le: » que l'arbitre pose lui-même ; sans preuve dans l'historique, aucune ligne."""
     retards: dict[str, list[str]] = {}
+    acceptations = dates_d_acceptation(ctx, racine, chantiers)
     for d in ctx.valides:
         code, sortie = git(racine, "log", "-1", "--format=%cs", "--", d["checkpoint"])
-        if code != 0 or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", sortie):
+        if code != 0 or not RE_JOUR.fullmatch(sortie):
             continue
         for c in ctx.chantiers:
-            recette = c.get("recette-le", "")
-            if (c.get("statut") != "recette" or "pour" in c or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", recette)
+            acceptee = acceptations.get(c.get("id", ""))
+            if (acceptee is None or c.get("statut") != "recette" or "pour" in c
                     or ctx.domaine_de(c) != d["domaine"]):
                 continue
             try:
-                posterieur = date.fromisoformat(recette) > date.fromisoformat(sortie)
+                posterieur = date.fromisoformat(acceptee) > date.fromisoformat(sortie)
             except ValueError:
                 continue
             if posterieur:
                 retards.setdefault(d["domaine"], []).append(
-                    f"{d['domaine']} : {c['id']} est en recette depuis le {recette}, "
+                    f"{d['domaine']} : {c['id']} est en recette depuis le {acceptee}, "
                     f"le checkpoint n'a pas été touché depuis le {sortie}")
     return retards
 
@@ -731,7 +802,7 @@ def passage(a, maintenant: datetime) -> int:
     ctx.archives = verifier.lire_archives(Path(a.archives))
     ctx.par_id = {c["id"]: c for c in ctx.chantiers if c.get("id")}
     silencieux = lire_temoins(ctx, racine, maintenant)           # 4
-    retards = lire_retards(ctx, racine)                          # 5
+    retards = lire_retards(ctx, racine, Path(a.chantiers))                          # 5
     nouveaux, deja = [], []
     constats_9, signales = constats_checkpoints(controle, retards, ctx, jour)
     constats = constats_ordinaires(controle, ctx, jour) + constats_9 + constats_entrees(controle, ctx, jour)

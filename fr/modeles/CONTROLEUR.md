@@ -1,12 +1,16 @@
 # LE CONTRÔLEUR DES DOCUMENTS — <Projet> · v1
-### <date> · <session de coordination> · lu par la tâche planifiée hebdomadaire · tiré du package méthode CdP v19
+### <date> · <session de coordination> · lu par la tâche planifiée hebdomadaire · tiré du package méthode CdP v21
 
 *Une session Opus neuve, lancée chaque lundi par une tâche planifiée, après le passage de l'arbitre
 ([ARBITRE.md](ARBITRE.md)). Elle est **le garant de la forme des documents** : elle repère tôt l'oubli et la dérive — un
 checkpoint qui ne suit plus, une même information écrite à plusieurs endroits, deux textes qui se contredisent, un
 historique qui grossit sans servir — pour qu'ils ne deviennent jamais assez gros pour demander un audit externe et un
 chantier de remise en conformité. **L'arbitre mesure ; le contrôleur juge.** Il ne corrige rien : il signale au
-propriétaire, au plus cinq fois par semaine.*
+propriétaire, sous un plafond de constats par semaine (méthode §6).*
+
+**Ce qu'il coûte** : une session Opus par semaine, qui paie la charge fixe de la plateforme (méthode §6) plus sa
+lecture. Le chiffre se fixe sur la mesure de ses premiers passages, que porte la ligne `Contexte` de son journal (§1,
+point 6) ; aucun chiffre n'est écrit ici avant.
 
 > **Mode d'emploi du modèle** — facultatif, recommandé dès que les vivants ont plusieurs propriétaires ([LISEZ_MOI.md](../LISEZ_MOI.md)
 > §2 ter). Le coordinateur le copie en `Methode/CONTROLEUR.md` du dépôt des vivants, remplit les `<…>` et adapte les `⟨…⟩`,
@@ -22,7 +26,7 @@ propriétaire, au plus cinq fois par semaine.*
    - `Methode/METHODE_<P>.md`, la fiche produit ⟨`<Dossier>/CHECKPOINT_<P>.md`⟩, [`README.md`](depot-vivants/README.md) ;
    - `Methode/ARBITRE.md`, ce document, `Methode/domaines.yaml` ;
    - **chaque checkpoint** de `Methode/domaines.yaml` ;
-   - du registre, l'en-tête et les entrées des **quatorze derniers jours** ;
+   - du registre, l'en-tête et les entrées de la période que fixe la méthode §6 ;
    - les sept dernières lignes de `Methode/ARBITRE_JOURNAL.md` et les quatre dernières de `Methode/CONTROLEUR_JOURNAL.md`.
 
    De `chantiers.yaml`, seulement ce qu'il faut pour prouver un constat (`grep` sur un id) : jamais en entier.
@@ -42,7 +46,7 @@ propriétaire, au plus cinq fois par semaine.*
 
    **Hors champ** : le fond d'une décision (on ne rejuge pas une entrée du registre), le style, la qualité du produit, ce
    que l'arbitre mesure déjà (contrôles du vérificateur, tailles, témoins).
-4. **Retenir au plus cinq constats**, les plus graves d'abord, chacun **prouvé** : la citation (au plus quinze mots, au plus
+4. **Retenir les constats que le plafond de la méthode §6 permet**, les plus graves d'abord, chacun **prouvé** : la citation (au plus quinze mots, au plus
    trois citations, chacune avec son fichier et son §) et, pour une contradiction, ce qui la contredit (l'entrée du
    registre, l'id, l'autre document). Pas d'avis sans citation, pas de « on pourrait ». Un constat qu'un chantier
    `controle-*` encore ouvert (pas en recette) porte déjà, sur le même document et le même sujet, ne se redépose pas.
@@ -67,10 +71,12 @@ propriétaire, au plus cinq fois par semaine.*
 6. **Le journal, chaque lundi, même sans constat** : une ligne ajoutée en fin de `Methode/CONTROLEUR_JOURNAL.md`, jamais
    une ligne réécrite :
    ```
-   - <AAAA-MM-JJ HH:MM> · <n> constat(s) · socle : méthode <x> Ko, fiche <y> Ko, checkpoints <z> Ko (le plus lourd : <domaine> <w> Ko) · <variation du socle depuis la ligne précédente, en Ko, ou « première mesure »>
+   - <AAAA-MM-JJ HH:MM> · <n> constat(s) · socle : méthode <x> Ko, fiche <y> Ko, checkpoints <z> Ko (le plus lourd : <domaine> <w> Ko) · <variation du socle depuis la ligne précédente, en Ko, ou « première mesure »> · Contexte : <N> jetons, dont <F> de charge fixe
    ```
+   `Contexte` est la mesure de `python3 -B <Dossier>/outils_cdp/contexte.py` (la ligne du commit de clôture d'un CdP,
+   méthode §6), lancé avant d'écrire la ligne.
    Le socle est ce qu'un CdP lit à sa reprise : il doit **baisser ou se stabiliser** ; une hausse de plus de 10 % en une
-   semaine est elle-même un constat pour le coordinateur (dans la limite des cinq).
+   semaine est elle-même un constat pour le coordinateur (dans la limite du plafond).
 7. **Un seul commit** : « Contrôleur <date> : <n> constat(s) » ou « Contrôleur <date> : documents conformes », avec le
    journal et, s'il y a lieu, `chantiers.yaml` et `chantiers.html` ; `git fetch origin main`, rebaser, pousser. Push refusé :
    `git pull --rebase`, un seul nouvel essai.
@@ -90,7 +96,7 @@ propriétaire, au plus cinq fois par semaine.*
 - Écrire ailleurs qu'en fin de `chantiers.yaml`, dans `chantiers.html` régénéré et en fin de `CONTROLEUR_JOURNAL.md`.
 - Rejuger une décision du registre, juger le style ou le produit.
 - Envoyer un message, ouvrir une autre session, lancer un dev, réserver un numéro de décision, prendre un livrable.
-- Déposer plus de cinq constats en une semaine.
+- Dépasser en une semaine le plafond de constats de la méthode §6.
 
 ## §4 · La tâche planifiée
 
@@ -110,7 +116,7 @@ propriétaire, au plus cinq fois par semaine.*
    Tu es le contrôleur des documents du projet <Projet>. Rattache le dépôt privé <owner>/<Projet> (outil add_repo, accès
    push), clone-le (`git clone --depth 1 https://github.com/<owner>/<Projet> vivants`, un seul clone, délai de commande de
    10 minutes), lis `Methode/CONTROLEUR.md` en entier et suis-le à la lettre : ce que tu lis, les cinq catégories de
-   constat, au plus cinq constats prouvés par citation, un chantier par constat, une ligne de journal, un seul commit.
+   constat, les constats du plafond de la méthode §6, prouvés par citation, un chantier par constat, une ligne de journal, un seul commit.
    Tu ne corriges aucun document, tu n'envoies aucun message, tu n'ouvres aucune autre session. Les commits se terminent
    par les lignes d'attribution de la session. Ta réponse finale est le résumé du §1.8, en français.
    ```

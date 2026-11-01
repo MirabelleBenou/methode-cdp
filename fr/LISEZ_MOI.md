@@ -1,4 +1,4 @@
-# PACKAGE MÉTHODE CdP · v20
+# PACKAGE MÉTHODE CdP · v21
 ### 1er novembre 2026 · pour démarrer un nouveau projet sous la méthode CdP
 
 *Ce package reproduit une façon de travailler éprouvée lot après lot : un **chef de projet** (CdP, Opus) qui décide
@@ -49,12 +49,13 @@ production).
 | `../templates/server-runner/` (à la racine du dépôt public, non traduit) | **facultatif** — son implémentation de référence (Python, systemd, installateur, tests), en français | dépôt de code du projet, puis le serveur |
 | `modeles/depot-vivants/` | [`README.md`](modeles/depot-vivants/README.md) du dépôt des vivants | dépôt des vivants |
 | `modeles/depot-app/` | `.gitattributes`, `.gitignore`, [`CHANGELOG.md`](modeles/depot-app/CHANGELOG.md) du dépôt de code | dépôt de code |
-| [`skill/SKILL.md`](skill/SKILL.md) | la skill personnelle `methode-cdp`, **à personnaliser (§1 et §8) puis installer** — **v19** : ce qu'une session sait avant de lire la méthode du projet | tes skills claude.ai |
+| [`skill/SKILL.md`](skill/SKILL.md) | la skill personnelle `methode-cdp`, **à personnaliser (§1 et §8) puis installer** — **v21** : ce qu'une session sait avant de lire la méthode du projet | tes skills claude.ai |
 
-**L'outillage** : les scripts n'emploient que la bibliothèque standard de Python et sont testés en CI. Deux tests gardent
-les documents : `modeles/tests/test_liens.py` (chaque lien relatif mène à un fichier qui existe) et
+**L'outillage** : les scripts n'emploient que la bibliothèque standard de Python et sont testés en CI. Trois tests gardent
+les documents : `modeles/tests/test_liens.py` (chaque lien relatif mène à un fichier qui existe),
 `modeles/tests/test_parite.py` (chaque chiffre de la méthode n'est écrit qu'à sa source, et chaque document français a
-les mêmes titres que son pendant anglais).
+les mêmes titres que son pendant anglais) et `modeles/tests/test_renvois_en.py` (aucun renvoi « §1 bis » ni clé `file:` ne
+reste dans l'anglais).
 
 ---
 
@@ -135,8 +136,8 @@ chantiers en recette : l'arbitre, s'il existe ; sans lui (modes A et B), le CdP 
 
 **Trois choses que la méthode fixe pour que les outils s'y retrouvent.** *Le témoin* : l'identifiant court d'une session est
 les huit derniers caractères de son identifiant de session (celui de la ligne d'attribution de ses commits) ; toutes les
-sessions d'un même compte en partagent le début ; un témoin se juge à son silence, **sauf celui de la coordination**, que
-tu gardes ouverte des jours sans commit. *La file* : chaque checkpoint la porte sous un titre stable
+sessions d'un même compte en partagent le début ; un témoin se juge à son silence — une information, jamais une alerte (méthode §6) —, **sauf celui de la coordination**,
+que tu gardes ouverte des jours sans commit. *La file* : chaque checkpoint la porte sous un titre stable
 `## §<n> · La file`, avec la liste elle-même ; la table des domaines nomme ce titre, une ligne `file:` vide est un trou, et la
 coordination y a sa propre entrée. *Ta machine* : quand le projet pilote un jeu ou une application sur ton PC, la session du
 CdP s'en sert **par le pont de l'application Claude** (dossiers reliés, terminal s'il est offert, écran que tu valides) ;
@@ -167,8 +168,9 @@ combien, comment » : [`modeles/ARBITRE.md`](modeles/ARBITRE.md) §0 et [`modele
   `pour:` par écart nouveau, archive et tient son journal ; elle échoue quand elle a déposé, et l'e-mail de GitHub te
   prévient. **Son signe** : le premier numéro de décision en double, ou la première session oubliée qui garde un témoin.
 - **Le contrôleur juge, chaque lundi** : une session Opus neuve, par tâche planifiée (approbation automatique), qui rend
-  au plus cinq constats prouvés sur la forme des documents. **Son signe** : le premier document qui enfle ou se contredit
-  sans que personne le dise.
+  des constats prouvés sur la forme des documents (leur plafond : méthode §6). **Son signe** : le premier document qui enfle ou se
+  contredit sans que personne le dise. **Son coût** : une session Opus par semaine, charge fixe comprise ; la mesure de ses
+  premiers passages le fixe (`modeles/CONTROLEUR.md`).
 - **Ni l'un ni l'autre ne corrige** : le propriétaire corrige.
 
 ---
@@ -283,13 +285,13 @@ propriétaire de la méthode** tant qu'il n'y a pas de coordination.
 2. Dis au CdP qui tenait la méthode, dans sa conversation : « la coordination est ouverte, elle reprend la méthode ».
 3. En A → C : demande ensuite à la coordination d'ouvrir le second domaine (tu lui dis lequel ; elle te remet sa ligne
    fixe).
-4. Réponds à ses propositions (fiche produit, arbitre) et colle les instructions qu'elle te redonne.
+4. Réponds à ses propositions (fiche produit, arbitre, contrôleur) et colle les instructions qu'elle te redonne.
 
 **B → C — ce que la session de coordination fait :** elle reprend la méthode, le prompt du dev, le README des vivants et
 le package (le CdP qui les tenait les lui laisse) ; elle crée son checkpoint ; elle tient la table des domaines en trois
 endroits (méthode §1 bis, README, `Methode/domaines.yaml`) ; les règles du mode C entrent dans la méthode (un livrable,
 un seul lot en vol ; une ressource prise comme un livrable ; `attend:`, `touche:` ; la fiche produit d'un produit à
-plusieurs CdP) ; elle propose l'arbitre ; elle prévient chaque CdP en activité par un message prêt à coller, que tu lui remets, et vérifie
+plusieurs CdP) ; elle propose l'arbitre et le contrôleur ; elle prévient chaque CdP en activité par un message prêt à coller, que tu lui remets, et vérifie
 ensuite sa réponse sur le dépôt ; un CdP au témoin libre le trouve par un chantier `pour:` à sa reprise (méthode §1 bis).
 
 **Le retour, quand un domaine se ferme :** demande à la coordination (ou, en B, au CdP qui tient la méthode) « ferme le
@@ -357,7 +359,7 @@ changer ; `DEPENDANCES_CLAUDE.md` dit, pour chacune, ce qui casse et le repli. R
 
 ## 6 · Les coûts à attendre (mesurés sur un premier projet)
 
-- un lot ordinaire : 5 à 20 minutes de dev, quelques minutes de réception ;
+- un lot ordinaire : le coût visé de la méthode §8 (`modeles/METHODE.md`), quelques minutes de réception en plus ;
 - un écran avec maquette : 15 minutes à 1 h 30 de dev, une ou deux passes de maquette avec toi (faite par le CdP avant le lancement, ou demandée au dev, qui la livre par un arrêt ; le CdP te la montre et relaie ton verdict mot pour mot) ;
 - un addendum lancé par le CdP : quelques minutes, sans un geste de ta part ;
 - une session de CdP : la passation à une fin de file naturelle ou au seuil de contexte de la méthode §6.
@@ -376,7 +378,7 @@ le premier lot de produit.*
   de ce projet la reporte ici — modèles, `3_GITHUB.md`, skill — dans un commit « Package vN : … », te le dit, et te
   propose la skill mise à jour. Une leçon propre au projet reste dans sa méthode.
 - **Un projet déjà amorcé ne se réaligne pas tout seul** : sa méthode prime ; son CdP reprend une évolution du package
-  à sa prochaine version de méthode, s'il y a lieu. **Avant de réinstaller la skill v19 sur un projet amorcé plus tôt**,
+  à sa prochaine version de méthode, s'il y a lieu. **Avant de réinstaller la skill v21 sur un projet amorcé plus tôt**,
   son CdP vérifie que la méthode du projet porte ce que la skill v17 disait seule et la complète depuis
   `modeles/METHODE.md` sinon : pour tout projet, la passation (mesure, seuils, ligne fixe), les plafonds des vivants et
   le §0 du checkpoint à chaque lot clos ; avec plusieurs CdP, en plus, le témoin, la file et la coordination.
@@ -437,7 +439,7 @@ page fixe et son fichier de données (`chantiers.html`, `chantiers.json`), ce qu
 régimes de version, déployé à chaque lot ou publié par release (`modeles/depot-app/CHANGELOG.md`, section « Unreleased ») ;
 la méthode, éprouvée sur trois projets dont un complexe ; skill v17.
 v19, le 31 octobre 2026 — les corrections de la revue indépendante du package v18 : le numéro d'un correctif (la règle de
-la méthode §1 bis), le régime « publié par release » jusqu'au bout (`lot/<nom du lot>`), la préséance complète,
+la méthode, aujourd'hui §2 étape 6), le régime « publié par release » jusqu'au bout (`lot/<nom du lot>`), la préséance complète,
 la passation jamais avec un dev en vol, le §0 du checkpoint rafraîchi à chaque lot clos, des seuils à une seule source
 (méthode §6), la relecture indépendante du code, le dépôt d'ordres cloné après la réception seulement, la protection de
 `main` et des secrets ; l'outillage v19 (YAML strict, onze contrôles) ; l'arbitre en action GitHub (`modeles/ARBITRE.md` v6,
@@ -454,3 +456,4 @@ v20, le 1er novembre 2026 — le contrôle 12 de `verifier_vivants.py` : la tail
 registre contre leurs plafonds (méthode §6), un chantier par domaine pour l'arbitre ; l'écart (b) du contrôle 4 se lit quelle
 que soit la version ; les seuils de passation se comptent au-dessus de la charge fixe mesurée au premier tour, une règle
 pour tous (`contexte.py` l'affiche) ; la skill reste v19.
+v21, le 1er novembre 2026 — les suites de la revue externe du package v20 : « owner » ne désigne plus que le porteur en anglais (« holder » pour celui qui tient un fichier) ; plus de renvoi « §n bis » dans l'anglais, et un test qui le garde ; la protection contre les secrets dite pour ce qu'elle couvre (les dépôts publics ; pour un dépôt privé, une organisation payante, et rien pour un compte personnel) et un scan du diff à la porte P12 du banc, qui tient dans le clone peu profond de l'étape 1 et vaut pour tout lot ; le numéro d'un correctif obtenu côté dev (le correctif part de la branche du lot remis, et le prompt du dev récupère cette base) ; les attendus, que le dev ne lit pas : une règle de son prompt et non un mur ; le §1 bis de la méthode devenu une extension, la règle de version rangée au §2 et le témoin au §6 ; le coût du contrôleur mesuré à son journal ; ce qu'est la charge fixe ; trois chiffres de plus à la table du §6 (silence d'un témoin, constats du contrôleur, lecture du registre) ; la fabrique de la copie publique qui refuse un `README.md` resté à une autre version du package ou de la skill ; le droit de pousser sous `.github/workflows/` au relevé des dépendances ; les workflows en Node 24 (`checkout@v7`, `setup-python@v7`) ; un commit vert à chaque push ; l'arbitre date le checkpoint en retard par le passage du chantier en recette ; la skill passe à v21.

@@ -1,14 +1,16 @@
 # CADRAGE — <titre du lot> · `v<X.Y>`
-### <date> · <session de CdP> · branche `lot/v<X.Y>` de `<owner>/<Projet>-App` · base `<sha court de main>`
+### <date> · <session de CdP> · branche `lot/v<X.Y>` de `<owner>/<Projet>-App` · base `<sha court de main, ou de la branche du lot remis>`
 
 > **Modèle pour le CdP — un cadrage ne le cite jamais.** Le cadrage est autoportant : avec le prompt du dev, il se
 > suffit. Il porte des règles, des critères et les textes que l'utilisateur lira — **jamais le code tout écrit**.
 > **La version** : `v<X.Y>` n'existe que pour un livrable **déployé à chaque lot** (elle se calcule quand le lot prend le
-> livrable, par la règle de la méthode §1 bis, jamais `main` plus un ; le cadrage l'annonce). Pour un livrable
+> livrable, par la règle de la méthode §2, étape 6, jamais `main` plus un ; le cadrage l'annonce). **La base d'un correctif
+> d'une version remise est la branche de ce lot** (le script `release` y donne la version suivante) ; si le porteur abandonne
+> la version remise, le lot part de `main` et le cadrage écrit `release --set <version>`, à la valeur de la règle. Pour un livrable
 > **publié par release**, le lot ne porte pas de version : retirer `v<X.Y>` du titre, nommer la branche et le dossier
 > d'après le lot (`lot/<nom du lot>`, `lots/<nom du lot>/`), et le §6 complète la section « Unreleased » du `CHANGELOG`
 > — c'est elle que vérifie la porte P8 du prompt du dev — avec, si le lot produit une donnée dérivée, « À déposer après
-> la release : … » (méthode §1 bis, « Le livrable et sa version »).
+> la release : … » (méthode §2, étape 6).
 > Supprimer cet encadré.
 
 **Dev : ⟨modèle⟩ · ⟨effort⟩ · session neuve** *(par défaut, ceux de la table de la méthode §6 ; Opus pour ⟨…⟩ ; High
@@ -19,7 +21,8 @@ en fin de ce modèle)*
 
 ## §0 · Les pièces
 
-- **La base** : `main` au `<sha complet>`. Si la tête de `main` n'est pas ce commit : arrêt.
+- **La base** : `main` au `<sha complet>` ⟨, ou `lot/v<X'.Y'>` (la branche du lot remis) au `<sha complet>`, pour un correctif (encadré ci-dessus) ; le prompt du dev récupère cette branche à l'étape 1⟩. Si cette
+  tête n'est pas ce commit : arrêt.
 - **Sur cette branche** : ce cadrage ; ⟨`maquette/…` ; fixtures ; images à ouvrir, par leur nom — les seules⟩.
 - **À lire avant de construire** : ⟨les fonctions, par leur nom, dans les gros fichiers⟩.
 
@@ -109,7 +112,7 @@ En plus de ceux du prompt du dev :
 
 ### Liste de contrôle du CdP avant de pousser (à retirer du cadrage)
 
-- [ ] La base mesurée à froid aujourd'hui, pas supposée.
+- [ ] La base mesurée à froid aujourd'hui, pas supposée ; pour un correctif d'une version remise, la branche de ce lot.
 - [ ] Les tests et le banc cherchés pour **les valeurs** que le lot change, pas seulement les symboles.
 - [ ] Rien de ce que le lot crée ne double un existant.
 - [ ] Les dettes à déclencheur passées contre la liste du §4.
@@ -119,7 +122,7 @@ En plus de ceux du prompt du dev :
 - [ ] Les API, fichiers et fonctions que la règle impose, tous nommés.
 - [ ] Une règle de couleur mesurée sur tous les thèmes ; un libellé à la largeur la plus étroite.
 - [ ] Aucun code tout écrit.
-- [ ] La version calculée quand le lot prend le livrable (la règle de la méthode §1 bis, pas `main` plus un) — ou
+- [ ] La version calculée quand le lot prend le livrable (la règle de la méthode §2, étape 6, pas `main` plus un) — ou
   aucune version, pour un livrable publié par release.
 - [ ] Lot de complexité moyenne ou forte, ou dépendance nouvelle : la relecture indépendante prévue, le fichier de
   verrouillage dans la liste du §4.

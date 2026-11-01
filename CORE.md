@@ -1,5 +1,5 @@
 # CORE — the PL method for a project with a single PL
-### 31 October 2026 · the document that is enough to start · mode A (`GUIDE.md` §2a)
+### 1 November 2026 · the document that is enough to start · mode A (`GUIDE.md` §2a)
 
 *Alone with a PL, read this first; each template is read when it is filled in. The rest of the package is added when a
 sign you have lived through calls for it (the table, at the end). The terms are in [`GLOSSARY.md`](GLOSSARY.md).*
@@ -31,8 +31,11 @@ dev, the practical conditions of its command override the brief, which overrides
 
 **Your moves, before the first session**:
 1. On GitHub, **create two empty private repositories**: `<Project>` (the living docs) and `<Project>-App` (the code);
-   protect `main` against force-push and deletion, and turn on **secret protection at push** for the account; on a free
-   account, GitHub does not apply branch rules to private repositories ([`3_GITHUB.md`](3_GITHUB.md) §5).
+   protect `main` against force-push and deletion, and turn on **secret protection at push** for the account — it only
+   blocks pushes to **public** repositories; for a private repository, push protection only exists in a **paid
+   organization** (GitHub Team or Enterprise): **a personal account has no option**. On a free account, GitHub does not
+   apply branch rules to private repositories either: **in mode A, on a personal account, no technical
+   safeguard**; the only one is the test bench's secret scan (gate P12 of the dev prompt; [`3_GITHUB.md`](3_GITHUB.md) §5).
 2. On claude.ai, **create the project**; paste into its instructions
    [`1_PROJECT_INSTRUCTIONS.md`](1_PROJECT_INSTRUCTIONS.md) (short version), the `<…>` filled in.
 3. **Customize the skill** ([`skill/SKILL.md`](skill/SKILL.md): its §1 and §8 describe you) and install it in your
@@ -65,7 +68,7 @@ it, no gate can be measured. The first product batch comes next.
 
 **The two versioning regimes**: a deliverable **deployed per batch** (an application in service) takes one version per
 batch, announced in the brief (branch `batch/v<X.Y>`): the highest version already taken by a batch, handed over or
-refused, plus one — the exact rule: method §1a; a deliverable
+refused, plus one — the exact rule: method §2, step 6; a deliverable
 **published by release** (a tool downloaded as a package) takes no version per batch (branch `batch/<batch name>`): the
 batch completes the “Unreleased” section of the `CHANGELOG`, and the release is made when you ask for it.
 

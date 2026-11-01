@@ -1,7 +1,7 @@
 # THE DEV COMMAND — the sub-agent launch, and the fallback line
 
 *The PL launches the dev themselves (`Agent` tool, in the background), with the model and effort mode of the brief, **after
-deleting the orders repository's clone if it has one** (the sub-agent shares its disk; method §4 bis). For a deliverable
+deleting the orders repository's clone if it has one** (the sub-agent shares its disk; method §4a). For a deliverable
 published by release, which carries no version, `v<X.Y>` reads `<batch name>` throughout below: branch
 `batch/<batch name>`. The dev
 starts **without the PL's context**: this command is all they know beyond the repository. It comes in four parts.
@@ -25,6 +25,7 @@ Expected report: batches/v<X.Y>/<DEV_REPORT.md | DEV_REPORT_<n>.md>.
 - Your working folder: /home/claude/dev_<batch>/; never <the paths of the PL's copies>, which it occupies itself.
 - You push only to batch/v<X.Y> <public code: and to batch/<batch> of the public repository, where you push the code alone>.
 - End of every commit message, these lines: <the attribution lines imposed by the PL's session, copied as they are>.
+- The code and its tests go in the same commit: every pushed commit keeps the test suite green (every push runs the CI, and a failure alerts the owner by e-mail).
 - <The tools already present: browser at such path, do not reinstall it; interpreter version.>
 <The attached repositories, the separate clones, the batch branches only, no background process: in the dev prompt, which carries them. A project with no dev prompt repeats them here.>
 

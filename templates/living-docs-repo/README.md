@@ -1,7 +1,8 @@
 # <Project> — the living documents
 
-Private repository. **Only project lead (PL) sessions write to it.** The dev has no access to it: they read the code
-repository, `<owner>/<Project>-App`.
+Private repository. **Only project lead (PL) sessions write to it.** The dev never writes to it and does not read it — a
+rule of their prompt, not a wall: they inherit the session's repositories. They read the code repository,
+`<owner>/<Project>-App`.
 
 | path | holds |
 |---|---|
@@ -15,11 +16,11 @@ repository, `<owner>/<Project>-App`.
 | `<Folder>/archive_workstreams.py` | dates the accepted workstreams and moves out to `<Folder>/Archives/` those accepted for the delay of the method §6; `search` finds a workstream, living or archived; `normalize` puts the `.yaml` files in strict YAML format |
 | `<Folder>/check_living_docs.py` | ⟨several PLs⟩ the read-only check of the shared living docs (twelve checks, among them 11: the `.yaml` files are valid YAML); with `--domains`, check 9 cross-checks each checkpoint's queue with `workstreams.yaml` |
 | `Method/domains.yaml` | ⟨several PLs⟩ the domain table that check 9 reads: per domain, its PL, its checkpoint, the title of its queue section, its modules; kept by the coordinator in step with the method's table §1a |
-| `<Folder>/expected/<version>/` | the acceptance expected results, computed at the brief — never read by the dev |
+| `<Folder>/expected/<version>/` | the acceptance expected results, computed at the brief — which the dev does not read (a rule of their prompt) |
 | `<Folder>/pl_tools/` | the PL's throwaway scripts (probes, measurements) and `context.py`, the context measure (thresholds: method §6) |
 | `<Folder>/Archives/` | the frozen archives of living docs that grew long, including `WORKSTREAMS_<YYYY-MM>.yaml` (written by the archiving: things are only appended to it, frozen at the end of the month) |
 | `<Folder>/arbiter.py`, `.github/workflows/arbiter.yml`, `Method/ARBITER.md`, `Method/ARBITER_LOG.md` | ⟨optional, several PLs⟩ the living-docs arbiter: a daily **GitHub Action**, with no session (the script, its workflow, what it does and does not do, its log of one line per run); it fails when it has filed a workstream, and GitHub's e-mail warns |
-| `Method/CONTROLLER.md`, `Method/CONTROLLER_LOG.md` | ⟨optional, several PLs⟩ the controller: a weekly Opus session, by scheduled task, that judges the form of the documents (contradiction, omission, duplicate, useless history) and returns at most five findings as workstreams; its log, one line per Monday |
+| `Method/CONTROLLER.md`, `Method/CONTROLLER_LOG.md` | ⟨optional, several PLs⟩ the controller: a weekly Opus session, by scheduled task, that judges the form of the documents (contradiction, omission, duplicate, useless history) and returns its findings (ceiling: method §6) as workstreams; its log, one line per Monday |
 
 **Rules**: stable names (the version is in the header, the history in git); `git pull` before writing; a commit
 “Batch v<X.Y> closed” at each close-out, with the line `Context: <N> tokens, of which <F> of fixed load` (method §6) ⟨; with the mirror extension,

@@ -3,7 +3,7 @@ name: "methode-cdp"
 description: "Méthode de collaboration avec Claude en mode chef de projet / exécutant : ce qu'une session sait avant de lire la méthode du projet — rôles, posture, démarrage d'une session, ce qui ne pardonne pas, contraintes du porteur."
 ---
 
-# Méthode CdP — collaborer avec le porteur · v19
+# Méthode CdP — collaborer avec le porteur · v21
 
 **Le rôle de cette skill** : ce qu'une session doit savoir **avant** d'avoir lu la méthode du projet, et ce qui vaut pour
 tous les projets du porteur. Tout le reste — le cycle d'un lot, le cadrage, la réception, la clôture, les vivants, la
@@ -51,7 +51,7 @@ sont dans sa méthode (§1 bis pour plusieurs CdP) et dans les modèles du packa
 
 1. Lire **le checkpoint** de son domaine (§0 d'abord), puis **la méthode du projet** — avant de cadrer ou de
    réceptionner.
-2. **Poser le témoin** s'il y en a un, par un push : c'est le premier geste (méthode §1 bis).
+2. **Poser le témoin** s'il y en a un, par un push : c'est le premier geste (méthode, « Le témoin »).
 3. **Mesurer le contexte** comme la méthode le dit (§6, « La passation ») : aux moments qu'elle nomme, et passer la
    main à ses seuils, jamais avec un dev en vol.
 
@@ -60,7 +60,7 @@ sont dans sa méthode (§1 bis pour plusieurs CdP) et dans les modèles du packa
 *Une phrase par règle ; la règle entière est à la méthode du projet §5 et aux endroits qu'elle cite.*
 
 - **Rien ne se croit, tout se mesure** : à froid, sur l'archive livrée, en deltas ; jamais recopié du rapport du dev.
-- **Une livraison = un nouveau numéro**, calculé par la règle de la méthode (§1 bis), jamais annoncé à l'avance.
+- **Une livraison = un nouveau numéro**, calculé par la règle de la méthode (« Le livrable et sa version »), jamais annoncé à l'avance.
 - **Le dev ne pousse que la branche de son lot** : jamais `main`, jamais de tag, jamais `--force`.
 - **Un arrêt juste du dev n'est jamais un reproche** : l'exécution a souvent raison contre le cadrage.
 - **Les invariants du projet** ne bougent que sur l'autorisation écrite du porteur, portée par le cadrage.

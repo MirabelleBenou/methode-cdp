@@ -1,5 +1,5 @@
 # L'ARBITRE DES VIVANTS — <Projet> · v6
-### <date> · <session de coordination> · tiré du package méthode CdP v20
+### <date> · <session de coordination> · tiré du package méthode CdP v21
 
 ***L'arbitre est une action GitHub**, `.github/workflows/arbitre.yml` : chaque jour, sans session, elle lance
 `<Dossier>/arbitre.py`, commite et pousse au nom de `github-actions[bot]`, puis **échoue si elle a déposé un
@@ -62,12 +62,14 @@ dit ce que le script fait, dans l'ordre ; il ne s'exécute pas, il se lit.*
    `arbitre-c10-checkpoint-court-<domaine>-<date>`, `arbitre-c12-entrees-courtes-<domaine>-<date>`), sans nouveau dépôt
    tant qu'un chantier du même nom, ouvert, attend son CdP ; **un défaut de la table elle-même** : un seul chantier `arbitre-c9-table-<date>`, pour le coordinateur.
 4. **Les témoins** : la ligne « Session en activité » de chaque checkpoint. **Un témoin ne se juge pas à son âge, mais à son
-   silence** : aucun commit portant son identifiant depuis plus de 24 heures. ⟨Le témoin est les huit derniers
+   silence** : aucun commit portant son identifiant depuis le délai de silence de la méthode §6. ⟨Le témoin est les huit derniers
    caractères de l'identifiant de session des lignes d'attribution des commits ; sans cette ligne, convenir d'une marque
    que chaque CdP met dans ses messages.⟩ C'est **une information** (journal, résumé), jamais un chantier. **La
    coordination est exclue** : session longue de consultation, muette des jours sans être oubliée.
 5. **Le checkpoint en retard** : un chantier du domaine passé en recette après le dernier commit de son checkpoint rejoint le
-   chantier du contrôle 9 de ce domaine.
+   chantier du contrôle 9 de ce domaine. **La date du passage est celle du commit qui a mis l'entrée en recette** (l'historique
+   git de `chantiers.yaml`), pas `recette-le:`, que l'arbitre pose lui-même à son passage ; **sans preuve dans l'historique
+   disponible, pas d'alerte**.
 6. **Archiver** : `archiver_chantiers.py archiver` date `recette-le:` et sort vers `<Dossier>/Archives/CHANTIERS_<AAAA-MM>.yaml` les
    chantiers en recette depuis le délai de la méthode §6 (le défaut du script : ne pas passer `--delai`) ; il vérifie qu'il ne perd aucune ligne.
    Une date illisible : un chantier `archivage-<id>`. Code 2 : rien n'est écrit.

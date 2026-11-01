@@ -790,17 +790,30 @@ class TestTemoins(CasArbitre):
         self.assertIn("· témoins frais ·", self.lignes_de_journal()[0])
 
 
+LIVRE = "2026-03-12T10:00:00+0100"   # le commit qui passe l'entrée en recette
+
+
 class TestCheckpointEnRetard(CasArbitre):
+    """La date d'acceptation est celle du commit qui passe l'entrée en recette, jamais « recette-le: »."""
     cites = {"alpha": ("alpha-1",), "beta": ("beta-1",)}
 
     def chantiers_conformes(self):
         self.ecrire_chantiers(
             bloc("alpha-1", titre="Premier", statut="a-venir", module="module-a"),
-            bloc("alpha-2", titre="Livré", statut="recette", module="module-a", recette_le="2026-03-12"),
             bloc("beta-1", titre="Autre", statut="a-venir", module="module-b"))
 
-    def test_un_chantier_en_recette_apres_le_dernier_commit_du_checkpoint_est_detecte(self):
-        sortie = self.arbitrer()  # le checkpoint d'alpha date du 1er mars, la recette du 12
+    def en_recette(self, *supplement: str, quand: str = LIVRE, message: str = "alpha-2 passe en recette", **cles):
+        """Un commit daté qui met alpha-2 en recette (sans « recette-le: » : l'arbitre le pose), sans toucher au checkpoint."""
+        self.ecrire_chantiers(
+            bloc("alpha-1", titre="Premier", statut="a-venir", module="module-a"),
+            bloc("alpha-2", titre="Livré", statut="recette", module="module-a", **cles),
+            *supplement,
+            bloc("beta-1", titre="Autre", statut="a-venir", module="module-b"))
+        self.valider(message, quand=quand)
+
+    def test_un_chantier_passe_en_recette_apres_le_dernier_commit_du_checkpoint_est_detecte(self):
+        self.en_recette()  # le checkpoint d'alpha date du 1er mars, le passage en recette du 12
+        sortie = self.arbitrer()
         self.assertEqual(sortie.code, 1, sortie.stdout + sortie.stderr)
         self.assertEqual(self.arbitres(), ["arbitre-c9-checkpoint-alpha-20260315"])
         c = self.par_id()["arbitre-c9-checkpoint-alpha-20260315"]
@@ -812,6 +825,7 @@ class TestCheckpointEnRetard(CasArbitre):
         self.assertRegex(self.lignes_de_journal()[0], r"· 1 écart · 1 constat nouveau · .*· checkpoints : alpha · socle")
 
     def test_pas_d_ecart_si_le_checkpoint_a_ete_touche_apres_la_recette(self):
+        self.en_recette()
         self.ecrire(f"depot/{CHECKPOINTS['alpha']}", checkpoint("alpha-1") + "\nMis à jour.\n")
         self.valider("Alpha : checkpoint à jour", quand="2026-03-13T10:00:00+0100")
         sortie = self.arbitrer()
@@ -820,17 +834,13 @@ class TestCheckpointEnRetard(CasArbitre):
         self.assertIn("· 0 écart ·", self.lignes_de_journal()[0])
 
     def test_le_meme_jour_n_est_pas_un_retard(self):
+        self.en_recette()
         self.ecrire(f"depot/{CHECKPOINTS['alpha']}", checkpoint("alpha-1") + "\nMis à jour.\n")
         self.valider("Alpha : checkpoint du jour de la recette", quand="2026-03-12T23:00:00+0100")
         self.assertEqual(self.arbitrer().code, 0)
 
     def test_le_retard_se_groupe_avec_les_lignes_du_controle_9_du_meme_domaine(self):
-        self.ecrire_chantiers(
-            bloc("alpha-1", statut="a-venir", module="module-a"),
-            bloc("alpha-2", statut="recette", module="module-a", recette_le="2026-03-12"),
-            bloc("alpha-3", statut="a-venir", module="module-a"),
-            bloc("beta-1", statut="a-venir", module="module-b"))
-        self.valider("alpha-3 n'est pas cité")
+        self.en_recette(bloc("alpha-3", statut="a-venir", module="module-a"), message="alpha-3 n'est pas cité")
         sortie = self.arbitrer()
         self.assertEqual(sortie.code, 1, sortie.stdout + sortie.stderr)
         self.assertEqual(self.arbitres(), ["arbitre-c9-checkpoint-alpha-20260315"])
@@ -838,19 +848,143 @@ class TestCheckpointEnRetard(CasArbitre):
         self.assertIn("alpha : alpha-3 (a-venir) n'est pas cité au checkpoint ; alpha : alpha-2 est en recette", mesure)
 
     def test_un_message_pour_un_cdp_n_est_pas_un_sujet_du_domaine(self):
-        self.ecrire_chantiers(
-            bloc("alpha-1", statut="a-venir", module="module-a"),
-            bloc("alpha-msg", statut="recette", module="module-a", recette_le="2026-03-12", pour="Opus-CdP-Alpha"),
-            bloc("beta-1", statut="a-venir", module="module-b"))
-        self.valider("un message en recette")
+        self.en_recette(pour="Opus-CdP-Alpha", message="un message en recette")
         self.assertEqual(self.arbitrer().code, 0)
 
     def test_pas_de_doublon_au_passage_suivant(self):
+        self.en_recette()
         self.arbitrer()
         apres = self.lire("Dossier/chantiers.yaml")
         sortie = self.arbitrer(date="2026-03-16 06:43")
         self.assertEqual(sortie.code, 0, sortie.stdout)
         self.assertEqual(self.lire("Dossier/chantiers.yaml"), apres)
+
+    # ── la date d'acceptation vient de l'historique ──
+
+    def test_le_jour_J_puis_J_plus_1_puis_J_plus_2_ne_fait_pas_de_fausse_alerte(self):
+        """J : le CdP passe l'entrée en recette et rafraîchit son checkpoint. J+1 : l'arbitre pose « recette-le: ».
+        J+2 : « recette-le: » (J+1) suit le dernier commit du checkpoint (J) : plus aucune alerte."""
+        self.ecrire_chantiers(
+            bloc("alpha-1", titre="Premier", statut="a-venir", module="module-a"),
+            bloc("alpha-2", titre="Livré", statut="a-venir", module="module-a"),
+            bloc("beta-1", titre="Autre", statut="a-venir", module="module-b"))
+        self.ecrire(f"depot/{CHECKPOINTS['alpha']}", checkpoint("alpha-1", "alpha-2"))
+        self.valider("alpha-2 ouvert", quand="2026-03-10T10:00:00+0100")
+        self.en_recette(quand=LIVRE, message="J : alpha-2 en recette")
+        self.ecrire(f"depot/{CHECKPOINTS['alpha']}", checkpoint("alpha-1") + "\nalpha-2 livré.\n")
+        self.valider("J : checkpoint rafraîchi", quand="2026-03-12T10:05:00+0100")
+        self.assertNotIn("recette-le:", self.lire("Dossier/chantiers.yaml"))
+
+        sortie = self.arbitrer(date="2026-03-13 06:43")                      # J+1
+        self.assertEqual(sortie.code, 0, sortie.stdout + sortie.stderr)
+        self.assertIn("  statut: recette\n  recette-le: 2026-03-13\n", self.lire("Dossier/chantiers.yaml"))
+        self.valider("Arbitre J+1", quand="2026-03-13T06:50:00+0100")
+
+        sortie = self.arbitrer(date="2026-03-14 06:43")                      # J+2
+        self.assertEqual(sortie.code, 0, sortie.stdout + sortie.stderr)
+        self.assertEqual(self.arbitres(), [])
+        self.assertIn("· 0 écart ·", self.lignes_de_journal()[-1])
+        self.assertNotIn("Checkpoint en retard", sortie.stdout)
+
+    def test_le_recette_le_pose_a_la_main_n_est_pas_la_date_d_acceptation(self):
+        self.en_recette(recette_le="2026-03-12", quand="2026-03-02T10:00:00+0100")  # en recette le 2, daté du 12 à la main
+        self.ecrire(f"depot/{CHECKPOINTS['alpha']}", checkpoint("alpha-1") + "\nMis à jour.\n")
+        self.valider("Alpha : checkpoint à jour", quand="2026-03-05T10:00:00+0100")
+        sortie = self.arbitrer()
+        self.assertEqual(sortie.code, 0, sortie.stdout + sortie.stderr)
+        self.assertEqual(self.arbitres(), [])
+
+    def test_la_date_est_celle_du_passage_pas_celle_des_commits_suivants_du_fichier(self):
+        self.ecrire(f"depot/{CHECKPOINTS['alpha']}", checkpoint("alpha-1") + "\nMis à jour.\n")
+        self.valider("Alpha : checkpoint à jour", quand="2026-03-11T10:00:00+0100")
+        self.en_recette(message="alpha-2 en recette")
+        note = bloc("note-1", statut="a-cadrer", module="module-b", pour="Opus-CdP-Beta")
+        self.en_recette(note, quand="2026-03-13T10:00:00+0100", message="un message pour beta")
+        self.en_recette(note, bloc("note-2", statut="a-cadrer", module="module-b", pour="Opus-CdP-Beta"),
+                        quand="2026-03-14T10:00:00+0100", message="un autre message")
+        sortie = self.arbitrer()
+        self.assertEqual(sortie.code, 1, sortie.stdout + sortie.stderr)
+        mesure = self.par_id()["arbitre-c9-checkpoint-alpha-20260315"]["mesure"]
+        self.assertIn("alpha : alpha-2 est en recette depuis le 2026-03-12, "
+                      "le checkpoint n'a pas été touché depuis le 2026-03-11", mesure)
+
+    def test_une_serie_interrompue_repart_au_dernier_passage_en_recette(self):
+        self.en_recette(quand="2026-03-05T10:00:00+0100", message="alpha-2 en recette")
+        self.ecrire(f"depot/{CHECKPOINTS['alpha']}", checkpoint("alpha-1") + "\nMis à jour.\n")
+        self.valider("Alpha : checkpoint à jour", quand="2026-03-08T10:00:00+0100")
+        self.ecrire_chantiers(bloc("alpha-1", titre="Premier", statut="a-venir", module="module-a"),
+                              bloc("beta-1", titre="Autre", statut="a-venir", module="module-b"))
+        self.valider("alpha-2 archivé", quand="2026-03-09T10:00:00+0100")
+        self.en_recette(quand=LIVRE, message="alpha-2 revient en recette")  # sans l'interruption, il serait en recette depuis le 5
+        sortie = self.arbitrer()
+        self.assertEqual(sortie.code, 1, sortie.stdout + sortie.stderr)
+        mesure = self.par_id()["arbitre-c9-checkpoint-alpha-20260315"]["mesure"]
+        self.assertIn("alpha : alpha-2 est en recette depuis le 2026-03-12, "
+                      "le checkpoint n'a pas été touché depuis le 2026-03-08", mesure)
+
+    def test_deux_entrees_ont_chacune_leur_date(self):
+        self.en_recette(quand="2026-03-09T10:00:00+0100", message="alpha-2 en recette")
+        self.ecrire(f"depot/{CHECKPOINTS['alpha']}", checkpoint("alpha-1") + "\nMis à jour.\n")
+        self.valider("Alpha : checkpoint à jour", quand="2026-03-10T10:00:00+0100")
+        self.en_recette(bloc("alpha-3", titre="Livré aussi", statut="recette", module="module-a"),
+                        quand=LIVRE, message="alpha-3 en recette")
+        sortie = self.arbitrer()
+        self.assertEqual(sortie.code, 1, sortie.stdout + sortie.stderr)
+        mesure = self.par_id()["arbitre-c9-checkpoint-alpha-20260315"]["mesure"]
+        self.assertIn("alpha-3 est en recette depuis le 2026-03-12", mesure)
+        self.assertNotIn("alpha-2 est en recette", mesure, "alpha-2 est en recette depuis le 9, avant le checkpoint du 10")
+
+    def retard_dans_un_clone(self, profondeur: int) -> str:
+        """Le résumé d'un passage dans un clone peu profond : tout ce qui précède son premier commit est inconnu."""
+        clone = self.sous_dossier("court") / f"profondeur{profondeur}"
+        subprocess.run(["git", "clone", "-q", "--depth", str(profondeur), f"file://{self.depot}", str(clone)],
+                       check=True, capture_output=True)
+        sortie = self.lancer(clone / "Methode" / "arbitre.py", *self.options(), "--date", PASSAGE, cwd=clone)
+        self.assertIn(sortie.code, (0, 1), sortie.stdout + sortie.stderr)
+        return sortie.stdout
+
+    def test_un_historique_qui_contient_le_passage_suffit_a_la_preuve(self):
+        self.en_recette()  # deux commits : la base, puis le passage en recette
+        self.assertIn("Checkpoint en retard · alpha", self.retard_dans_un_clone(2))
+
+    def test_un_historique_trop_court_ne_prouve_rien_et_ne_fait_aucune_ligne(self):
+        self.en_recette()  # un seul commit lu : l'entrée y est déjà en recette
+        self.assertNotIn("Checkpoint en retard", self.retard_dans_un_clone(1))
+
+
+class TestCheckpointSansPreuve(CasArbitre):
+    """Une entrée déjà en recette au premier commit de l'historique : pas de preuve de son passage, pas d'alerte."""
+    cites = {"alpha": ("alpha-1",), "beta": ("beta-1",)}
+
+    def chantiers_conformes(self):
+        self.ecrire_chantiers(
+            bloc("alpha-1", titre="Premier", statut="a-venir", module="module-a"),
+            bloc("alpha-2", titre="Livré", statut="recette", module="module-a", recette_le="2026-03-12"),
+            bloc("beta-1", titre="Autre", statut="a-venir", module="module-b"))
+
+    def test_une_entree_deja_en_recette_au_premier_commit_ne_fait_aucune_ligne(self):
+        sortie = self.arbitrer()
+        self.assertEqual(sortie.code, 0, sortie.stdout + sortie.stderr)
+        self.assertEqual(self.arbitres(), [])
+        self.assertIn("· 0 écart ·", self.lignes_de_journal()[0])
+        self.assertNotIn("Checkpoint en retard", sortie.stdout)
+
+    def test_une_version_introuvable_du_fichier_arrete_la_preuve(self):
+        """Le fichier sort du dépôt, puis revient en recette : la version manquante ne prouve rien."""
+        self.git("rm", "-q", "--cached", "Dossier/chantiers.yaml")
+        self.git("commit", "-q", "-m", "le fichier sort de l'index", quand="2026-03-02T10:00:00+0100")
+        self.valider("le fichier revient", quand="2026-03-03T10:00:00+0100")
+        sortie = self.arbitrer()
+        self.assertEqual(sortie.code, 0, sortie.stdout + sortie.stderr)
+        self.assertEqual(self.arbitres(), [])
+
+    def test_un_fichier_sans_historique_ne_fait_aucune_ligne(self):
+        """Le fichier existe sur le disque mais n'est plus (ou pas encore) dans le dépôt : rien à lire."""
+        self.git("rm", "-q", "--cached", "Dossier/chantiers.yaml")
+        self.git("commit", "-q", "-m", "le fichier sort du dépôt", quand="2026-03-02T10:00:00+0100")
+        sortie = self.arbitrer()
+        self.assertEqual(sortie.code, 0, sortie.stdout + sortie.stderr)
+        self.assertEqual(self.arbitres(), [])
 
 
 class TestNormalisation(CasArbitre):
@@ -1059,7 +1193,7 @@ class TestWorkflow(unittest.TestCase):
     def test_le_modele_porte_le_declencheur_les_droits_et_le_script(self):
         texte = self.texte()
         for attendu in ("schedule:", 'cron: "42 5 * * *"', "workflow_dispatch:", "contents: write", "concurrency:",
-                        "fetch-depth: 300", "actions/checkout@v4", "actions/setup-python@v5", 'python-version: "3.12"',
+                        "fetch-depth: 300", "actions/checkout@v7", "actions/setup-python@v7", 'python-version: "3.12"',
                         "github-actions[bot]", "git pull --rebase", "GITHUB_STEP_SUMMARY", "sed -n 's/^Commit : //p'"):
             self.assertIn(attendu, texte)
 

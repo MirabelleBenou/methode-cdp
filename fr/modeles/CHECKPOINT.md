@@ -28,7 +28,7 @@ derniers caractères de l'identifiant de la session, celui de la ligne d'attribu
 - **Depuis le checkpoint précédent** : <les lots clos, cités par leur version (ou leur nom) et leur R ; leur détail est au
   journal des versions du plan, pas ici>.
 - **La méthode** est en v<n> (<ce qui a changé>).
-- **Le registre** : les numéros se réservent par un push au moment d'écrire (méthode §1 bis) — jamais d'après ce fichier.
+- **Le registre** : le prochain numéro se lit au registre, jamais d'après ce fichier ⟨; plusieurs CdP : il se réserve par un push au moment d'écrire (méthode §1 bis)⟩.
 - **Dettes ouvertes** : `<id>` — une demi-ligne chacune (chaque dette a son chantier, cité par son id).
 - **À faire par le porteur** :
   - <tag et release à poser, sur quel commit, avec quel texte> ;

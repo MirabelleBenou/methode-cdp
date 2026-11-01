@@ -42,7 +42,7 @@
 *On ne fait qu'ajouter. Une ligne par lot clos, à sa clôture. **C'est la seule source du fait d'un lot** : le registre,
 `chantiers.yaml` et le checkpoint le citent (la version ou le nom du lot), ils ne le redisent pas (méthode §6). Ce journal
 ne dit pas qu'une version a été remise puis refusée — la règle du numéro lit les branches de lot et `chantiers.yaml`
-(la méthode, §1 bis ; ouvertes et archivées).*
+(la méthode, §2, étape 6 ; ouvertes et archivées).*
 
 *La forme d'une ligne : la version (un livrable déployé à chaque lot) ou le nom du lot (publié par release, sans version) ;
 la date ; le titre ; le dev (modèle, effort) ; la durée ; les arrêts (leur nombre, « aucun ») ; la réception (conforme,

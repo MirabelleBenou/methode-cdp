@@ -73,7 +73,10 @@
 
 ---
 
-## §1 bis · Plusieurs CdP en même temps
+## §1 bis · Plusieurs CdP en même temps ⟨plusieurs CdP⟩
+
+*Une extension (`NOYAU.md` §6) : seul avec un CdP (mode A), cette section ne s'applique pas — la supprimer de la
+méthode du projet. La règle de la version est au §2 (étape 6), le témoin au §6 : tous les modes les portent.*
 
 *À deux, « `git pull` avant d'écrire » suffit. À quatre, des numéros de décision sortent en double, des compteurs
 dérivent, des versions se répartissent par des messages que le porteur relaie (premier projet, quatre CdP en parallèle).*
@@ -122,41 +125,15 @@ décision. Passer d'un mode à l'autre, dans un sens ou dans l'autre : `LISEZ_MO
 accepté → l'entrée se rédige à sa place. Une entrée ne porte pas de total : elle marque `[exécution +1]` ou
 `[inverse +1]` (§5).
 
-**Le livrable et sa version** : le livrable est le dépôt de code d'où sort la release. **Un livrable, un seul lot en
-vol** : le lot en vol porte dans `chantiers.yaml` `statut: en-vol`, `cdp:` et `livrable:`, et pousser cette entrée
+**Un livrable, un seul lot en vol** (le livrable est le dépôt de code d'où sort la release ; sa version se calcule au
+§2, étape 6) : le lot en vol porte dans `chantiers.yaml` `statut: en-vol`, `cdp:` et `livrable:`, et pousser cette entrée
 prend le livrable. **Un autre lot du même livrable est suspendu**, même s'il vient d'un autre CdP : il reste `a-cadrer`
 avec `attend: <id>`, sans cadrage poussé, branche ni dev, jusqu'à ce que le premier soit validé en production et
-fusionné (ou, pour un livrable publié par release, fusionné après réception — voir plus bas ; ou abandonné sur décision
-du porteur). **L'étude et le pré-cadrage restent libres** : le pré-cadrage (règles, critères, textes, sans version ni
+fusionné (ou, pour un livrable publié par release, fusionné après réception — §2, étape 6 ; ou abandonné sur décision
+du porteur). **Un lot suspendu qui reprend recalcule sa version**, refait sa base et ses attendus. **L'étude et le pré-cadrage restent libres** : le pré-cadrage (règles, critères, textes, sans version ni
 attendus) peut se pousser au dépôt des lots, sous `lots/<lot>/PRECADRAGE.md` ; il devient le cadrage quand le lot prend
 le livrable. Un fichier d'un autre livrable se déclare (`touche:`). Un lot sans release (une sonde, une étude jouée, de
 la documentation) ne porte pas de `livrable:`.
-
-**Personne ne décide d'un numéro de version à l'avance** : aucun checkpoint, chantier, étude ou message n'annonce « telle
-version pour tel lot ». **Deux régimes de version, selon le livrable** :
-- **déployé à chaque lot** (une application en production, son agent, le déployeur) : la version se calcule quand le lot
-  prend le livrable, avant sa branche : **la plus haute version portée par une branche de lot (`lot/…`) ou par une
-  entrée de `chantiers.yaml`, ouverte ou archivée, remise ou refusée, plus un** (le journal du plan ne s'écrit qu'à la
-  clôture : il ne voit pas un lot refusé), jamais « la version de `main` plus un » — une version remise puis refusée n'est pas
-  fusionnée, `main` est encore à la précédente, et la redonner ferait deux livraisons sous un même numéro. **Calculée
-  par la règle, annoncée au cadrage** : elle s'écrit alors dans `version:` de l'entrée en vol et dans le cadrage ; un
-  lot suspendu qui reprend la recalcule, refait sa base et ses attendus. **Le contrôle 4** de `verifier_vivants.py` le
-  vérifie pour le lot en vol (sa version passe toute autre version de son livrable, archives comprises) ; le contrôle 7
-  ne vérifie que l'accord du journal et des chantiers ;
-- **publié par release** (un outil que l'on télécharge en paquet) : **le lot ne porte pas de version** (ni `version:` ni
-  numéro au cadrage) ; **sa branche est `lot/<nom du lot>`** (et son dossier `lots/<nom du lot>/`) au lieu de
-  `lot/v<X.Y>` ; il complète la section « Unreleased » du `CHANGELOG` (et les fichiers à télécharger, s'il y en a) —
-  c'est cette entrée que la porte P8 du prompt du dev vérifie — et **libère le livrable à sa fusion, après
-  réception**. **La release se fait à la demande du porteur** : le CdP fixe alors le numéro par la règle du `CHANGELOG`
-  du dépôt, renomme la section, refait les paquets en une passe et remet au porteur le texte et les paquets. Pour ce
-  régime, la validation en production est cette release ; ce qui dépend d'une release (des données déposées sur un
-  serveur) attend la release. **Le lot qui produit une telle donnée dérivée l'inscrit à l'« Unreleased », sous « À
-  déposer après la release : <quoi, d'où, vers où> »** (modèle `depot-app/CHANGELOG.md`), et **la release finit par ces
-  dépôts**, dans le même geste : c'est le CdP qui fait la release qui dépose.
-
-*Pourquoi deux régimes* : « la version se calcule quand le lot prend le livrable » vaut pour ce qui se déploie à chaque
-lot. Pour une suite que l'on télécharge par release, une release par lot fait du bruit chez ceux qui la téléchargent, sans
-rien leur apporter : on regroupe les lots dans une release que le porteur demande.
 
 **Une ressource partagée se prend comme un livrable** : la machine du porteur et ce qu'elle fait tourner pour un lot
 (l'exécutant local, un jeu, un logiciel piloté) n'accueillent qu'un lot à la fois, quel que soit son domaine. Le lot qui
@@ -169,19 +146,10 @@ générique est un chantier `module: methode`, `pour:` la session de méthode. *
 en activité** lui parvient par un message prêt à coller, remis au porteur, et le coordinateur vérifie ensuite sa réponse
 sur le dépôt ; un CdP au témoin libre le trouve par un chantier `pour:` à sa reprise.
 
-**Le témoin** : chaque checkpoint porte en tête `Session en activité : <identifiant court>, depuis <heure>` (ou
-« aucune — libre depuis <heure> »). **L'identifiant court est les huit derniers caractères de l'identifiant de la
-session**, celui de la ligne d'attribution de session de ses commits : il n'était défini nulle part, trois formes ont
-coexisté, et toutes les sessions d'un même compte partagent le même début d'identifiant — ce qui peut tromper l'arbitre qui
-cherchait le témoin dans les commits. La session qui reprend le pose par un push, c'est son premier geste ; une session qui
-trouve après un `pull` un autre identifiant que le sien n'écrit plus aux vivants et le dit au porteur ; une session qui
-attend un geste du porteur garde le témoin. **Un témoin se juge à son silence, pas à son âge** : une session peut vivre
-plusieurs jours en attendant le porteur ; c'est l'absence de tout commit de cette session depuis plus de 24 heures qui
-signale une session oubliée (le contrôle de l'arbitre, s'il existe). **La coordination fait exception** : elle garde son
-témoin entre deux travaux, parce que le porteur la consulte pour rouvrir un chantier ou prendre une ligne fixe et qu'elle
-peut rester des jours sans commit (l'arbitre la signalait comme une session oubliée, à tort). Le contrôle de silence des
-témoins l'exclut ; ses autres contrôles (checkpoints, taille) restent ; **elle passe la main à la mesure de son contexte
-(§6), pas au silence**.
+**Le témoin de la coordination** (§6, « Le témoin ») : elle garde son témoin entre deux travaux, parce que le porteur la
+consulte pour rouvrir un chantier ou prendre une ligne fixe et qu'elle peut rester des jours sans commit (l'arbitre
+la signalait comme une session oubliée, à tort). Le contrôle de silence des témoins l'exclut ; ses autres contrôles
+(checkpoints, taille) restent ; **elle passe la main à la mesure de son contexte (§6), pas au silence**.
 
 **Le titre de la session** : `<nom du CdP> · <chantier en cours>`, changé à chaque chantier ; `-2` pour un second CdP sur
 le même domaine, avec son propre checkpoint. La session se renomme si elle le peut, sinon elle donne le titre au porteur
@@ -195,20 +163,23 @@ en tête de réponse.
    validé avant toute exécution.
 2. **La mesure, puis le cadrage** (§3), et la maquette du CdP s'il y en a une (§3 bis).
    - **Les attendus de la réception se calculent au cadrage**, dans `<Dossier>/attendus/<version>/` du dépôt des vivants
-     — jamais au dépôt de code, que le dev lit. Une livraison simulée du CdP peut servir à les calculer : **elle ne se
+     — jamais dans un dépôt que le dev doit lire ; **le dev ne les lit pas : c'est une règle de son prompt, pas un mur**
+     (le sous-agent, ci-dessous). Une livraison simulée du CdP peut servir à les calculer : **elle ne se
      transmet jamais**. **Seulement quand le lot produit des valeurs que la réception doit comparer** (un calcul, un
      fichier de sortie, un format) : un lot d'écran se prouve par un contrôle d'écran, un lot de documentation par ses
      critères — pas de dossier d'attendus vide.
-   - **Le CdP pousse le cadrage sur la branche du lot** : `lot/v<X.Y>`, partie de la tête de `main`, qui ne porte qu'un
-     commit de plus, `lots/v<X.Y>/CADRAGE.md` (et sa maquette). Le cadrage nomme ce commit de base. *(Un livrable
-     publié par release n'a pas de version par lot : `v<X.Y>` se lit alors `<nom du lot>` dans ce document, §1 bis.)*
+   - **Le CdP pousse le cadrage sur la branche du lot** : `lot/v<X.Y>`, partie de la tête de `main` (ou, pour le correctif d'une
+     version remise, de la tête de la branche de ce lot : étape 6), qui ne porte qu'un commit de plus,
+     `lots/v<X.Y>/CADRAGE.md` (et sa maquette). Le cadrage nomme ce commit de base **et sa branche**. *(Un livrable
+     publié par release n'a pas de version par lot : `v<X.Y>` se lit alors `<nom du lot>` dans ce document, §2, étape 6.)*
    - **Le CdP lance le dev** : outil `Agent`, en arrière-plan, **le modèle et le mode d'effort du cadrage**, et une
      commande en quatre parts (modèle : [`COMMANDE_DEV.md`](COMMANDE_DEV.md)) — qui il est et ce qu'il exécute ; les conditions pratiques,
      qui priment sur le cadrage ; les arrêts ; sa réponse finale. **Les conditions durables sont au prompt du dev** (dépôts
      déjà rattachés ; clones dans `/home/claude/dev_<lot>/`, jamais aux chemins des copies du CdP ; push sur les seules
      branches du lot ; aucun processus laissé en arrière-plan) : **la commande ne redit que ce qui change d'un lot à
      l'autre**. Pendant que le dev travaille, **le CdP ne touche pas aux chemins qu'il occupe**. **Le dev ne parle qu'au
-     CdP.** **Le sous-agent hérite des dépôts et du disque du CdP** (le dépôt d'ordres : §4 bis).
+     CdP.** **Le sous-agent hérite des dépôts et du disque du CdP** : ce qu'il ne lit pas — les attendus, le dépôt d'ordres
+     (§4 bis), les copies du CdP — est **une règle de son prompt, pas un mur**.
    - **Le dev pousse sa branche à chaque étape** (clone, construction, contrôle, livraison) : la mort de la session du
      CdP — limite d'usage, plantage, passation — ne doit pas emporter le travail du sous-agent ; une session neuve le
      reprend depuis la branche.
@@ -231,15 +202,42 @@ en tête de réponse.
 5. **La réception** (§4), puis le verdict au porteur, avec la prédiction pour la production, et **le livrable remis tel
    quel**, sous son nom exact, avec son sha256 — ⟨avec un exécutant serveur : **déployé par un ordre** (§4 bis), la
    remise devenant le repli⟩.
-6. **Une livraison = un nouveau numéro** (la règle et son pourquoi : §1 bis). Un correctif ou des retours d'essai après
-   une remise font **un lot de la version suivante**, qui garde le livrable, sur sa
-   propre branche partie de celle du lot, dans la même session de dev si elle est encore ouverte. **L'addendum sous la
-   même version ne sert que tant que rien n'a été remis ni déployé** : lever un arrêt, corriger un écart de la
-   réception.
+6. **Une livraison = un nouveau numéro, et la version.** Ce qui est remis ou déployé porte un numéro jamais pris. Un
+   correctif ou des retours d'essai après une remise font **un lot de la version suivante**, qui garde le livrable (le
+   dépôt de code d'où sort la release), sur sa propre branche **partie de celle du lot remis** (le cadrage la nomme comme
+   base), dans la même session de dev si elle est encore ouverte ⟨; le script `release` y donne la version suivante, sans
+   numéro tapé. **Seul cas de forçage** : le porteur abandonne la version remise, le lot suivant part de `main` et son
+   cadrage écrit `release --set <version>` à la valeur de la règle ci-dessous ; le dev n'emploie `--set` que s'il est
+   écrit au cadrage, avec sa valeur⟩. **L'addendum sous la même version ne sert que tant que rien n'a été remis ni
+   déployé** : lever un arrêt, corriger un écart de la réception.
+   **Personne ne décide d'un numéro à l'avance** : aucun checkpoint, chantier, étude ou message n'annonce « telle version
+   pour tel lot ». **Le livrable et sa version — deux régimes, selon le livrable** :
+   - **déployé à chaque lot** (une application en production, son agent, le déployeur) : la version se calcule quand le
+     lot prend le livrable, avant sa branche : **la plus haute version portée par une branche de lot (`lot/…`) ou par une
+     entrée de `chantiers.yaml`, ouverte ou archivée, remise ou refusée, plus un** (le journal du plan ne s'écrit qu'à la
+     clôture : il ne voit pas un lot refusé), jamais « la version de `main` plus un » — une version remise puis refusée
+     n'est pas fusionnée, `main` est encore à la précédente, et la redonner ferait deux livraisons sous un même numéro.
+     **Calculée par la règle, annoncée au cadrage** : elle s'écrit alors dans `version:` de l'entrée en vol et dans le
+     cadrage. **Le contrôle 4** de `verifier_vivants.py` le vérifie pour le lot en vol (sa version passe toute autre
+     version de son livrable, archives comprises) ; le contrôle 7 ne vérifie que l'accord du journal et des chantiers ;
+   - **publié par release** (un outil que l'on télécharge en paquet) : **le lot ne porte pas de version** (ni `version:`
+     ni numéro au cadrage) ; **sa branche est `lot/<nom du lot>`** (et son dossier `lots/<nom du lot>/`) au lieu de
+     `lot/v<X.Y>` ; il complète la section « Unreleased » du `CHANGELOG` (et les fichiers à télécharger, s'il y en a) —
+     c'est cette entrée que la porte P8 du prompt du dev vérifie — et **libère le livrable à sa fusion, après
+     réception**. **La release se fait à la demande du porteur** : le CdP fixe alors le numéro par la règle du
+     `CHANGELOG` du dépôt, renomme la section, refait les paquets en une passe et remet au porteur le texte et les
+     paquets. Pour ce régime, la validation en production est cette release ; ce qui dépend d'une release (des données
+     déposées sur un serveur) attend la release. **Le lot qui produit une telle donnée dérivée l'inscrit à
+     l'« Unreleased », sous « À déposer après la release : <quoi, d'où, vers où> »** (modèle `depot-app/CHANGELOG.md`), et
+     **la release finit par ces dépôts**, dans le même geste : c'est le CdP qui fait la release qui dépose.
+
+   *Pourquoi deux régimes* : « la version se calcule quand le lot prend le livrable » vaut pour ce qui se déploie à chaque
+   lot. Pour une suite que l'on télécharge par release, une release par lot fait du bruit chez ceux qui la téléchargent,
+   sans rien leur apporter : on regroupe les lots dans une release que le porteur demande.
 7. **La validation en production par le porteur**, puis **la fusion** : `git push origin lot/v<X.Y>:main` en avance rapide,
    jamais `--force` ; enfin **la clôture** (§6), une fois par lot. *(Pour un livrable publié par release, il n'y a ni
    version ni validation en production par lot : la fusion se fait après la réception, et la release, à la demande du
-   porteur — §1 bis.)*
+   porteur — étape 6.)*
 
 ---
 
@@ -415,11 +413,10 @@ procédure manuelle, la date de mise en service.⟩
 - **Le dev ne pousse que la branche de son lot** : jamais `main`, jamais de tag, jamais `--force` (prompt du dev §5).
 - **Aucun secret ni donnée de production dans un dépôt** (`3_GITHUB.md` §7 du package) ; **rien ne se supprime sans
   l'accord du porteur** (§6).
-- **La version** : calculée par la règle du §1 bis (« Le livrable et sa version »), annoncée au cadrage ⟨; le script
-  `release` côté dev la fait monter d'un cran par lot — mais un lot parti de `main` après un lot refusé prend le plus
-  haut numéro remis plus un, pas `main` plus un⟩. Un lot qui ne change pas le code (méthode, banc) ne prend pas de
+- **La version** : calculée par la règle du §2 (étape 6), annoncée au cadrage ⟨; le script `release` côté dev la donne
+  sans numéro tapé, au pas de cette règle⟩. Un lot qui ne change pas le code (méthode, banc) ne prend pas de
   version, ni un lot d'un livrable publié par release. **Aucun changement de version sans l'accord explicite du
-  porteur**, sauf règle contraire écrite dans ce projet — la règle du §1 bis en est une.
+  porteur**, sauf règle contraire écrite dans ce projet — la règle du §2 (étape 6) en est une.
 - ⟨Les invariants du projet : un fichier, un module ou une empreinte qui ne bougent que sur autorisation écrite du
   porteur portée par le cadrage.⟩
 - **Les textes produits restent neutres en genre** : jamais présumer le genre d'une personne d'après un pseudonyme.
@@ -440,7 +437,7 @@ procédure manuelle, la date de mise en service.⟩
   la version (ou, pour un livrable publié par release, qui ne prend pas de version, le nom du lot), la date, le dev
   (modèle, effort), la durée, les arrêts, la réception, l'empreinte, la validation ; ailleurs, on le cite. Un lot d'un
   livrable publié par release complète la section « Unreleased » du `CHANGELOG` et libère le livrable à sa fusion, après
-  réception (§1 bis) ; le `CHANGELOG` dit ce qui change pour l'utilisateur, un autre contenu ;
+  réception (§2, étape 6) ; le `CHANGELOG` dit ce qui change pour l'utilisateur, un autre contenu ;
 - le registre : la décision, et « ce que le lot apprend » quand il y a une leçon ; **l'entrée nomme le lot, cité au
   journal des versions**, sans redire son dev, sa durée, ses arrêts ni son empreinte ; le compte « l'exécution a raison »
   y reste (§5) ;
@@ -455,7 +452,8 @@ Deux lots reçus le même jour peuvent se clore ensemble.
 
 **Les vivants** :
 - vivent au dépôt des vivants (à défaut de dépôt, dans les fichiers du projet) **sous des noms stables** ; la version
-  est dans l'en-tête **des seuls fichiers à propriétaire unique** (§1 bis), l'historique dans git ;
+  est dans l'en-tête **des seuls fichiers qu'un seul CdP écrit** (la méthode, le prompt du dev, un checkpoint) ⟨; un fichier
+  à plusieurs mains, comme le registre, n'en porte pas : §1 bis⟩, l'historique dans git ;
 - se modifient par remplacements ciblés, ou se remplacent en entier en retirant l'obsolète — par le CdP lui-même, une
   fois par lot : il ne demande jamais au porteur de les téléverser ;
 - **restent courts**, sous des plafonds (ci-dessous) : quand l'un redevient long, ce qui ne vit plus part dans une
@@ -478,6 +476,9 @@ les mêmes. ⟨Un projet qui en change un le change ici.⟩
 | coupe du registre | **par tranches de cinquante numéros**, au-delà de **~150 Ko** | |
 | délai d'archivage d'un chantier en recette | **sept jours** | `archiver_chantiers.py`, sans `--delai` |
 | modèle et effort par défaut du dev | **Sonnet · Medium** | Opus pour ⟨…⟩ (§1) ; High ou Low (§3) |
+| silence d'un témoin | **24 heures** sans commit de la session | l'information de l'arbitre (`ARBITRE.md` §1, point 4), jamais un chantier ; la même valeur par défaut dans `arbitre.py` |
+| constats du contrôleur | **cinq constats** au plus par lundi | `CONTROLEUR.md` §1, point 4 |
+| lecture du registre par le contrôleur | **quatorze jours** d'entrées | `CONTROLEUR.md` §1, point 2 |
 
 **Les plafonds** — *chaque CdP relit tout à chaque reprise, et les messages entre CdP s'empilaient dans les entrées : sur le
 premier projet, un fichier de chantiers est passé de 95 à 146 Ko en un jour, un registre a atteint 206 Ko, un checkpoint
@@ -531,6 +532,17 @@ premier projet, un fichier de chantiers est passé de 95 à 146 Ko en un jour, u
   l'arbitre, s'il existe, le lance chaque jour (`Methode/ARBITRE.md`) et **le contrôleur** (`Methode/CONTROLEUR.md`),
   chaque lundi, juge ce que le vérificateur ne mesure pas : la contradiction, l'oubli, le doublon, l'historique
   inutile ; **sans eux**, le coordinateur lance le vérificateur avec `--domaines` à sa clôture.
+
+**Le témoin** : chaque checkpoint porte en tête `Session en activité : <identifiant court>, depuis <heure>` (ou
+« aucune — libre depuis <heure> »). **L'identifiant court est les huit derniers caractères de l'identifiant de la
+session**, celui de la ligne d'attribution de session de ses commits : il n'était défini nulle part, trois formes ont
+coexisté, et toutes les sessions d'un même compte partagent le même début d'identifiant — ce qui peut tromper l'arbitre qui
+cherchait le témoin dans les commits. La session qui reprend le pose par un push, c'est son premier geste ; une session qui
+trouve après un `pull` un autre identifiant que le sien n'écrit plus aux vivants et le dit au porteur ; une session qui
+attend un geste du porteur garde le témoin. **Un témoin se juge à son silence, pas à son âge** : une session peut vivre
+plusieurs jours en attendant le porteur. L'absence de tout commit de cette session depuis le délai de silence de la table
+ci-dessus est **une information** (la ligne du journal de l'arbitre, s'il existe), jamais un oubli signalé ni un
+chantier : une session qui attend le porteur ne pousse rien.
 
 **Les `.yaml` des vivants sont du YAML valide** (format strict : une valeur qui porte « : » ou « # » précédé d'une
 espace, ou qui commence par un caractère spécial, s'écrit entre guillemets doubles) : `archiver_chantiers.py normaliser`
@@ -603,6 +615,9 @@ dépôt. **Plus de prompt de reprise** (la passation, ci-dessous). **Les images*
   **151 083** et de **156 577** jetons. Un seuil absolu, qui compte cette charge comme du travail, ne laissait qu'environ
   100 000 jetons de travail à un CdP seul, et un CdP a passé la main après un seul relevé. La charge fixe change avec la
   plateforme : d'où la mesure à chaque session, plutôt qu'un chiffre figé.
+  **Ce qu'elle est** : celle de la plateforme (instructions système, outils natifs, mémoire, instructions du projet).
+  **Débrancher les connecteurs ne la réduit que d'environ 1 %** (mesure : −1,3 % sans un connecteur de stockage), car
+  un connecteur différé ne pèse que son nom : l'économie se cherche dans **ce que les sessions lisent**.
 - **Les seuils sont à la table « Les chiffres de la méthode »** (ci-dessus), qui dit aussi la fenêtre qu'ils
   supposent, **une seule règle quel que soit le nombre de CdP**. Le CdP les compare à la ligne « travail au-dessus de la
   charge fixe » de `contexte.py` : **au premier**, il prévient le porteur en tête de sa réponse (« Contexte : ~N jetons, dont ~F de
@@ -672,7 +687,7 @@ Un piège qui ne touche qu'un produit va à sa fiche produit ou au checkpoint de
 
 ## §8 · Le coût visé
 
-- **Un lot ordinaire** : une dizaine à une vingtaine de minutes de dev, une réception de quelques minutes.
+- **Un lot ordinaire** : dix à vingt minutes de dev, une réception de quelques minutes.
 - **Un écran avec maquette du CdP** : de 15 minutes à 1 h 30 de dev ; la maquette validée en un ou deux tours.
 - **Un addendum lancé par le CdP** : quelques minutes, sans un geste du porteur.
 - **Le CdP note son propre coût** à chaque passation : contexte mesuré, signes de saturation vus, premiers postes.

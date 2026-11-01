@@ -31,7 +31,7 @@
 #   livrable   : le dépôt de code d'où sort la release ; un seul lot en vol par livrable, pousser l'entrée en-vol le prend
 #   attend     : l'id du lot en vol dont ce lot suspendu attend la fin (même livrable ou même ressource)
 #   ressource  : une ressource partagée occupée pendant le vol (la machine du porteur, un jeu…) ; un seul lot en vol par ressource
-#   version    : calculée quand le lot prend le livrable (la règle de la méthode §1 bis, jamais `main` plus un),
+#   version    : calculée quand le lot prend le livrable (la règle de la méthode §2, étape 6, jamais `main` plus un),
 #                annoncée au cadrage — seulement pour un livrable déployé à chaque lot ; un lot d'un livrable
 #                publié par release n'a pas de `version:` (il complète la section « Unreleased » du CHANGELOG ; la
 #                release se fait à la demande du porteur)

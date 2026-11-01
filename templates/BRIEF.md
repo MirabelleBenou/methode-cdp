@@ -1,14 +1,16 @@
 # BRIEF — <batch title> · `v<X.Y>`
-### <date> · <PL session> · branch `batch/v<X.Y>` of `<owner>/<Project>-App` · base `<short sha of main>`
+### <date> · <PL session> · branch `batch/v<X.Y>` of `<owner>/<Project>-App` · base `<short sha of main, or of the handed-over batch's branch>`
 
 > **Template for the PL — a brief never cites it.** The brief is self-contained: together with the dev prompt, it is
 > enough. It carries rules, criteria and the texts the user will read — **never ready-written code**.
 > **The version**: `v<X.Y>` exists only for a deliverable **deployed per batch** (it is computed when the batch takes the
-> deliverable, by the rule of the method §1a, never `main` plus one; the brief announces it). For a
+> deliverable, by the rule of the method §2, step 6, never `main` plus one; the brief announces it). **The base of a fix
+> to a handed-over version is that batch's branch** (the `release` script gives the next version there); if the owner abandons
+> the handed-over version, the batch starts from `main` and the brief writes `release --set <version>`, at the value of the rule. For a
 > deliverable **published by release**, the batch carries no version: remove `v<X.Y>` from the title, name the branch and
 > the folder after the batch (`batch/<batch name>`, `batches/<batch name>/`), and §6 completes the “Unreleased” section
-> of the `CHANGELOG` — the one gate P8 of the dev prompt checks — with, if the batch produces derived data, “To deposit
-> after the release: …” (method §1a, “The deliverable and its version”).
+> of the `CHANGELOG` — the one gate P8 of the dev prompt checks — with, if the batch produces derived data, “To drop
+> after the release: …” (method §2, step 6).
 > Delete this box.
 
 **Dev: ⟨model⟩ · ⟨effort⟩ · new session** *(by default, those of the table in the method §6; Opus for ⟨…⟩; High for a
@@ -19,7 +21,8 @@ template)*
 
 ## §0 · The pieces
 
-- **The base**: `main` at `<full sha>`. If the head of `main` is not this commit: stop.
+- **The base**: `main` at `<full sha>` ⟨, or `batch/v<X'.Y'>` (the handed-over batch's branch) at `<full sha>`, for a fix (box above); the dev prompt fetches that branch at step 1⟩. If that
+  head is not this commit: stop.
 - **On this branch**: this brief; ⟨`mock-up/…`; fixtures; images to open, by name — the only ones⟩.
 - **To read before building**: ⟨the functions, by name, in the large files⟩.
 
@@ -109,7 +112,7 @@ In addition to those of the dev prompt:
 
 ### PL checklist before pushing (remove from the brief)
 
-- [ ] The base measured cold today, not assumed.
+- [ ] The base measured cold today, not assumed; for a fix to a handed-over version, that batch's branch.
 - [ ] The tests and the test bench searched for **the values** the batch changes, not only the symbols.
 - [ ] Nothing the batch creates duplicates something that exists.
 - [ ] The debts with a trigger run against the list in §4.
@@ -119,7 +122,7 @@ In addition to those of the dev prompt:
 - [ ] The APIs, files and functions the rule requires, all named.
 - [ ] A color rule measured on every theme; a label at the narrowest width.
 - [ ] No ready-written code.
-- [ ] The version computed when the batch takes the deliverable (the rule of the method §1a, not `main` plus one) — or
+- [ ] The version computed when the batch takes the deliverable (the rule of the method §2, step 6, not `main` plus one) — or
   no version, for a deliverable published by release.
 - [ ] Batch of medium or high complexity, or new dependency: the independent review planned, the lock file in the list
   of §4.

@@ -175,7 +175,7 @@ only — to set only if a private release really serves as a source.
 
 **First a read-only probe** (lesson ⑤): the PL writes an inventory script that the owner drops and runs once — folder
 and name of the Compose project (observed, not assumed), volumes and containers, what the folder holds outside the
-archive (`.env`, `backups/`…), owner of the served folders, versions of the system, Git and Docker, disks and free
+archive (`.env`, `backups/`…), the user that owns the served folders, versions of the system, Git and Docker, disks and free
 space, firewall, and, if there is a drop of files from the PC, SSH. The brief is based on its output.
 
 **Then the installer** (`installer.sh` in the reference implementation), a single POSIX script, idempotent, to run as
@@ -202,7 +202,7 @@ top of the script, the only place where they appear — the program only knows t
 | `DEPOT_APPLICATION`, `DEPOT_ORDRES` | the two repositories (SSH addresses) |
 | `TABLES_HISTOIRE` | the tables whose row count must never drop |
 | `SUITES` | the static files: name, public repository, path in the repository, served folder and name |
-| `ZONES`, `ZONE_TRANSFERT`, `PROPRIETAIRE_ZONES` | the zones of the file operations, the one that receives `entree/`, their owner |
+| `ZONES`, `ZONE_TRANSFERT`, `PROPRIETAIRE_ZONES` | the zones of the file operations, the one that receives `entree/`, the user that owns them |
 | `DEPOTS_PUBLICS`, `HOTES_AUTORISES` | the authorized download sources |
 
 **The owner, next**: on GitHub, **Settings → Deploy keys → Add deploy key**, twice — `cle_ordres` on the orders

@@ -42,7 +42,7 @@
 *Append only. One line per closed batch, at its close. **It is the only source of a batch's facts**: the decision log,
 `workstreams.yaml` and the checkpoint cite it (the version or the batch's name), they do not repeat it (method §6). This
 log does not say that a version was handed over then refused — the number rule reads the batch branches and
-`workstreams.yaml` (the method, §1a; open and archived).*
+`workstreams.yaml` (the method, §2, step 6; open and archived).*
 
 *The form of a line: the version (a deliverable deployed per batch) or the batch's name (released, with no version);
 the date; the title; the dev (model, effort); the duration; the stops (their number, “none”); the acceptance

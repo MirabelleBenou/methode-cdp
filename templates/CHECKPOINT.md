@@ -28,7 +28,7 @@ session's identifier, the one in the session attribution line of its commits)*
 - **Since the previous checkpoint**: <the closed batches, cited by their version (or their name) and their D; their
   detail is in the plan's version log, not here>.
 - **The method** is at v<n> (<what changed>).
-- **The decision log**: numbers are reserved by a push at the moment of writing (method §1a) — never from this file.
+- **The decision log**: the next number is read in the log, never from this file ⟨; several PLs: it is reserved by a push at the moment of writing (method §1a)⟩.
 - **Open debts**: `<id>` — half a line each (every debt has its workstream, cited by its id).
 - **To do by the owner**:
   - <tag and release to set, on which commit, with which text>;

@@ -792,17 +792,30 @@ class TestBatons(ArbiterCase):
         self.assertIn("· batons fresh ·", self.log_lines()[0])
 
 
+DELIVERED = "2026-03-12T10:00:00+0100"   # the commit that makes the entry accepted
+
+
 class TestLateCheckpoint(ArbiterCase):
+    """The acceptance date is that of the commit that makes the entry accepted, never "accepted-on:"."""
     cited = {"alpha": ("alpha-1",), "beta": ("beta-1",)}
 
     def compliant_workstreams(self):
         self.write_workstreams(
             block("alpha-1", title="First", status="upcoming", module="module-a"),
-            block("alpha-2", title="Delivered", status="accepted", module="module-a", accepted_on="2026-03-12"),
             block("beta-1", title="Other", status="upcoming", module="module-b"))
 
+    def accepted(self, *extra: str, when: str = DELIVERED, message: str = "alpha-2 becomes accepted", **keys):
+        """A dated commit that makes alpha-2 accepted (without "accepted-on:": the arbiter sets it), checkpoint untouched."""
+        self.write_workstreams(
+            block("alpha-1", title="First", status="upcoming", module="module-a"),
+            block("alpha-2", title="Delivered", status="accepted", module="module-a", **keys),
+            *extra,
+            block("beta-1", title="Other", status="upcoming", module="module-b"))
+        self.commit(message, when=when)
+
     def test_a_workstream_accepted_after_the_last_commit_of_the_checkpoint_is_detected(self):
-        output = self.arbitrate()  # alpha's checkpoint dates from 1 March, the acceptance from the 12th
+        self.accepted()  # alpha's checkpoint dates from 1 March, the acceptance commit from the 12th
+        output = self.arbitrate()
         self.assertEqual(output.code, 1, output.stdout + output.stderr)
         self.assertEqual(self.arbiter_ids(), ["arbiter-c9-checkpoint-alpha-20260315"])
         c = self.by_id()["arbiter-c9-checkpoint-alpha-20260315"]
@@ -814,6 +827,7 @@ class TestLateCheckpoint(ArbiterCase):
         self.assertRegex(self.log_lines()[0], r"· 1 gap · 1 new finding · .*· checkpoints: alpha · footprint")
 
     def test_no_gap_if_the_checkpoint_was_touched_after_the_acceptance(self):
+        self.accepted()
         self.write(f"repo/{CHECKPOINTS['alpha']}", checkpoint("alpha-1") + "\nUpdated.\n")
         self.commit("Alpha: checkpoint up to date", when="2026-03-13T10:00:00+0100")
         output = self.arbitrate()
@@ -822,17 +836,13 @@ class TestLateCheckpoint(ArbiterCase):
         self.assertIn("· 0 gaps ·", self.log_lines()[0])
 
     def test_the_same_day_is_not_a_lateness(self):
+        self.accepted()
         self.write(f"repo/{CHECKPOINTS['alpha']}", checkpoint("alpha-1") + "\nUpdated.\n")
         self.commit("Alpha: checkpoint of the acceptance day", when="2026-03-12T23:00:00+0100")
         self.assertEqual(self.arbitrate().code, 0)
 
     def test_the_lateness_is_grouped_with_the_check_9_lines_of_the_same_domain(self):
-        self.write_workstreams(
-            block("alpha-1", status="upcoming", module="module-a"),
-            block("alpha-2", status="accepted", module="module-a", accepted_on="2026-03-12"),
-            block("alpha-3", status="upcoming", module="module-a"),
-            block("beta-1", status="upcoming", module="module-b"))
-        self.commit("alpha-3 is not cited")
+        self.accepted(block("alpha-3", status="upcoming", module="module-a"), message="alpha-3 is not cited")
         output = self.arbitrate()
         self.assertEqual(output.code, 1, output.stdout + output.stderr)
         self.assertEqual(self.arbiter_ids(), ["arbiter-c9-checkpoint-alpha-20260315"])
@@ -840,19 +850,143 @@ class TestLateCheckpoint(ArbiterCase):
         self.assertIn("alpha: alpha-3 (upcoming) is not cited in the checkpoint; alpha: alpha-2 has been accepted", basis)
 
     def test_a_message_for_a_pl_is_not_a_subject_of_the_domain(self):
-        self.write_workstreams(
-            block("alpha-1", status="upcoming", module="module-a"),
-            block("alpha-msg", status="accepted", module="module-a", accepted_on="2026-03-12", **{"for": "Opus-PL-Alpha"}),
-            block("beta-1", status="upcoming", module="module-b"))
-        self.commit("a message accepted")
+        self.accepted(**{"for": "Opus-PL-Alpha"}, message="a message accepted")
         self.assertEqual(self.arbitrate().code, 0)
 
     def test_no_duplicate_at_the_next_run(self):
+        self.accepted()
         self.arbitrate()
         after = self.read("Folder/workstreams.yaml")
         output = self.arbitrate(date="2026-03-16 06:43")
         self.assertEqual(output.code, 0, output.stdout)
         self.assertEqual(self.read("Folder/workstreams.yaml"), after)
+
+    # ── the acceptance date comes from the history ──
+
+    def test_day_D_then_D_plus_1_then_D_plus_2_gives_no_false_alert(self):
+        """D: the PL makes the entry accepted and refreshes the checkpoint. D+1: the arbiter sets "accepted-on:".
+        D+2: "accepted-on:" (D+1) follows the checkpoint's last commit (D): no alert any more."""
+        self.write_workstreams(
+            block("alpha-1", title="First", status="upcoming", module="module-a"),
+            block("alpha-2", title="Delivered", status="upcoming", module="module-a"),
+            block("beta-1", title="Other", status="upcoming", module="module-b"))
+        self.write(f"repo/{CHECKPOINTS['alpha']}", checkpoint("alpha-1", "alpha-2"))
+        self.commit("alpha-2 opened", when="2026-03-10T10:00:00+0100")
+        self.accepted(when=DELIVERED, message="D: alpha-2 accepted")
+        self.write(f"repo/{CHECKPOINTS['alpha']}", checkpoint("alpha-1") + "\nalpha-2 delivered.\n")
+        self.commit("D: checkpoint refreshed", when="2026-03-12T10:05:00+0100")
+        self.assertNotIn("accepted-on:", self.read("Folder/workstreams.yaml"))
+
+        output = self.arbitrate(date="2026-03-13 06:43")                     # D+1
+        self.assertEqual(output.code, 0, output.stdout + output.stderr)
+        self.assertIn("  status: accepted\n  accepted-on: 2026-03-13\n", self.read("Folder/workstreams.yaml"))
+        self.commit("Arbiter D+1", when="2026-03-13T06:50:00+0100")
+
+        output = self.arbitrate(date="2026-03-14 06:43")                     # D+2
+        self.assertEqual(output.code, 0, output.stdout + output.stderr)
+        self.assertEqual(self.arbiter_ids(), [])
+        self.assertIn("· 0 gaps ·", self.log_lines()[-1])
+        self.assertNotIn("Late checkpoint", output.stdout)
+
+    def test_an_accepted_on_written_by_hand_is_not_the_acceptance_date(self):
+        self.accepted(accepted_on="2026-03-12", when="2026-03-02T10:00:00+0100")  # accepted on the 2nd, dated the 12th by hand
+        self.write(f"repo/{CHECKPOINTS['alpha']}", checkpoint("alpha-1") + "\nUpdated.\n")
+        self.commit("Alpha: checkpoint up to date", when="2026-03-05T10:00:00+0100")
+        output = self.arbitrate()
+        self.assertEqual(output.code, 0, output.stdout + output.stderr)
+        self.assertEqual(self.arbiter_ids(), [])
+
+    def test_the_date_is_that_of_the_acceptance_not_of_the_later_commits_of_the_file(self):
+        self.write(f"repo/{CHECKPOINTS['alpha']}", checkpoint("alpha-1") + "\nUpdated.\n")
+        self.commit("Alpha: checkpoint up to date", when="2026-03-11T10:00:00+0100")
+        self.accepted(message="alpha-2 accepted")
+        note = block("note-1", status="to-brief", module="module-b", **{"for": "Opus-PL-Beta"})
+        self.accepted(note, when="2026-03-13T10:00:00+0100", message="a message for beta")
+        self.accepted(note, block("note-2", status="to-brief", module="module-b", **{"for": "Opus-PL-Beta"}),
+                      when="2026-03-14T10:00:00+0100", message="another message")
+        output = self.arbitrate()
+        self.assertEqual(output.code, 1, output.stdout + output.stderr)
+        basis = self.by_id()["arbiter-c9-checkpoint-alpha-20260315"]["basis"]
+        self.assertIn("alpha: alpha-2 has been accepted since 2026-03-12, "
+                      "the checkpoint has not been touched since 2026-03-11", basis)
+
+    def test_an_interrupted_run_starts_again_at_the_last_acceptance(self):
+        self.accepted(when="2026-03-05T10:00:00+0100", message="alpha-2 accepted")
+        self.write(f"repo/{CHECKPOINTS['alpha']}", checkpoint("alpha-1") + "\nUpdated.\n")
+        self.commit("Alpha: checkpoint up to date", when="2026-03-08T10:00:00+0100")
+        self.write_workstreams(block("alpha-1", title="First", status="upcoming", module="module-a"),
+                               block("beta-1", title="Other", status="upcoming", module="module-b"))
+        self.commit("alpha-2 archived", when="2026-03-09T10:00:00+0100")
+        self.accepted(when=DELIVERED, message="alpha-2 is accepted again")  # without the interruption, it would be accepted since the 5th
+        output = self.arbitrate()
+        self.assertEqual(output.code, 1, output.stdout + output.stderr)
+        basis = self.by_id()["arbiter-c9-checkpoint-alpha-20260315"]["basis"]
+        self.assertIn("alpha: alpha-2 has been accepted since 2026-03-12, "
+                      "the checkpoint has not been touched since 2026-03-08", basis)
+
+    def test_two_entries_each_have_their_own_date(self):
+        self.accepted(when="2026-03-09T10:00:00+0100", message="alpha-2 accepted")
+        self.write(f"repo/{CHECKPOINTS['alpha']}", checkpoint("alpha-1") + "\nUpdated.\n")
+        self.commit("Alpha: checkpoint up to date", when="2026-03-10T10:00:00+0100")
+        self.accepted(block("alpha-3", title="Delivered too", status="accepted", module="module-a"),
+                      when=DELIVERED, message="alpha-3 accepted")
+        output = self.arbitrate()
+        self.assertEqual(output.code, 1, output.stdout + output.stderr)
+        basis = self.by_id()["arbiter-c9-checkpoint-alpha-20260315"]["basis"]
+        self.assertIn("alpha-3 has been accepted since 2026-03-12", basis)
+        self.assertNotIn("alpha-2 has been accepted", basis, "alpha-2 is accepted since the 9th, before the checkpoint of the 10th")
+
+    def late_in_a_clone(self, depth: int) -> str:
+        """The summary of a run in a shallow clone: everything before its first commit is unknown."""
+        clone = self.subfolder("shallow") / f"depth{depth}"
+        subprocess.run(["git", "clone", "-q", "--depth", str(depth), f"file://{self.repo}", str(clone)],
+                       check=True, capture_output=True)
+        output = self.run_script(clone / "Method" / "arbiter.py", *self.options(), "--date", RUN, cwd=clone)
+        self.assertIn(output.code, (0, 1), output.stdout + output.stderr)
+        return output.stdout
+
+    def test_a_history_that_holds_the_acceptance_is_enough_for_the_proof(self):
+        self.accepted()  # two commits: the base, then the acceptance
+        self.assertIn("Late checkpoint · alpha", self.late_in_a_clone(2))
+
+    def test_a_history_that_is_too_short_proves_nothing_and_gives_no_line(self):
+        self.accepted()  # a single commit read: the entry is already accepted there
+        self.assertNotIn("Late checkpoint", self.late_in_a_clone(1))
+
+
+class TestCheckpointWithoutProof(ArbiterCase):
+    """An entry already accepted at the first commit of the history: no proof of its acceptance, no alert."""
+    cited = {"alpha": ("alpha-1",), "beta": ("beta-1",)}
+
+    def compliant_workstreams(self):
+        self.write_workstreams(
+            block("alpha-1", title="First", status="upcoming", module="module-a"),
+            block("alpha-2", title="Delivered", status="accepted", module="module-a", accepted_on="2026-03-12"),
+            block("beta-1", title="Other", status="upcoming", module="module-b"))
+
+    def test_an_entry_already_accepted_at_the_first_commit_gives_no_line(self):
+        output = self.arbitrate()
+        self.assertEqual(output.code, 0, output.stdout + output.stderr)
+        self.assertEqual(self.arbiter_ids(), [])
+        self.assertIn("· 0 gaps ·", self.log_lines()[0])
+        self.assertNotIn("Late checkpoint", output.stdout)
+
+    def test_a_version_of_the_file_that_cannot_be_found_stops_the_proof(self):
+        """The file leaves the repository, then comes back accepted: the missing version proves nothing."""
+        self.git("rm", "-q", "--cached", "Folder/workstreams.yaml")
+        self.git("commit", "-q", "-m", "the file leaves the index", when="2026-03-02T10:00:00+0100")
+        self.commit("the file comes back", when="2026-03-03T10:00:00+0100")
+        output = self.arbitrate()
+        self.assertEqual(output.code, 0, output.stdout + output.stderr)
+        self.assertEqual(self.arbiter_ids(), [])
+
+    def test_a_file_without_history_gives_no_line(self):
+        """The file exists on disk but is no longer (or not yet) in the repository: nothing to read."""
+        self.git("rm", "-q", "--cached", "Folder/workstreams.yaml")
+        self.git("commit", "-q", "-m", "the file leaves the repository", when="2026-03-02T10:00:00+0100")
+        output = self.arbitrate()
+        self.assertEqual(output.code, 0, output.stdout + output.stderr)
+        self.assertEqual(self.arbiter_ids(), [])
 
 
 class TestNormalization(ArbiterCase):
@@ -1061,7 +1195,7 @@ class TestWorkflow(unittest.TestCase):
     def test_the_template_carries_the_trigger_the_rights_and_the_script(self):
         text = self.text()
         for expected in ("schedule:", 'cron: "42 5 * * *"', "workflow_dispatch:", "contents: write", "concurrency:",
-                         "fetch-depth: 300", "actions/checkout@v4", "actions/setup-python@v5", 'python-version: "3.12"',
+                         "fetch-depth: 300", "actions/checkout@v7", "actions/setup-python@v7", 'python-version: "3.12"',
                          "github-actions[bot]", "git pull --rebase", "GITHUB_STEP_SUMMARY", "sed -n 's/^Commit: //p'"):
             self.assertIn(expected, text)
 

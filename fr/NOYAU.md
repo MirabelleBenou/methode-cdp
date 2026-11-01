@@ -1,5 +1,5 @@
 # NOYAU — la méthode CdP pour un projet à un seul CdP
-### 31 octobre 2026 · le document qui se suffit pour démarrer · mode A (`LISEZ_MOI.md` §2 bis)
+### 1er novembre 2026 · le document qui se suffit pour démarrer · mode A (`LISEZ_MOI.md` §2 bis)
 
 *Seul avec un CdP, lis ceci d'abord ; chaque modèle se lit au moment de le remplir. Le reste du package s'ajoute quand
 un signe vécu le demande (la table, à la fin). Les termes sont au [`GLOSSAIRE.md`](GLOSSAIRE.md).*
@@ -31,8 +31,11 @@ conditions pratiques de sa commande priment sur le cadrage, qui prime sur le pro
 
 **Tes gestes, avant la première session** :
 1. Sur GitHub, **crée deux dépôts privés vides** : `<Projet>` (les vivants) et `<Projet>-App` (le code) ; protège `main`
-   contre le force-push et la suppression, et active au compte **la protection des secrets au push** ; sur un compte
-   gratuit, GitHub n'applique pas les règles de branche aux dépôts privés ([`3_GITHUB.md`](3_GITHUB.md) §5).
+   contre le force-push et la suppression, et active au compte **la protection des secrets au push** — elle ne bloque que
+   les pushes vers des dépôts **publics** ; pour un dépôt privé, la protection au push n'existe que dans une **organisation
+   payante** (GitHub Team ou Enterprise) : **un compte personnel n'a aucune option**. Sur un compte gratuit, GitHub
+   n'applique pas non plus les règles de branche aux dépôts privés : **en mode A, sur un compte personnel, aucun garde
+   technique** ; le seul est le scan de secrets du banc (porte P12 du prompt du dev ; [`3_GITHUB.md`](3_GITHUB.md) §5).
 2. Sur claude.ai, **crée le projet** ; colle dans ses instructions
    [`1_INSTRUCTIONS_PROJET.md`](1_INSTRUCTIONS_PROJET.md) (version courte), les `<…>` remplis.
 3. **Personnalise la skill** ([`skill/SKILL.md`](skill/SKILL.md) : ses §1 et §8 te décrivent) et installe-la dans tes
@@ -65,7 +68,7 @@ aucune porte n'est mesurable. Le premier lot de produit vient ensuite.
 
 **Les deux régimes de version** : un livrable **déployé à chaque lot** (une application en service) prend une version par
 lot, annoncée au cadrage (branche `lot/v<X.Y>`) : la plus haute version déjà prise par un lot, remis ou refusé, plus un
-— la règle exacte : méthode §1 bis ; un livrable **publié par release**
+— la règle exacte : méthode §2, étape 6 ; un livrable **publié par release**
 (un outil téléchargé en paquet) ne prend pas de version par lot (branche `lot/<nom du lot>`) : le lot complète la
 section « Unreleased » du `CHANGELOG`, et la release se fait quand tu la demandes.
 

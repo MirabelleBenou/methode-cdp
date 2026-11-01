@@ -42,7 +42,7 @@ Les douze contrôles, dans cet ordre :
      chantiers.yaml ; (b) une entrée « statut: en-vol » qui porte « version: » et « livrable: »
      porte une version strictement plus haute que toute autre « version: » du même
      « livrable: », dans chantiers.yaml et, avec « --archives », dans les archives : c'est la
-     règle du numéro d'un lot (méthode §1 bis). Une version se compare par la suite des
+     règle du numéro d'un lot (méthode §2, étape 6). Une version se compare par la suite des
      nombres de son jeton de version : la première occurrence, bornée par un caractère non
      alphanumérique ou le bord, de « [vV]?<n>.<n>[.<n>…] » ou de « [vV]<n> » (« v1.0065 » →
      (1, 65) ; « agent-v0.1.1 » → (0, 1, 1) ; « AC-V1.5.1 » → (1, 5, 1) ; « v1.10 (R205) » →

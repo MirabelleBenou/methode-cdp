@@ -56,7 +56,7 @@ nothing from `batches/` or this prompt to the public one⟩:
 
 `.gitattributes` keeps `bench/`, `batches/` and this prompt **out of the archive** (`export-ignore`).
 
-**The brief names the base commit**: the head of `main` when it was pushed. **A piece the brief names is missing: stop**,
+**The brief names the base commit**, and its branch: the head of `main` when it was pushed or, for a fix to a handed-over version, the head of that batch's branch (method §2, step 6). **A piece the brief names is missing: stop**,
 by its exact name.
 
 ---
@@ -88,22 +88,24 @@ by its exact name.
 
 ```sh
 git clone --depth 1 --branch batch/v<X.Y> https://github.com/<owner>/<project>-app <clone>
-cd <clone> && git fetch --depth 1 origin main:refs/remotes/origin/main && git rev-parse origin/main
+cd <clone> && git fetch --depth 1 origin <base-ref>:refs/remotes/origin/base && git rev-parse origin/base
 ```
 
-*The clone only tracks the batch branch: a `git fetch origin main` without a destination does not create `origin/main`.*
+*`<base-ref>` is the branch the brief names: `main`, or the handed-over batch's branch. The clone only tracks the batch branch: a `git fetch origin main` without a destination creates no reference, and the base commit is not in the clone without that `fetch`.*
 
 *`<clone>` and `<folder>` are in your working folder (§2), never in a PL copy.*
 
-**The head of `main` must be `<base>` (named in the brief). Otherwise: stop.** Then extract the base outside the clone:
-`git -C <clone> archive origin/main | tar -x -C <folder>/base`, and copy the test bench. Read the brief, then install
+**The head of the base branch (`main`, or the handed-over batch's branch) must be `<base>`, the commit the brief names. Otherwise: stop.**
+Then extract the base outside the clone: `git -C <clone> archive <base> | tar -x -C <folder>/base`, and copy the test bench. Read the brief, then install
 what your batch requires.
 
 **2 — P0, the base.** ⟨The test-bench ritual on `base/`⟩: the output must equal, line for line, the “base” block of the
 brief — for a low-complexity batch, the base line of its short form; tests and lint on a copy. **A divergence: stop.**
 
-**3 — The version.** It is the one the **brief names**, computed by the method's rule: ⟨`release` on the dev side, with
-no typed number, with no force option⟩. The version obtained must be that of the brief; otherwise, stop. **A deliverable
+**3 — The version.** It is the one the **brief names**, computed by the method's rule (§2, step 6): ⟨`release` on the
+dev side, with no typed number: on the branch of a fix, started from the handed-over batch's, it gives the next version.
+**No force option, except `release --set <version>` written in the brief, with its value**⟩. The version obtained must be
+that of the brief; otherwise, stop. **A deliverable
 published by release has no version**: the batch only completes the “Unreleased” entry of the `CHANGELOG` (step 7).
 
 **4 — Build**, in the clone, **what the brief commands and nothing else**: only the files and areas it names. No
@@ -154,7 +156,7 @@ prediction.
 
 | gate | measurement | source |
 |---|---|---|
-| P0 | the base equals the brief's “base” block (or the base line of its short form); the head of `main` is the commit it names | ritual on `base/`, `git rev-parse` |
+| P0 | the base equals the brief's “base” block (or the base line of its short form); the head of the base branch is the commit it names | ritual on `base/`, `git rev-parse` |
 | P1 | the version, as the brief predicts it | ⟨…⟩ |
 | P2 | ⟨file count, caches at zero⟩ | ⟨ritual⟩ |
 | P3 | ⟨lint: nothing⟩ | `measure/` |
@@ -165,9 +167,22 @@ prediction.
 | P8 | `CHANGELOG`: 0 “to be completed”; the first entry = the delivered version — **for a deliverable published by release, the “Unreleased” entry carries the brief's text** | ⟨…⟩ |
 | P9 | `base` → `measure` gap: **the exact list** of modified, added, removed files = the brief's | ⟨…⟩ |
 | P10 | the fingerprint of the code in `measure/`; with a mock-up, equal to the one noted at validation | ⟨fingerprint command⟩ |
-| P11 | **outside the code, nothing moves** except `batches/v<X.Y>/`: `git diff --stat origin/main HEAD -- bench DEV_PROMPT_<P>.md .gitattributes` is empty | the clone |
+| P11 | **outside the code, nothing moves** except `batches/v<X.Y>/`: `git diff --stat <base> HEAD -- bench DEV_PROMPT_<P>.md .gitattributes` is empty | the clone |
+| P12 | **Secrets**: the batch's diff (`git diff <base> HEAD`) run through the pattern below: **0 lines**; **a `git diff` that fails fails the gate**, it does not leave it at 0 | the clone |
 
-**A low-complexity batch** (its brief says so, in its short form: method §3) passes only **P0, P1, P5, P7, P8, P9 and P11**; the
+**The P12 pattern**, with no dependency, on the added lines only (`<base>`: the base commit the brief names, which step 1 fetched into the shallow clone: a three-dot `git diff <base>...HEAD` fails there for want of a common ancestor):
+
+```sh
+diff=$(git diff <base> HEAD) || { echo "P12: diff impossible"; exit 1; }
+added=$(printf '%s\n' "$diff" | grep '^+')
+{ printf '%s\n' "$added" | grep -E 'AKIA[0-9A-Z]{16}|ghp_|gho_|github_pat_|sk-ant-|xox[abprs]-|-----BEGIN [A-Z ]*PRIVATE KEY-----'
+  printf '%s\n' "$added" | grep -iE "(password|secret|token|api[-_]?key)[[:space:]]*[:=][[:space:]]*['\"][^'\"]{8,}"; } | wc -l
+```
+
+(AWS keys, GitHub tokens, Anthropic keys, Slack tokens, private keys, then a password, secret, token or API key assigned
+to a string of eight characters or more.) **A false alarm is justified in the report, line by line**; a batch that touches this prompt makes the gate ring on the pattern itself: an expected false alarm, justified the same way.
+
+**A low-complexity batch** (its brief says so, in its short form: method §3) passes only **P0, P1, P5, P7, P8, P9, P11 and P12** (P12 applies to every batch: it is the only secrets safeguard in mode A); the
 other gates apply only if its brief names them. Your report gives those, and says “not called” for the others.
 
 ---
@@ -179,7 +194,8 @@ other gates apply only if its brief names them. Your report gives those, and say
 - ⛔ **`main`**: you push only your batch's branch; never `--force`, never a tag.
 - ⛔ **`bench/`, this prompt, `.gitattributes`, the brief and its addenda**: if they fail or contradict each other, you
   stop and say so; you do not fix them.
-- ⛔ The claude.ai project documents and the living-docs repository: they belong to the PL.
+- ⛔ **Read neither the paths of the PL's copies** (§2) **nor the living-docs repository** — even attached to the session,
+  even cloned on the disk (then say so in the report) — **nor the claude.ai project documents**: they belong to the PL.
 - ⛔ ⟨Project with a server runner:⟩ the orders repository: you neither read nor write it, even if it is attached to the
   session or if its clone lies on the disk (then say so in the report); an order is pushed by the PL only, and
   deployment is never your action.
@@ -191,7 +207,7 @@ other gates apply only if its brief names them. Your report gives those, and say
 ## §6 · The stops
 
 **You stop, you write nothing more, and you say so** if:
-- P0 diverges, or the head of `main` is not the base commit;
+- P0 diverges, or the base named by the brief cannot be found or is not the clone's;
 - an invariant moves without authorization;
 - a gate lands off its expected value;
 - a rule of the brief is impossible or contradictory as written;

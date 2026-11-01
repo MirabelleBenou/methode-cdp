@@ -37,8 +37,11 @@ A run does, in order:
   4. the batons: the "Session active" line of each domain checkpoint and the last commit that carries its
      identifier — information (the log and the output), never a workstream; the coordination (the domain whose "pl"
      contains "Coordination" or "Coordinator") is excluded;
-  5. the late checkpoint: a workstream of the domain, accepted and without "for:", whose "accepted-on:" is later
-     than the date of the checkpoint's last commit, is a line of that domain's check-9 workstream;
+  5. the late checkpoint: a workstream of the domain, accepted and without "for:", whose acceptance date is later
+     than the date of the checkpoint's last commit, is a line of that domain's check-9 workstream; the acceptance
+     date is that of the commit that made it accepted (the oldest commit of workstreams.yaml from which it is
+     accepted without interruption up to HEAD), not "accepted-on:", which the arbiter sets itself at its run;
+     without that proof in the available history, no line;
   6. archive (archive_workstreams.py archive);
   7. if workstreams.yaml changed: regenerate the board (with "--board"), then check again;
   8. append a line at the end of "--arbiter-log";
@@ -77,6 +80,7 @@ RE_HEADER = re.compile(r"^(\d+)\s+(.+?)\s+(GAP|warning|OK)\s+(.*)$")
 RE_NOT_REQUESTED = re.compile(r"^(\d+)\s+(.+?)\s+—\s+not requested$")
 RE_TABLE_FAULT = re.compile(r"checkpoint not found|checkpoint unreadable|queue section not found"
                             r"|domain or checkpoint missing")
+RE_DAY = re.compile(r"\d{4}-\d{2}-\d{2}")
 RE_BATON = re.compile(r"^\**\s*Session active\s*:")
 RE_IDENTIFIER = re.compile(r"^\**\s*Session active\s*:\s*\**\s*([A-Za-z0-9]{8})(?=\s*,|\s+since\b)")
 ACTIONS = {
@@ -127,9 +131,10 @@ def last_line(process: subprocess.CompletedProcess) -> str:
     return text.splitlines()[-1]
 
 
-def git(root: Path, *arguments) -> tuple[int, str]:
+def git(root: Path, *arguments, errors: str = "strict") -> tuple[int, str]:
     process = subprocess.run(["git", "-C", str(root), *arguments], capture_output=True, text=True,
-                             encoding="utf-8", env={**os.environ, "LC_ALL": "C", "GIT_TERMINAL_PROMPT": "0"})
+                             encoding="utf-8", errors=errors,
+                             env={**os.environ, "LC_ALL": "C", "GIT_TERMINAL_PROMPT": "0"})
     return process.returncode, process.stdout.strip()
 
 
@@ -585,16 +590,82 @@ def baton_text(now: datetime, silent: list[Baton]) -> str:
     return f"{b.domain} ({b.identifier}, {detail})"
 
 
-def read_lates(ctx: Context, root: Path) -> dict[str, list[str]]:
-    """Per domain, the accepted workstreams whose accepted-on: date follows the checkpoint's last commit."""
+def statuses_of_text(checker, text: str) -> dict[str, str]:
+    """The status of each entry of a workstreams.yaml, by id (the same reader as the checker)."""
+    entries: list[dict] = []
+    for _, start, key, raw in checker.analyse(text):
+        if start:
+            entries.append({})
+        if key is not None:
+            entries[-1][key] = checker.read_value(raw)
+    return {e["id"]: e.get("status", "") for e in entries if e.get("id")}
+
+
+def acceptance_dates(ctx: Context, root: Path, workstreams: Path) -> dict[str, str]:
+    """Per id, the date (%cs) of the commit that made the entry accepted; without proof, the id is not there.
+
+    The entries read are those of a domain, accepted and without "for:". The date is that of the oldest commit of
+    workstreams.yaml from which the entry is accepted without interruption up to HEAD. One reading of the history:
+    each version of the file is read at most once, for all the entries, from the most recent to the oldest, and the
+    reading stops when every entry is judged. Without proof (entry already accepted at the oldest readable version,
+    file or history not found), the id is not returned."""
+    domains = {d["domain"] for d in ctx.valid}
+    remaining = {c["id"] for c in ctx.workstreams
+                 if c.get("id") and c.get("status") == "accepted" and "for" not in c and ctx.domain_of(c) in domains}
+    try:
+        relative = Path(workstreams).resolve().relative_to(Path(root).resolve()).as_posix()
+    except ValueError:
+        return {}
+    if not remaining:
+        return {}
+    code, output = git(root, "log", "--topo-order", "--format=%H %cs", "--", relative)
+    commits = [line.split() for line in output.split("\n") if line.strip()]
+    if code != 0 or not commits or any(len(c) != 2 or not RE_DAY.fullmatch(c[1]) for c in commits):
+        return {}
+
+    def statuses_at(revision: str) -> dict[str, str] | None:
+        code, text = git(root, "show", f"{revision}:./{relative}", errors="replace")
+        return statuses_of_text(ctx.checker, text) if code == 0 else None
+
+    since: dict[str, str] = {}      # id -> the date of the oldest commit read from which the entry is accepted without interruption
+    proofs: dict[str, str] = {}
+    for commit, day in commits:     # from the most recent version to the oldest
+        statuses = statuses_at(commit)
+        if statuses is None:        # an unreadable version: nothing more can be proved
+            return proofs
+        for i in list(remaining):
+            if statuses.get(i) == "accepted":
+                since[i] = day
+            else:                   # the run stops here: the more recent version is the one that made it accepted
+                if i in since:
+                    proofs[i] = since[i]
+                remaining.discard(i)
+        if not remaining:
+            return proofs
+    # the entries still left are accepted down to the oldest version that touches the file: the version before it
+    # (the parent) says whether they already were; without a parent or a file, it is the origin of the readable history
+    parent = statuses_at(f"{commits[-1][0]}^")
+    if parent is not None:
+        for i in remaining:
+            if parent.get(i) != "accepted":
+                proofs[i] = since[i]
+    return proofs
+
+
+def read_lates(ctx: Context, root: Path, workstreams: Path) -> dict[str, list[str]]:
+    """Per domain, the accepted workstreams whose acceptance date follows the checkpoint's last commit.
+
+    The acceptance date is that of the commit that made the entry accepted (acceptance_dates), not "accepted-on:",
+    which the arbiter sets itself; without proof in the history, no line."""
     lates: dict[str, list[str]] = {}
+    acceptances = acceptance_dates(ctx, root, workstreams)
     for d in ctx.valid:
         code, output = git(root, "log", "-1", "--format=%cs", "--", d["checkpoint"])
-        if code != 0 or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", output):
+        if code != 0 or not RE_DAY.fullmatch(output):
             continue
         for c in ctx.workstreams:
-            accepted = c.get("accepted-on", "")
-            if (c.get("status") != "accepted" or "for" in c or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", accepted)
+            accepted = acceptances.get(c.get("id", ""))
+            if (accepted is None or c.get("status") != "accepted" or "for" in c
                     or ctx.domain_of(c) != d["domain"]):
                 continue
             try:
@@ -657,7 +728,7 @@ def archiving_findings(archiving: Archiving, ctx: Context, day: date) -> list[Fi
             id=f"arbiter-ca-archiving-{safe_key(i)}", title=f"Archiving: {line}",
             module=ctx.module_of(ctx.by_id.get(i)), for_=ctx.coordinator,
             basis=(f"Reported by the arbiter on {long_date(day)} (archiving). {line}. "
-                   "Have the owner fix the accepted-on: date (YYYY-MM-DD): the arbiter does not correct it.")))
+                   "Have its holder fix the accepted-on: date (YYYY-MM-DD): the arbiter does not correct it.")))
     return findings
 
 
@@ -733,7 +804,7 @@ def make_run(a, now: datetime) -> int:
     ctx.archives = checker.read_archives(Path(a.archives))
     ctx.by_id = {c["id"]: c for c in ctx.workstreams if c.get("id")}
     silent = read_batons(ctx, root, now)                         # 4
-    lates = read_lates(ctx, root)                                # 5
+    lates = read_lates(ctx, root, Path(a.workstreams))                                # 5
     new, existing = [], []
     findings_9, reported = checkpoint_findings(check, lates, ctx, day)
     findings = ordinary_findings(check, ctx, day) + findings_9 + entry_findings(check, ctx, day)

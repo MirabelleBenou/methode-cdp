@@ -41,7 +41,7 @@ The twelve checks, in this order:
      (b) an entry in "status: in-flight" that carries "version:" and "deliverable:" carries a
      version strictly higher than every other "version:" of the same "deliverable:", in
      workstreams.yaml and, with "--archives", in the archives: this is the rule of the number
-     of a batch (method §1 bis). A version is compared by the sequence of numbers of its
+     of a batch (method §2, step 6). A version is compared by the sequence of numbers of its
      version token: the first occurrence, bounded by a non-alphanumeric character or the edge,
      of "[vV]?<n>.<n>[.<n>…]" or of "[vV]<n>" ("v1.0065" -> (1, 65); "agent-v0.1.1" ->
      (0, 1, 1); "AC-V1.5.1" -> (1, 5, 1); "v1.10 (D205)" -> (1, 10); "v19" -> (19,)); a value

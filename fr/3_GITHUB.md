@@ -18,8 +18,9 @@ reconstitue depuis les dépôts.*
 nomment le porteur, décrivent la méthode et citent le registre. Ils vont dans un troisième dépôt, privé (§6 B). Un fichier
 poussé sur un dépôt public y reste dans l'historique même retiré ensuite : la règle vaut **dès le premier commit**.
 
-**Pourquoi deux dépôts** : le dev lit tout le dépôt de code ; il ne doit pas lire les attendus de la réception, ni les
-décisions en cours, ni les autres chantiers. Les vivants restent au CdP.
+**Pourquoi deux dépôts** : le dev lit tout le dépôt de code ; les attendus de la réception, les décisions en cours et
+les autres chantiers sont donc ailleurs, aux vivants, qui restent au CdP. **Le dev ne les lit pas — c'est une règle de son
+prompt, pas un mur** : il hérite des dépôts de la session ([`DEPENDANCES_CLAUDE.md`](DEPENDANCES_CLAUDE.md)).
 
 **Une troisième famille, facultative — le dépôt d'ordres** : quand le projet a un serveur de production et un exécutant
 serveur ([`modeles/EXECUTANT_SERVEUR.md`](modeles/EXECUTANT_SERVEUR.md)), le CdP y déploie par des ordres.
@@ -79,8 +80,8 @@ lot/vX.Y ●─ CADRAGE ─ … travail … ─ LIVRAISON ─ RAPPORT
                          └ MAQUETTE_1 (dev) ─ verdict (CdP, mot pour mot) ┘  si le cadrage la demande
 ```
 
-1. **Le CdP crée `lot/v<X.Y>` depuis la tête de `main`** et y pousse **un seul commit** : `lots/v<X.Y>/CADRAGE.md` (et
-   sa maquette s'il y en a une). Le cadrage nomme le commit de base (la tête de `main`). *Un livrable publié par release
+1. **Le CdP crée `lot/v<X.Y>` depuis la tête de `main`** (pour le correctif d'une version remise : depuis la tête de la branche de ce lot) et y pousse **un seul commit** : `lots/v<X.Y>/CADRAGE.md` (et
+   sa maquette s'il y en a une). Le cadrage nomme le commit de base (la tête de `main`, ou celle de la branche du lot remis) et sa branche. *Un livrable publié par release
    n'a pas de version par lot : la branche est `lot/<nom du lot>` et le dossier `lots/<nom du lot>/`.*
 2. **Le CdP lance le dev en sous-agent** ([`modeles/COMMANDE_DEV.md`](modeles/COMMANDE_DEV.md)) : modèle et effort du cadrage, clone dans un dossier
    à part (`/home/claude/dev_<lot>/`, jamais aux chemins des copies du CdP), rien d'autre en contexte ; les conditions
@@ -100,7 +101,7 @@ lot/vX.Y ●─ CADRAGE ─ … travail … ─ LIVRAISON ─ RAPPORT
    fait à ta demande.)*
 
 **Une livraison = un nouveau numéro** (livrable déployé à chaque lot ; un livrable publié par release ne porte pas de
-version par lot) : un correctif ou des retours d'essai après une remise font un lot de la version suivante (la règle et son pourquoi : [`modeles/METHODE.md`](modeles/METHODE.md) §1 bis), sur sa propre branche partie de celle du lot, un commit et un rapport chacun. L'addendum sous la même version ne
+version par lot) : un correctif ou des retours d'essai après une remise font un lot de la version suivante (la règle et son pourquoi : [`modeles/METHODE.md`](modeles/METHODE.md) §2, étape 6), sur sa propre branche **partie de celle du lot remis** (le cadrage la nomme comme base ; le script `release` du dev y donne la version suivante), un commit et un rapport chacun. L'addendum sous la même version ne
 sert que tant que rien n'a été remis ni déployé.
 
 ---
@@ -115,7 +116,7 @@ sert que tant que rien n'a été remis ni déployé.
   ce qui s'applique dans chaque cas.
 - **Plusieurs CdP peuvent partager les vivants**, un par domaine (méthode §1 bis) : chacun son checkpoint et son
   témoin ; registre, plan et chantiers en ajout seul ; un numéro de décision se réserve par un push ; un livrable n'a qu'un lot en vol, sa version se
-  calcule quand le lot le prend (déployé à chaque lot) ou n'existe pas par lot (publié par release : méthode §1 bis) ; `pull` avant
+  calcule quand le lot le prend (déployé à chaque lot) ou n'existe pas par lot (publié par release : méthode §2, étape 6) ; `pull` avant
   chaque écriture, un conflit se voit au `pull` au lieu de s'écraser.
 - **Le miroir au projet** (une extension, `NOYAU.md` §6 : quand une conversation sans clone doit lire les vivants) : à chaque clôture, chaque fichier modifié se recopie par l'outil du projet en envoyant le
   fichier depuis le clone (`project_write` avec `local_path`), sous le même nom. **Jamais depuis le texte que rend
@@ -138,7 +139,7 @@ sert que tant que rien n'a été remis ni déployé.
 | **Clone d'une seule branche** | `git fetch origin main` ne crée pas `origin/main` | écrire `git fetch origin main:refs/remotes/origin/main` |
 | **Branche de lot qui suit `origin/main`** | le hook de fin de tour croit à des commits non poussés | fixer `branch.<lot>.merge` et ajouter la branche au `remote.origin.fetch` |
 | **Lignes d'attribution** | la session impose ses lignes dans les commits | sur un dépôt public, elles se voient : à savoir |
-| **Secrets** | un `.env` poussé est publié pour toujours | seul `.env.example` porte des valeurs, factices ; vérifier avant le premier push ; **activer la protection des secrets au push** (réglage du compte) |
+| **Secrets** | un `.env` poussé est publié pour toujours | seul `.env.example` porte des valeurs, factices ; vérifier avant le premier push ; **activer la protection des secrets au push** (réglage du compte) — elle ne bloque que les pushes vers des dépôts **publics** ; pour un dépôt privé, la protection au push n'existe que dans une **organisation payante** (GitHub Team ou Enterprise), **un compte personnel n'a aucune option** : **le seul garde est alors le scan du banc** (porte P12 du prompt du dev) |
 | **`main` sans protection** | un force-push ou une suppression de `main` est possible | **une règle de branche** qui bloque l'un et l'autre. *Sur un compte gratuit, GitHub n'applique pas les règles de branche aux dépôts privés : les dépôts publics se protègent ; les privés gardent la règle écrite (le dev ne pousse que sa branche).* |
 | **Dossier `dist/` ignoré mais suivi** | `git add` ne le prend pas | `git add -f` |
 | **Rejet HTTP 413 au push** | un push depuis un clone peu profond qui n'a pas fait `fetch` envoie l'arbre entier, que le proxy refuse pour sa taille (ce n'est pas un refus d'avance rapide) | `git fetch origin main` avant de pousser |
@@ -163,8 +164,8 @@ CdP n'écrit pas le livré » s'applique au code, pas à la documentation, que l
 - **Le circuit** : le CdP pousse le cadrage sur `lot/<lot>` du dépôt des lots ; il nomme le commit du dépôt public d'où
   part le code. Le dev lit le prompt et le cadrage au dépôt des lots, clone le dépôt public, y pousse le code sur sa
   propre branche `lot/<lot>`, et pousse arrêts et rapport au dépôt des lots. Le sous-agent hérite des trois dépôts.
-- **Le dev ne lit pas les vivants** : c'est pour cela que le prompt et les lots ne vont pas au dépôt des vivants, où sont
-  les attendus de la réception.
+- **Le dev ne lit pas les vivants** (une règle de son prompt, pas un mur) : c'est pour cela que le prompt et les lots ne
+  vont pas au dépôt des vivants, où sont les attendus de la réception.
 - **Un outil simple peut se passer de prompt du dev** : le cadrage se suffit alors, et nomme les fonctions à lire dans un
   gros fichier de build.
 - Après ta validation : avance rapide de `main` public (à l'octet de l'archive reçue) ; **la release se fait à ta
@@ -193,7 +194,7 @@ CdP n'écrit pas le livré » s'applique au code, pas à la documentation, que l
 
 *Et dans un dépôt public, en plus : le prompt du dev et `lots/` (§6 B).*
 
-- les secrets, jetons, mots de passe, `.env` réels (la protection des secrets au push du compte en rattrape certains, pas tous) ;
+- les secrets, jetons, mots de passe, `.env` réels (la protection des secrets au push du compte ne couvre que les dépôts publics : §5) ;
 - les données de production (journaux, dumps, exports) : elles se téléversent dans la session qui en a besoin ;
 - les images à faire valider par toi : elles passent dans la discussion (ou dans `lots/<version>/maquette/` quand le
   cadrage les commande).

@@ -1,5 +1,5 @@
 # GLOSSAIRE — les mots de la méthode CdP
-### 31 octobre 2026 · un terme, une ou deux lignes, le document où il vit
+### 1er novembre 2026 · un terme, une ou deux lignes, le document où il vit
 
 *Les chemins sont ceux du package. Pour démarrer, tu n'as besoin que des termes de la première partie : le noyau
 ([`NOYAU.md`](NOYAU.md)) les emploie tous ; les autres parties servent quand tu ajoutes une extension (table de `NOYAU.md` §6).*
@@ -29,13 +29,13 @@
 | **maquette** | le rendu d'un écran avant qu'on le construise : soit celle du CdP, faite par le vrai code ; soit demandée au dev, qui la livre par un arrêt (`MAQUETTE_<n>.md`). | `modeles/METHODE.md` §2 et §3 bis |
 | **banc** | l'outillage qui mesure une archive (fichiers, tests, lint, empreintes) ; il se construit par le premier lot, un lot d'outillage. | `NOYAU.md` §3 ; `LISEZ_MOI.md` §5 |
 | **portes** | les mesures du banc que le dev passe sur sa livraison (P0 à Pn). | `modeles/PROMPT_DEV.md` §4 (et les portes d'un lot de complexité faible) |
-| **attendus** | les résultats attendus de la réception, calculés au cadrage par le CdP, jamais là où le dev lit. | `modeles/METHODE.md` §2 |
+| **attendus** | les résultats attendus de la réception, calculés au cadrage par le CdP, jamais dans un dépôt que le dev doit lire ; il ne les lit pas (une règle de son prompt, pas un mur). | `modeles/METHODE.md` §2 |
 | **réception à froid** | le CdP remesure indépendamment, sur `git archive` du commit livré : critères en deltas, diff lu contre les règles, rendus regardés. Ce que le rapport du dev dit ne se recopie jamais. | `modeles/METHODE.md` §4 |
 | **relecture indépendante** | pour un lot moyen ou fort, ou qui ajoute une dépendance : un sous-agent neuf, d'un autre modèle que le dev, lit le diff et rend des constats ; le CdP les tranche à la réception. | `modeles/METHODE.md` §4 |
 | **clôture** | ce que fait le CdP une fois par lot reçu : fusion en avance rapide après ta validation, registre, chantiers, commit « Lot clos », ⟨avec l'extension du miroir : miroir au projet⟩, checkpoint. | `modeles/METHODE.md` §6 |
 | **livrable** | ce qui se remet ou se déploie ; dans les chantiers, le dépôt de code d'où sort la release. Un seul lot en vol par livrable. | `modeles/METHODE.md` §1 bis |
 | **ressource partagée** | une machine ou un logiciel qu'un seul lot à la fois peut occuper (ta machine et son jeu) ; elle se prend comme un livrable (`ressource:`). | `modeles/METHODE.md` §1 bis |
-| **version** (les deux régimes) | *déployé à chaque lot* (application en production, agent, déployeur) : la version se calcule quand le lot prend le livrable, par la règle de la méthode §1 bis (jamais `main` plus un). *Publié par release* (outil téléchargé en paquet) : le lot ne porte pas de version, sa branche est `lot/<nom du lot>`, il complète la section « Unreleased » du CHANGELOG ; la release se fait à ta demande. Une livraison = un nouveau numéro. | `modeles/METHODE.md` §1 bis, §6 ; [`modeles/depot-app/CHANGELOG.md`](modeles/depot-app/CHANGELOG.md) |
+| **version** (les deux régimes) | *déployé à chaque lot* (application en production, agent, déployeur) : la version se calcule quand le lot prend le livrable, par la règle de la méthode §2, étape 6 (jamais `main` plus un). *Publié par release* (outil téléchargé en paquet) : le lot ne porte pas de version, sa branche est `lot/<nom du lot>`, il complète la section « Unreleased » du CHANGELOG ; la release se fait à ta demande. Une livraison = un nouveau numéro. | `modeles/METHODE.md` §2 (étape 6), §6 ; [`modeles/depot-app/CHANGELOG.md`](modeles/depot-app/CHANGELOG.md) |
 
 ## 3 · Les vivants
 
@@ -44,7 +44,7 @@
 | **vivants** (documents vivants) | ce qui bouge avec le projet : méthode du projet, checkpoint, registre, plan, `chantiers.yaml`. Au dépôt des vivants ⟨, avec l'extension du miroir : et en miroir au projet claude.ai⟩ ; le CdP les écrit seul, à chaque lot clos. | `LISEZ_MOI.md` §2 et §4 ; [`modeles/depot-vivants/README.md`](modeles/depot-vivants/README.md) |
 | **checkpoint** | l'état réel du projet, sous un plafond (la méthode §6) : le point d'entrée de chaque session de CdP. Un par domaine. | [`modeles/CHECKPOINT.md`](modeles/CHECKPOINT.md) |
 | **ligne fixe** (ligne de reprise) | le message prêt à coller dans une conversation neuve pour reprendre un domaine ; il nomme tous les dépôts du domaine. Elle est en tête du checkpoint et au README des vivants. | `modeles/CHECKPOINT.md` ; `modeles/depot-vivants/README.md` |
-| **témoin** | la ligne « Session en activité : <identifiant court> » en tête d'un checkpoint : qui travaille sur le domaine. L'identifiant court est les huit derniers caractères de l'identifiant de session. Il se juge à son silence ; le silence de la coordination ne se juge pas. | `modeles/METHODE.md` §1 bis ; `skill/SKILL.md` §4 |
+| **témoin** | la ligne « Session en activité : <identifiant court> » en tête d'un checkpoint : qui travaille sur le domaine. L'identifiant court est les huit derniers caractères de l'identifiant de session. Il se juge à son silence, qui n'est qu'une information, jamais un oubli signalé ; le silence de la coordination ne se juge pas. | `modeles/METHODE.md` §6 (« Le témoin ») ; `skill/SKILL.md` §4 |
 | **file** | la liste de ce qui reste à faire, dans la section `## §<n> · La file` d'un checkpoint ; elle ne porte que des chantiers inscrits, cités par leur id. | `modeles/METHODE.md` §6 ; `modeles/CHECKPOINT.md` |
 | **passation** | le geste par lequel un CdP passe la main à une session neuve, à la mesure du contexte ; les seuils sont à la méthode §6. Jamais avec un dev en vol. | `NOYAU.md` §4 ; `modeles/METHODE.md` §6 |
 | **signe de saturation** | ce qui montre qu'un contexte est trop plein : pertes de fil, contradictions, une décision oubliée. Chaque passation note ceux qu'elle a vus (ou « aucun »). | `modeles/METHODE.md` §6 ; `modeles/CHECKPOINT.md` |
@@ -66,7 +66,7 @@
 | **noyau** | le document qui suffit à un porteur seul avec un CdP pour démarrer, et la table des extensions. | `NOYAU.md` |
 | **extension** | ce que la méthode ajoute quand un signe vécu l'appelle : les extensions de `NOYAU.md` §6, chacune avec son signe. | `NOYAU.md` §6 |
 | **arbitre** | une action GitHub quotidienne, sans session : elle contrôle les vivants partagés et les checkpoints, dépose un chantier par écart nouveau, archive, tient son journal, et échoue si elle a déposé. | `LISEZ_MOI.md` §2 ter ; [`modeles/ARBITRE.md`](modeles/ARBITRE.md) |
-| **contrôleur** | une session Opus neuve, chaque lundi, par tâche planifiée : elle juge la forme des documents (contradiction, oubli, doublon, historique inutile) et rend au plus cinq constats prouvés, en chantiers pour leur propriétaire. | `LISEZ_MOI.md` §2 ter ; [`modeles/CONTROLEUR.md`](modeles/CONTROLEUR.md) |
+| **contrôleur** | une session Opus neuve, chaque lundi, par tâche planifiée : elle juge la forme des documents (contradiction, oubli, doublon, historique inutile) et rend des constats prouvés, sous le plafond de la méthode §6, en chantiers pour leur propriétaire. | `LISEZ_MOI.md` §2 ter ; [`modeles/CONTROLEUR.md`](modeles/CONTROLEUR.md) |
 | **dépôt d'ordres** | un dépôt privé où le CdP pousse ses ordres et d'où l'exécutant serveur les tire ; il sert aussi de pont d'échange de fichiers (`transferts/`). | `LISEZ_MOI.md` §2 quater ; [`modeles/EXECUTANT_SERVEUR.md`](modeles/EXECUTANT_SERVEUR.md) §5 |
 | **exécutant serveur** | un programme déterministe sur ton serveur de production : il exécute les ordres d'une liste blanche et pousse un compte rendu. Aucune IA dans le chemin du déploiement. | `modeles/EXECUTANT_SERVEUR.md` ; `modeles/METHODE.md` §4 bis |
 | **exécutant local** | une session Claude Code locale sur ton PC, pilotée par fichiers ; le repli quand le pont ne donne pas ta machine. | [`modeles/EXECUTANT_LOCAL.md`](modeles/EXECUTANT_LOCAL.md) |

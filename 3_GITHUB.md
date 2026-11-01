@@ -19,8 +19,9 @@ name the owner, describe the method and cite the decision log. They go into a th
 pushed to a public repository stays there in the history even if removed afterwards: the rule holds **from the first
 commit**.
 
-**Why two repositories**: the dev reads the whole code repository; it must not read the acceptance expected results,
-nor the pending decisions, nor the other workstreams. The living docs stay with the PL.
+**Why two repositories**: the dev reads the whole code repository; the acceptance expected results, the pending decisions
+and the other workstreams are therefore elsewhere, in the living docs, which stay with the PL. **The dev does not read
+them — that is a rule of its prompt, not a wall**: it inherits the session's repositories ([`CLAUDE_DEPENDENCIES.md`](CLAUDE_DEPENDENCIES.md)).
 
 **A third family, optional — the orders repository**: when the project has a production server and a server runner
 ([`templates/SERVER_RUNNER.md`](templates/SERVER_RUNNER.md)), the PL deploys there through orders.
@@ -80,8 +81,8 @@ batch/vX.Y ●─ BRIEF ─ … work … ─ DELIVERY ─ REPORT
                          └ MOCKUP_1 (dev) ─ verdict (PL, word for word) ┘  if the brief asks for it
 ```
 
-1. **The PL creates `batch/v<X.Y>` from the head of `main`** and pushes **a single commit** to it:
-   `batches/v<X.Y>/BRIEF.md` (and its mock-up if there is one). The brief names the base commit (the head of `main`). *A deliverable published by release has no version per batch: the
+1. **The PL creates `batch/v<X.Y>` from the head of `main`** (for a fix to a handed-over version: from the head of that batch's branch) and pushes **a single commit** to it:
+   `batches/v<X.Y>/BRIEF.md` (and its mock-up if there is one). The brief names the base commit (the head of `main`, or of the handed-over batch's branch) and its branch. *A deliverable published by release has no version per batch: the
    branch is `batch/<batch name>` and the folder `batches/<batch name>/`.*
 2. **The PL launches the dev as a sub-agent** ([`templates/DEV_COMMAND.md`](templates/DEV_COMMAND.md)): model and effort from the brief, clone in a
    separate folder (`/home/claude/dev_<batch>/`, never at the paths of the PL's copies), nothing else in context; the
@@ -101,8 +102,8 @@ batch/vX.Y ●─ BRIEF ─ … work … ─ DELIVERY ─ REPORT
    merge follows the acceptance, and the release is made at your request.)*
 
 **One delivery = one new number** (a deliverable deployed per batch; a deliverable published by release carries no
-version per batch): a fix or trial feedback after a hand-over makes a batch of the next version (the rule and its reason: [`templates/METHOD.md`](templates/METHOD.md) §1a), on its
-own branch started from the batch's branch, one commit and one report each. An addendum under the same version only
+version per batch): a fix or trial feedback after a hand-over makes a batch of the next version (the rule and its reason: [`templates/METHOD.md`](templates/METHOD.md) §2, step 6), on its
+own branch **started from the handed-over batch's branch** (the brief names it as its base; the dev's `release` script gives the next version there), one commit and one report each. An addendum under the same version only
 serves while nothing has been handed over or deployed.
 
 ---
@@ -117,7 +118,7 @@ serves while nothing has been handed over or deployed.
   each case.
 - **Several PLs can share the living docs**, one per domain (method §1a): each its own checkpoint and baton; decision
   log, plan and workstreams append-only; a decision number is reserved by a push; a deliverable has a single batch in flight, its
-  version is computed when the batch takes it (deployed per batch) or does not exist per batch (released: method §1a); `pull` before every write, a
+  version is computed when the batch takes it (deployed per batch) or does not exist per batch (released: method §2, step 6); `pull` before every write, a
   conflict shows at the `pull` instead of being overwritten.
 - **The mirror in the project** (an extension, `CORE.md` §6: when a conversation without a clone must read the living docs): at every close-out, each modified file is copied over with the project tool by sending
   the file from the clone (`project_write` with `local_path`), under the same name. **Never from the text the project
@@ -140,7 +141,7 @@ serves while nothing has been handed over or deployed.
 | **Single-branch clone** | `git fetch origin main` does not create `origin/main` | write `git fetch origin main:refs/remotes/origin/main` |
 | **Batch branch tracking `origin/main`** | the end-of-turn hook believes there are unpushed commits | set `branch.<batch>.merge` and add the branch to `remote.origin.fetch` |
 | **Attribution lines** | the session imposes its lines in the commits | on a public repository, they show: be aware of it |
-| **Secrets** | a pushed `.env` is published forever | only `.env.example` holds values, dummy ones; check before the first push; **turn on secret protection at push** (an account setting) |
+| **Secrets** | a pushed `.env` is published forever | only `.env.example` holds values, dummy ones; check before the first push; **turn on secret protection at push** (an account setting) — it only blocks pushes to **public** repositories; for a private repository, push protection only exists in a **paid organization** (GitHub Team or Enterprise), **a personal account has no option**: **the only safeguard is then the test bench's scan** (gate P12 of the dev prompt) |
 | **`main` without protection** | a force-push or a deletion of `main` is possible | **a branch rule** that blocks both. *On a free account, GitHub does not apply branch rules to private repositories: public repositories can be protected; private ones keep the written rule (the dev pushes only its branch).* |
 | **`dist/` folder ignored but tracked** | `git add` does not pick it up | `git add -f` |
 | **HTTP 413 rejection on push** | a push from a shallow clone that has not run `fetch` sends the whole tree, which the proxy refuses for its size (it is not a fast-forward refusal) | `git fetch origin main` before pushing |
@@ -167,7 +168,7 @@ authorization.
   public repository the code starts from. The dev reads the prompt and the brief in the batches repository, clones the
   public repository, pushes the code there on its own branch `batch/<batch>`, and pushes stops and report to the batches
   repository. The sub-agent inherits the three repositories.
-- **The dev does not read the living docs**: that is why the prompt and the batches do not go into the living-docs
+- **The dev does not read the living docs** (a rule of its prompt, not a wall): that is why the prompt and the batches do not go into the living-docs
   repository, where the acceptance expected results are.
 - **A simple tool can do without a dev prompt**: the brief is then enough on its own, and names the functions to read
   in a large build file.
@@ -199,7 +200,7 @@ separately.
 
 *And in a public repository, in addition: the dev prompt and `batches/` (§6 B).*
 
-- secrets, tokens, passwords, real `.env` files (the account's secret protection at push catches some, not all);
+- secrets, tokens, passwords, real `.env` files (the account's secret protection at push only covers public repositories: §5);
 - production data (logs, dumps, exports): they are uploaded into the session that needs them;
 - images for you to validate: they go through the conversation (or into `batches/<version>/mock-up/` when the
   brief orders them).

@@ -25,4 +25,4 @@ complex** (several PLs in parallel on several products, a production server).
 | `templates/` | method, dev prompt, brief, dev command, local runner (the fallback), living docs and their scripts (board, checker, workstream archiving and search), repository skeletons; optional: the server runner ([`SERVER_RUNNER.md`](templates/SERVER_RUNNER.md)) and its reference implementation (`server-runner/`, in French), the living-docs arbiter ([`ARBITER.md`](templates/ARBITER.md), a daily GitHub Action), the document controller ([`CONTROLLER.md`](templates/CONTROLLER.md), a weekly session) and the domain table they read (`domains.yaml`); the tests of the scripts, of the links and of the parity (`tests/`) |
 | [`skill/SKILL.md`](skill/SKILL.md) | the personal skill `methode-cdp`, to customize (§1 and §8) then install |
 
-*Package v19 (skill v19), 31 October 2026 — history in `GUIDE.md` §7. MIT License.*
+*Package v21 (skill v21), 1 November 2026 — history in `GUIDE.md` §7. MIT License.*

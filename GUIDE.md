@@ -1,4 +1,4 @@
-# PL METHOD PACKAGE · v20
+# PL METHOD PACKAGE · v21
 ### 1 November 2026 · to start a new project under the PL method
 
 *This package reproduces a way of working proven batch after batch: a **project lead** (PL, Opus) who decides
@@ -49,13 +49,13 @@ production server).
 | `templates/server-runner/` | **optional** — its reference implementation (Python, systemd, installer, tests), in French | the project's code repository, then the server |
 | `templates/living-docs-repo/` | [`README.md`](templates/living-docs-repo/README.md) of the living-docs repository | living-docs repository |
 | `templates/code-repo/` | `.gitattributes`, `.gitignore`, [`CHANGELOG.md`](templates/code-repo/CHANGELOG.md) of the code repository | code repository |
-| [`skill/SKILL.md`](skill/SKILL.md) | the personal skill `methode-cdp`, **to customize (§1 and §8) then install** — **v19**: what a session knows before reading the project's method | your claude.ai skills |
+| [`skill/SKILL.md`](skill/SKILL.md) | the personal skill `methode-cdp`, **to customize (§1 and §8) then install** — **v21**: what a session knows before reading the project's method | your claude.ai skills |
 | `fr/` | the same package in French | the same places as its English counterpart |
 
-**The tooling**: the scripts use only Python's standard library and are tested in CI. Two tests guard the documents:
-`templates/tests/test_links.py` (every relative link leads to a file that exists) and `templates/tests/test_parity.py`
+**The tooling**: the scripts use only Python's standard library and are tested in CI. Three tests guard the documents:
+`templates/tests/test_links.py` (every relative link leads to a file that exists), `templates/tests/test_parity.py`
 (each figure of the method is written only at its source, and each French document has the same headings as its English
-counterpart).
+counterpart) and `templates/tests/test_cross_refs.py` (no French-style “§n bis” cross-reference and no key of the French domain table is left in the English).
 
 ---
 
@@ -115,7 +115,7 @@ time.
 own code repository and release. One checkpoint and one baton per domain; the shared living docs append-only (decision
 log, plan, workstreams); the decision number taken by a push; no common deliverable, so no waiting between them; the
 rare messages from one domain to another go through a `for:` workstream. **Without a coordination, the method, the dev prompt
-and the living-docs README keep a single owner**: the first PL, or a coordinator as soon as the project grows.
+and the living-docs README keep a single holder**: the first PL, or a coordinator as soon as the project grows.
 
 **C — several linked modules, one PL per domain and a coordinator**: modules that share a deliverable (the same
 application), a resource (your machine), files or a server. Everything in B, plus: a single batch in flight per
@@ -136,7 +136,7 @@ workstreams: the arbiter, if there is one; without it (modes A and B), the PL or
 
 **Three things the method fixes so that the tools find their way.** *The baton*: a session's short id is the last eight
 characters of its session identifier (the one in the attribution line of its commits); all the sessions of one account
-share the beginning; a baton is judged by its silence, **except the coordination's**, which you keep open for days
+share the beginning; a baton is judged by its silence — information, never an alert (method §6) —, **except the coordination's**, which you keep open for days
 without a commit. *The queue*: each checkpoint carries it under a stable title `## §<n> · The queue`, with the list
 itself; the domain table names that title, an empty `queue:` line is a gap, and the coordination has an entry of its own
 there. *Your machine*: when the project drives a game or an application on your PC, the PL's session uses it **through
@@ -167,10 +167,11 @@ own: [`templates/ARBITER.md`](templates/ARBITER.md) §0 and [`templates/CONTROLL
 - **The arbiter measures, every day**: a GitHub Action, with no session, that runs the checker, files one `for:`
   workstream per new gap, archives and keeps its log; it fails when it has filed, and GitHub's e-mail warns you. **Its
   sign**: the first duplicated decision number, or the first forgotten session that keeps a baton.
-- **The controller judges, every Monday**: a fresh Opus session, by scheduled task (automatic approval), that returns at
-  most five proved findings on the form of the documents. **Its sign**: the first document that swells or contradicts
-  itself without anyone saying so.
-- **Neither corrects**: the owner corrects.
+- **The controller judges, every Monday**: a fresh Opus session, by scheduled task (automatic approval), that returns
+  proved findings on the form of the documents (their ceiling: method §6). **Its sign**: the first document that swells or
+  contradicts itself without anyone saying so. **Its cost**: one Opus session a week, fixed load included; the measure of
+  its first runs sets it (`templates/CONTROLLER.md`).
+- **Neither corrects**: the holder corrects.
 
 ---
 
@@ -275,7 +276,7 @@ in the decision log as a decision.*
 **A → B — what the session does:** its domain takes a name (`Opus-PL-<Product>`) and a checkpoint of its own, with its
 baton; the domain table is born (method §1a, living-docs README with each PL's fixed line); the sharing rules apply from
 now on (method §1a: append only, numbers reserved by a push, messages through `for:` workstreams, module prefix in the
-batch names); the project's method changes version; the first PL **remains the owner of the method** as long as there
+batch names); the project's method changes version; the first PL **remains the holder of the method** as long as there
 is no coordination.
 
 **B → C (or A → C) — your actions:**
@@ -283,13 +284,13 @@ is no coordination.
    activity in it (in A → C: the single existing domain).
 2. Tell the PL that held the method, in its conversation: “the coordination is open, it takes over the method”.
 3. In A → C: then ask the coordination to open the second domain (you tell it which; it gives you its fixed line).
-4. Answer its proposals (product sheet, arbiter) and paste the instructions it gives you back.
+4. Answer its proposals (product sheet, arbiter, controller) and paste the instructions it gives you back.
 
 **B → C — what the coordination session does:** it takes over the method, the dev prompt, the living-docs README and
 the package (the PL that held them leaves them to it); it creates its checkpoint; it keeps the domain table in three
 places (method §1a, README, `Method/domains.yaml`); the mode C rules enter the method (one deliverable, a single batch
 in flight; a resource taken like a deliverable; `waits:`, `touches:`; the product sheet of a product with several
-PLs); it proposes the arbiter; it notifies each active PL by a ready-to-paste message, which you hand to it, and then checks
+PLs); it proposes the arbiter and the controller; it notifies each active PL by a ready-to-paste message, which you hand to it, and then checks
 its reply in the repository; a PL whose baton is free finds it through a `for:` workstream when it resumes (method §1a).
 
 **Going back, when a domain closes:** ask the coordination (or, in B, the PL that holds the method) “close the <name>
@@ -357,7 +358,7 @@ the living docs in the repository; the fast-forward merge after your validation;
 
 ## 6 · The costs to expect (measured on a first project)
 
-- an ordinary batch: 5 to 20 minutes of dev, a few minutes of acceptance;
+- an ordinary batch: the target cost of method §8 (`templates/METHOD.md`), a few minutes of acceptance on top;
 - a screen with a mock-up: 15 minutes to 1 h 30 of dev, one or two mock-up passes with you (made by the PL before the launch, or asked of the dev, who delivers it through a stop; the PL shows it to you and relays your verdict word for word);
 - an addendum launched by the PL: a few minutes, without a single action on your part;
 - a PL session: the handover at a natural end of the queue or at the context threshold of method §6.
@@ -376,7 +377,7 @@ the first product batch.*
   of that project carries it over here — templates, `3_GITHUB.md`, skill — in a commit “Package vN: …”, tells you, and
   offers you the updated skill. A lesson specific to the project stays in its method.
 - **A project already bootstrapped does not realign by itself**: its method prevails; its PL takes up a change of the
-  package at its next method version, if relevant. **Before reinstalling the v19 skill on a project bootstrapped
+  package at its next method version, if relevant. **Before reinstalling the v21 skill on a project bootstrapped
   earlier**, its PL checks that the project's method carries what the v17 skill alone used to say and completes it
   from `templates/METHOD.md` otherwise: for any project, the handover (measurement, thresholds, fixed line), the
   living docs' ceilings and the checkpoint's §0 at each closed batch; with several PLs, also the baton, the queue and
@@ -440,7 +441,7 @@ fixed page and its data file (`workstreams.html`, `workstreams.json`), what the 
 regimes, deployed per batch or released (`templates/code-repo/CHANGELOG.md`, “Unreleased” section); the method, proven on
 three projects, one of them complex; skill v17.
 v19, 31 October 2026 — the corrections from the independent review of package v18: the number of a fix (the rule of
-the method §1a), the “released” regime through to the end (`batch/<batch name>`), the complete
+the method, now §2 step 6), the “released” regime through to the end (`batch/<batch name>`), the complete
 precedence, no handover with a dev in flight, §0 of the checkpoint refreshed at each closed batch, thresholds with a single
 source (method §6), the independent review of the code, the orders repository cloned only after acceptance, the protection
 of `main` and of secrets; the v19 tooling (strict YAML, eleven checks); the arbiter as a GitHub Action
@@ -457,3 +458,4 @@ v20, 1 November 2026 — check 12 of `check_living_docs.py`: the size of a works
 their caps (method §6), one workstream per domain for the arbiter; gap (b) of check 4 is read whatever the version; the
 handover thresholds are counted above the fixed load measured at the first turn, one rule for all (`context.py` shows it);
 the skill stays v19.
+v21, 1 November 2026 — the follow-ups to the external review of package v20: “owner” now means only you, the person who decides; the file's holder is “holder”; no more “§n bis” cross-reference in the English, and a test that guards it; the secrets protection stated for what it covers (public repositories; for a private one, a paid organization, and nothing for a personal account) and a diff scan at gate P12 of the bench, which works in step 1's shallow clone and applies to every batch; a fix's number obtained on the dev side (the fix starts from the handed-over batch's branch, and the dev prompt fetches that base); the expected results, which the dev does not read: a rule of its prompt and not a wall; §1a of the method made an extension, the version rule moved to §2 and the baton to §6; the controller's cost measured in its log; what the fixed load is; three more figures in the table of §6 (a baton's silence, the controller's findings, the reading of the decision log); the public-copy builder, which refuses a `README.md` left at another package or skill version; the right to push under `.github/workflows/` in the dependency survey; the workflows on Node 24 (`checkout@v7`, `setup-python@v7`); a green commit at every push; the arbiter dates a late checkpoint by the workstream's move to acceptance; the skill moves to v21.

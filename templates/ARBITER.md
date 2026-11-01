@@ -1,5 +1,5 @@
 # THE LIVING-DOCS ARBITER — <Project> · v6
-### <date> · <coordination session> · drawn from the PL method package v20
+### <date> · <coordination session> · drawn from the PL method package v21
 
 ***The arbiter is a GitHub Action**, `.github/workflows/arbiter.yml`: every day, with no session, it runs
 `<Folder>/arbiter.py`, commits and pushes as `github-actions[bot]`, then **fails if it has filed a new workstream** — it is
@@ -37,7 +37,7 @@ it is not executed, it is read.*
    failure; to the PLs, reading after each `pull` the `for:` workstreams aimed at them.
 8. **How to read what it produces?** The log, one line per run, even without a gap — **it is the proof it ran**: date
    and time · gaps · new findings · batons · archiving · checkpoints · footprint (method, sheet and checkpoints, in KB;
-   it must go down or stabilize). A finding is a `to-brief` workstream, `for:` its owner, with the id `arbiter-c<n>-<key>`.
+   it must go down or stabilize). A finding is a `to-brief` workstream, `for:` its holder, with the id `arbiter-c<n>-<key>`.
 9. **How to judge whether to keep it?** After a week: does the log have a line per day, were the findings true, did the
    PLs do something with them, did the archiving lose nothing? **A false positive is fixed in the script, not case by
    case.**
@@ -59,12 +59,14 @@ it is not executed, it is read.*
    `arbiter-c12-short-entries-<domain>-<date>`), not filed again while an open workstream of the same name awaits its PL; **a fault of the table itself**: a single workstream
    `arbiter-c9-table-<date>`, for the coordinator.
 4. **The batons**: the “Session active” line of each checkpoint. **A baton is judged not by its age but by its silence**:
-   no commit carrying its identifier for more than 24 hours. ⟨The baton is the last eight characters of the session
+   no commit carrying its identifier for the silence delay of method §6. ⟨The baton is the last eight characters of the session
    identifier in the commits' attribution lines; without that line, agree on a mark that each PL puts in its messages.⟩
    It is **information** (log, summary), never a workstream. **The coordination is excluded**: a long consultation
    session, silent for days without being forgotten.
 5. **The late checkpoint**: a workstream of the domain that became accepted after the last commit of its checkpoint joins
-   that domain's check-9 workstream.
+   that domain's check-9 workstream. **The date of the change is that of the commit that made the entry accepted** (the git
+   history of `workstreams.yaml`), not `accepted-on:`, which the arbiter sets itself at its run; **without proof in the
+   available history, no alert**.
 6. **Archive**: `archive_workstreams.py archive` dates `accepted-on:` and moves to `<Folder>/Archives/WORKSTREAMS_<YYYY-MM>.yaml` the
    workstreams accepted for the delay of the method §6 (the script's default: do not pass `--delay`); it checks that it loses no line. An unreadable
    date: an `archiving-<id>` workstream. Code 2: nothing is written.
@@ -91,7 +93,7 @@ it is not executed, it is read.*
 
 ## §3 · What the arbiter never does
 
-- Correct an entry, a number, a checkpoint, a baton or the table: it reports, the owner corrects. The only mechanical
+- Correct an entry, a number, a checkpoint, a baton or the table: it reports, the holder corrects. The only mechanical
   writes: archiving and normalizing (`archive_workstreams.py`), never by hand.
 - Write anywhere but at the end of `workstreams.yaml`, in the regenerated board, at the end of the log and in `<Folder>/Archives/`.
 - Judge a document (contradiction, duplicate, history, style): that is the controller's job.
@@ -105,7 +107,7 @@ it is not executed, it is read.*
 1. **Copy** into `<Folder>/` (the living-docs folder, the one of `workstreams.yaml`) `arbiter.py`, `check_living_docs.py`, `archive_workstreams.py` and `make_board.py`
    (package templates: the arbiter finds the other three next to it); create `<Folder>/Archives/` (a `.gitkeep`).
 2. **Write the domain table** `Method/domains.yaml` (template `templates/domains.yaml`): one entry per PL, the coordination
-   included; **each checkpoint** has its `## §<n> · The queue` section (template [`templates/CHECKPOINT.md`](CHECKPOINT.md)), which `file:`
+   included; **each checkpoint** has its `## §<n> · The queue` section (template [`templates/CHECKPOINT.md`](CHECKPOINT.md)), which `queue:`
    names. The coordinator keeps it: at each domain opened, closed, or section renamed.
 3. **Seed** `Method/ARBITER_LOG.md` (a title and a line of explanation), copy this file to `Method/ARBITER.md`.
 4. **Copy the workflow** `templates/living-docs-repo/arbiter.yml` to `.github/workflows/arbiter.yml` of the living-docs

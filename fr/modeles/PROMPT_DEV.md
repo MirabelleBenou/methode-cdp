@@ -55,7 +55,7 @@ tes arrêts et ton rapport au dépôt des lots, et rien de `lots/` ni de ce prom
 
 `.gitattributes` tient `banc/`, `lots/` et ce prompt **hors de l'archive** (`export-ignore`).
 
-**Le cadrage nomme le commit de la base** : la tête de `main` quand il a été poussé. **Une pièce que le cadrage nomme
+**Le cadrage nomme le commit de la base**, et sa branche : la tête de `main` quand il a été poussé ou, pour le correctif d'une version remise, la tête de la branche de ce lot (méthode §2, étape 6). **Une pièce que le cadrage nomme
 manque : arrête-toi**, par son nom exact.
 
 ---
@@ -87,22 +87,24 @@ manque : arrête-toi**, par son nom exact.
 
 ```sh
 git clone --depth 1 --branch lot/v<X.Y> https://github.com/<owner>/<projet>-app <clone>
-cd <clone> && git fetch --depth 1 origin main:refs/remotes/origin/main && git rev-parse origin/main
+cd <clone> && git fetch --depth 1 origin <réf-base>:refs/remotes/origin/base && git rev-parse origin/base
 ```
 
-*Le clone ne suit que la branche du lot : un `git fetch origin main` sans destination ne crée pas `origin/main`.*
+*`<réf-base>` est la branche que nomme le cadrage : `main`, ou la branche du lot remis. Le clone ne suit que la branche du lot : un `git fetch origin main` sans destination ne crée pas de référence, et le commit de la base n'est pas dans le clone sans ce `fetch`.*
 
 *`<clone>` et `<dossier>` sont dans ton dossier de travail (§2), jamais dans une copie du CdP.*
 
-**La tête de `main` doit être `<base>` (nommée au cadrage). Sinon : arrêt.** Puis extrais la base hors du clone :
-`git -C <clone> archive origin/main | tar -x -C <dossier>/base`, et copie le banc. Lis le cadrage, puis installe ce que
+**La tête de la branche de base (`main`, ou la branche du lot remis) doit être `<base>`, le commit que nomme le cadrage. Sinon : arrêt.**
+Puis extrais la base hors du clone : `git -C <clone> archive <base> | tar -x -C <dossier>/base`, et copie le banc. Lis le cadrage, puis installe ce que
 demande ton lot.
 
 **2 — P0, la base.** ⟨Le rituel du banc sur `base/`⟩ : la sortie doit égaler, ligne pour ligne, le bloc « base » du
 cadrage — pour un lot de complexité faible, la ligne de base de sa forme courte ; tests et lint sur une copie. **Une divergence : arrêt.**
 
-**3 — La version.** C'est celle que **nomme le cadrage**, calculée par la règle de la méthode : ⟨`release` côté dev,
-sans numéro tapé, sans option de forçage⟩. La version obtenue doit être celle du cadrage ; sinon, arrêt. **Un livrable
+**3 — La version.** C'est celle que **nomme le cadrage**, calculée par la règle de la méthode (§2, étape 6) : ⟨`release`
+côté dev, sans numéro tapé : sur la branche d'un correctif, partie de celle du lot remis, il donne la version suivante.
+**Aucune option de forçage, sauf `release --set <version>` écrit au cadrage, avec sa valeur**⟩. La version obtenue doit
+être celle du cadrage ; sinon, arrêt. **Un livrable
 publié par release n'a pas de version** : le lot complète seulement l'entrée « Unreleased » du `CHANGELOG` (étape 7).
 
 **4 — Construis**, dans le clone, **ce que le cadrage commande et rien d'autre** : seulement les fichiers et les zones
@@ -154,7 +156,7 @@ prédiction.
 
 | porte | mesure | source |
 |---|---|---|
-| P0 | la base égale le bloc « base » du cadrage (ou la ligne de base de sa forme courte) ; la tête de `main` est le commit qu'il nomme | rituel sur `base/`, `git rev-parse` |
+| P0 | la base égale le bloc « base » du cadrage (ou la ligne de base de sa forme courte) ; la tête de la branche de base est le commit qu'il nomme | rituel sur `base/`, `git rev-parse` |
 | P1 | la version, comme le cadrage le prédit | ⟨…⟩ |
 | P2 | ⟨compte de fichiers, caches à zéro⟩ | ⟨rituel⟩ |
 | P3 | ⟨lint : rien⟩ | `mesure/` |
@@ -165,10 +167,23 @@ prédiction.
 | P8 | `CHANGELOG` : 0 « à compléter » ; la première entrée = la version livrée — **pour un livrable publié par release, l'entrée « Unreleased » porte le texte du cadrage** | ⟨…⟩ |
 | P9 | écart `base` → `mesure` : **la liste exacte** des fichiers modifiés, ajoutés, retirés = celle du cadrage | ⟨…⟩ |
 | P10 | l'empreinte du code de `mesure/` ; avec une maquette, égale à celle notée à la validation | ⟨commande d'empreinte⟩ |
-| P11 | **hors du code, rien ne bouge** sauf `lots/v<X.Y>/` : `git diff --stat origin/main HEAD -- banc PROMPT_DEV_<P>.md .gitattributes` est vide | le clone |
+| P11 | **hors du code, rien ne bouge** sauf `lots/v<X.Y>/` : `git diff --stat <base> HEAD -- banc PROMPT_DEV_<P>.md .gitattributes` est vide | le clone |
+| P12 | **Secrets** : le diff du lot (`git diff <base> HEAD`) passé au motif ci-dessous : **0 ligne** ; **un `git diff` qui échoue fait échouer la porte**, il ne la laisse pas à 0 | le clone |
 
-**Un lot de complexité faible** (son cadrage le dit, dans sa forme courte : méthode §3) ne passe que **P0, P1, P5, P7, P8, P9 et
-P11** ; les autres portes ne s'appliquent que si son cadrage les nomme. Ton rapport donne celles-là, et dit « non
+**Le motif de P12**, sans dépendance, sur les seules lignes ajoutées (`<base>` : le commit de la base que nomme le cadrage, que l'étape 1 a récupéré dans le clone, peu profond : un `git diff <base>...HEAD` à trois points y échoue faute de point commun) :
+
+```sh
+diff=$(git diff <base> HEAD) || { echo "P12 : diff impossible"; exit 1; }
+ajoutees=$(printf '%s\n' "$diff" | grep '^+')
+{ printf '%s\n' "$ajoutees" | grep -E 'AKIA[0-9A-Z]{16}|ghp_|gho_|github_pat_|sk-ant-|xox[abprs]-|-----BEGIN [A-Z ]*PRIVATE KEY-----'
+  printf '%s\n' "$ajoutees" | grep -iE "(password|secret|token|api[-_]?key)[[:space:]]*[:=][[:space:]]*['\"][^'\"]{8,}"; } | wc -l
+```
+
+(clés AWS, jetons GitHub, clés Anthropic, jetons Slack, clés privées, puis un mot de passe, secret, jeton ou clé d'API
+affecté à une chaîne de huit caractères ou plus.) **Une fausse alerte se justifie au rapport, ligne par ligne** ; un lot qui touche ce prompt fait sonner la porte sur le motif lui-même : fausse alerte attendue, à justifier de même.
+
+**Un lot de complexité faible** (son cadrage le dit, dans sa forme courte : méthode §3) ne passe que **P0, P1, P5, P7, P8, P9, P11 et
+P12** (P12 vaut pour tout lot : c'est le seul garde des secrets en mode A) ; les autres portes ne s'appliquent que si son cadrage les nomme. Ton rapport donne celles-là, et dit « non
 appelée » pour les autres.
 
 ---
@@ -180,7 +195,8 @@ appelée » pour les autres.
 - ⛔ **`main`** : tu ne pousses que la branche de ton lot ; jamais `--force`, jamais de tag.
 - ⛔ **`banc/`, ce prompt, `.gitattributes`, le cadrage et ses addenda** : s'ils échouent ou se contredisent, tu
   t'arrêtes et tu le dis ; tu ne les corriges pas.
-- ⛔ Les documents du projet claude.ai et le dépôt des vivants : ils sont au CdP.
+- ⛔ **Ne lis ni les chemins des copies du CdP** (§2) **ni le dépôt des vivants** — même rattaché à la session, même cloné
+  sur le disque (dis-le alors au rapport) — **ni les documents du projet claude.ai** : ils sont au CdP.
 - ⛔ ⟨Projet avec un exécutant serveur :⟩ le dépôt d'ordres : tu ne le lis ni ne l'écris, même s'il est rattaché à la
   session ou si son clone traîne sur le disque (dis-le alors au rapport) ; un ordre ne se pousse que par le CdP, et le
   déploiement n'est jamais ton geste.
@@ -192,7 +208,7 @@ appelée » pour les autres.
 ## §6 · Les arrêts
 
 **Tu t'arrêtes, tu n'écris rien de plus, et tu le dis** si :
-- P0 diverge, ou la tête de `main` n'est pas le commit de la base ;
+- P0 diverge, ou la base nommée par le cadrage est introuvable ou n'est pas celle du clone ;
 - un invariant bouge sans autorisation ;
 - une porte tombe à côté de sa valeur attendue ;
 - une règle du cadrage est impossible ou contradictoire telle qu'écrite ;

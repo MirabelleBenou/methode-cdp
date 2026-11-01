@@ -74,7 +74,10 @@
 
 ---
 
-## §1a · Several PLs at the same time
+## §1a · Several PLs at the same time ⟨several PLs⟩
+
+*An extension (`CORE.md` §6): alone with a PL (mode A), this section does not apply — delete it from the project's
+method. The version rule is in §2 (step 6), the baton in §6: every mode carries them.*
 
 *With two, “`git pull` before writing” is enough. With four, decision numbers come out twice, counters drift, versions
 are shared out through messages the owner relays (first project, four PLs in parallel).*
@@ -89,7 +92,7 @@ domain or a series of features, handovers do the rest.
 3. **Whatever can be taken only once is taken by a push** (a decision number, a deliverable): a refused push is the
    only atomic operation available.
 4. **What can be computed is not written**: totals, the board. After a conflict, regenerate; never merge by hand.
-5. **A file that is not append-only has a single owner**: this method, the dev prompt, the living-docs README, the
+5. **A file that is not append-only has a single holder**: this method, the dev prompt, the living-docs README, the
    method package and the skill belong to **the coordination session** (Opus-Coordination) when there is one; **with no
    coordination (mode B), to the first PL**.
 
@@ -122,41 +125,16 @@ records the decision. Moving from one mode to another, in either direction: `GUI
 accepted → the entry is written in its place. An entry carries no total: it marks `[execution +1]` or
 `[reverse +1]` (§5).
 
-**The deliverable and its version**: the deliverable is the code repository the release comes out of. **One
-deliverable, a single batch in flight**: the batch in flight carries in `workstreams.yaml` `status: in-flight`, `pl:`
+**One deliverable, a single batch in flight** (the deliverable is the code repository the release comes out of; its
+version is computed in §2, step 6): the batch in flight carries in `workstreams.yaml` `status: in-flight`, `pl:`
 and `deliverable:`, and pushing that entry takes the deliverable. **Another batch of the same deliverable is
 suspended**, even from another PL: it stays `to-brief` with `waits: <id>`, no brief pushed, no branch, no dev, until the
 first one is validated in production and merged (or, for a deliverable published by release, merged after acceptance —
-see below; or abandoned on the owner's decision). **Study and pre-brief stay free**: the pre-brief (rules, criteria,
+§2, step 6; or abandoned on the owner's decision). **A suspended batch that resumes recomputes its version**, redoes its
+base and its expected results. **Study and pre-brief stay free**: the pre-brief (rules, criteria,
 texts, no version, no expected results) may be pushed to the batches repository, under `batches/<batch>/PRE_BRIEF.md`; it
 becomes the brief when the batch takes the deliverable. A file of another deliverable is declared (`touches:`). A batch
 with no release (a probe, a played study, documentation) carries no `deliverable:`.
-
-**Nobody decides a version number in advance**: no checkpoint, workstream, study or message announces “such version for
-such batch”. **Two versioning regimes, depending on the deliverable**:
-- **deployed per batch** (an application in production, its agent, the deployer): the version is computed when the batch
-  takes the deliverable, before its branch: **the highest version carried by a batch branch (`batch/…`) or by an entry of
-  `workstreams.yaml`, open or archived, handed over or refused, plus one** (the plan's version log is written only at
-  close: it does not see a refused batch), never “the version of `main` plus one” — a version handed over then refused is not merged,
-  `main` is still at the previous one, and giving it again would make two deliveries under one number. **Computed by
-  the rule, announced in the brief**: it is then written in `version:` of the in-flight entry and in the brief; a
-  suspended batch that resumes recomputes it, redoes its base and its expected results. **Check 4** of
-  `check_living_docs.py` verifies it for the batch in flight (its version is above every other version of its
-  deliverable, archives included); check 7 only verifies that the log and the workstreams agree;
-- **released** (a tool downloaded as a package): **the batch carries no version** (neither `version:` nor a number in the
-  brief); **its branch is `batch/<batch name>`** (and its folder `batches/<batch name>/`) instead of `batch/v<X.Y>`; it
-  completes the “Unreleased” section of the `CHANGELOG` (and the files to download, if there are any) — that is the
-  entry gate P8 of the dev prompt checks — and **frees the deliverable at its merge, after acceptance**. **The release
-  is made at the owner's request**: the PL then fixes the number by the repository's `CHANGELOG` rule, renames the
-  section, rebuilds the packages in one pass and hands the owner the text and the packages. For this regime, validation
-  in production is that release; whatever depends on a release (data dropped on a server) waits for the release. **The
-  batch that produces such derived data records it in “Unreleased”, under “To drop after the release: <what, from where,
-  to where>”** (template `code-repo/CHANGELOG.md`), and **the release ends with those drops**, in the same move: whoever
-  makes the release makes the drops.
-
-*Why two regimes*: “the version is computed when the batch takes the deliverable” holds for what is deployed at every
-batch. For a suite downloaded by release, a release per batch is noise for those who download it, and brings them
-nothing: the batches are grouped into a release the owner asks for.
 
 **A shared resource is taken like a deliverable**: the owner's machine and what it runs for a batch (the local runner,
 a game, a driven piece of software) host one batch at a time, whatever its domain. The batch that occupies it carries
@@ -169,15 +147,7 @@ workstream `module: method`, `for:` the method session. **A method change that a
 ready-to-paste message, handed to the owner, and the coordinator then checks its reply in the repository; a PL whose
 baton is free finds it through a `for:` workstream when it resumes.
 
-**The baton**: each checkpoint carries at the top `Session active: <short id>, since <time>` (or “none — free since
-<time>”). **The short id is the last eight characters of the session's identifier**, the one in the session attribution
-line of its commits: it was defined nowhere, three forms coexisted, and all the sessions of one account share the same
-beginning of identifier — which can mislead the arbiter looking for the baton in the commits. The resuming session sets
-it by a push, its first move; a session that finds another id than its own after a
-`pull` stops writing to the living docs and tells the owner; a session waiting for the owner keeps the baton. **A baton
-is judged by its silence, not by its age**: a session can live several days waiting for the owner; it is the absence
-of any commit from that session for more than 24 hours that signals a forgotten session (the arbiter's check, if there
-is one). **The coordination is the exception**: it keeps its baton between two pieces of work, because the owner consults
+**The coordination's baton** (§6, “The baton”): it keeps its baton between two pieces of work, because the owner consults
 it to reopen a workstream or take a fixed line, and it can stay days without a commit (the arbiter used to flag it as a
 forgotten session, wrongly). The baton silence check excludes it; its other checks (checkpoints, size) remain; **it hands
 over on the measure of its context (§6), not on silence**.
@@ -194,21 +164,23 @@ top of its reply.
    validated before any execution.
 2. **The measurement, then the brief** (§3), and the PL's mock-up if there is one (§3a).
    - **The acceptance expected results are computed at brief time**, in `<Folder>/expected/<version>/` of the
-     living-docs repository — never in the code repository, which the dev reads. A delivery simulated by the PL can
+     living-docs repository — never in a repository the dev is to read; **the dev does not read them: that is a rule of its prompt, not a wall**
+     (the sub-agent, below). A delivery simulated by the PL can
      be used to compute them: **it is never passed on**. **Only when the batch produces values that acceptance must
      compare** (a calculation, an output file, a format): a screen batch is proven by a screen check, a documentation
      batch by its criteria — no empty expected-results folder.
-   - **The PL pushes the brief on the batch branch**: `batch/v<X.Y>`, started from the head of `main`, which carries
-     only one more commit, `batches/v<X.Y>/BRIEF.md` (and its mock-up). The brief names this base commit. *(A
+   - **The PL pushes the brief on the batch branch**: `batch/v<X.Y>`, started from the head of `main` (or, for a fix to a handed-over version, from the head of that batch's branch: step 6), which carries
+     only one more commit, `batches/v<X.Y>/BRIEF.md` (and its mock-up). The brief names this base commit **and its branch**. *(A
      deliverable published by release has no version per batch: `v<X.Y>` then reads `<batch name>` in this document,
-     §1a.)*
+     §2, step 6.)*
    - **The PL launches the dev**: `Agent` tool, in the background, **the model and effort mode of the brief**, and a
      command in four parts (template: [`DEV_COMMAND.md`](DEV_COMMAND.md)) — who they are and what they execute; the practical
      conditions, which take precedence over the brief; the stops; their final answer. **The standing conditions are in
      the dev prompt** (repositories already attached; clones in `/home/claude/dev_<batch>/`, never at the paths of the
      PL's copies; push to the batch's branches only; no process left running in the background): **the command only
      repeats what changes from one batch to the next**. While the dev works, **the PL does not touch the paths it
-     occupies**. **The dev talks only to the PL.** **The sub-agent inherits the PL's repositories and disk** (the orders repository: §4a).
+     occupies**. **The dev talks only to the PL.** **The sub-agent inherits the PL's repositories and disk**: what it does not read — the expected results, the orders
+     repository (§4a), the PL's copies — is **a rule of its prompt, not a wall**.
    - **The dev pushes their branch at every step** (clone, build, check, delivery): the death of the PL's session — usage
      limit, crash, handover — must not take the sub-agent's work with it; a new session resumes it from the branch.
    - **Fallback**: if the PL cannot launch a sub-agent, they give the owner a line to paste word for word, with above
@@ -230,15 +202,42 @@ top of its reply.
 5. **The acceptance** (§4), then the verdict to the owner, with the prediction for production, and **the deliverable
    handed over as is**, under its exact name, with its sha256 — ⟨with a server runner: **deployed by an order** (§4a),
    the hand-over becoming the fallback⟩.
-6. **One delivery = one new number** (the rule and its reason: §1a). A fix or trial feedback after a hand-over makes
-   **a batch of the next version**, which keeps the deliverable,
-   on its own branch started from the batch's branch, in the same dev session if it is still open. **An addendum under
-   the same version only serves while nothing has been handed over or deployed**: lifting a stop, correcting a gap found
-   at acceptance.
+6. **One delivery = one new number, and the version.** What is handed over or deployed carries a number never taken. A
+   fix or trial feedback after a hand-over makes **a batch of the next version**, which keeps the deliverable (the code
+   repository the release comes out of), on its own branch **started from the handed-over batch's branch** (the brief
+   names it as its base), in the same dev session if it is still open ⟨; the `release` script gives the next version
+   there, with no typed number. **The only case of forcing**: the owner abandons the handed-over version, the next batch
+   starts from `main` and its brief writes `release --set <version>` at the value of the rule below; the dev uses `--set`
+   only if it is written in the brief, with its value⟩. **An addendum under the same version only serves while nothing
+   has been handed over or deployed**: lifting a stop, correcting a gap found at acceptance.
+   **Nobody decides a number in advance**: no checkpoint, workstream, study or message announces “such version for such
+   batch”. **The deliverable and its version — two regimes, depending on the deliverable**:
+   - **deployed per batch** (an application in production, its agent, the deployer): the version is computed when the
+     batch takes the deliverable, before its branch: **the highest version carried by a batch branch (`batch/…`) or by an
+     entry of `workstreams.yaml`, open or archived, handed over or refused, plus one** (the plan's version log is written
+     only at close: it does not see a refused batch), never “the version of `main` plus one” — a version handed over then
+     refused is not merged, `main` is still at the previous one, and giving it again would make two deliveries under one
+     number. **Computed by the rule, announced in the brief**: it is then written in `version:` of the in-flight entry and
+     in the brief. **Check 4** of `check_living_docs.py` verifies it for the batch in flight (its version is above every
+     other version of its deliverable, archives included); check 7 only verifies that the log and the workstreams agree;
+   - **released** (a tool downloaded as a package): **the batch carries no version** (neither `version:` nor a number in
+     the brief); **its branch is `batch/<batch name>`** (and its folder `batches/<batch name>/`) instead of
+     `batch/v<X.Y>`; it completes the “Unreleased” section of the `CHANGELOG` (and the files to download, if there are any)
+     — that is the entry gate P8 of the dev prompt checks — and **frees the deliverable at its merge, after acceptance**.
+     **The release is made at the owner's request**: the PL then fixes the number by the repository's `CHANGELOG` rule,
+     renames the section, rebuilds the packages in one pass and hands the owner the text and the packages. For this
+     regime, validation in production is that release; whatever depends on a release (data dropped on a server) waits for
+     the release. **The batch that produces such derived data records it in “Unreleased”, under “To drop after the
+     release: <what, from where, to where>”** (template `code-repo/CHANGELOG.md`), and **the release ends with those
+     drops**, in the same move: whoever makes the release makes the drops.
+
+   *Why two regimes*: “the version is computed when the batch takes the deliverable” holds for what is deployed at every
+   batch. For a suite downloaded by release, a release per batch is noise for those who download it, and brings them
+   nothing: the batches are grouped into a release the owner asks for.
 7. **Validation in production by the owner**, then **the merge**: `git push origin batch/v<X.Y>:main` as a
    fast-forward, never `--force`; finally **the close-out** (§6), once per batch. *(For a deliverable published by
    release, there is neither a version nor a validation in production per batch: the merge happens after acceptance, and
-   the release at the owner's request — §1a.)*
+   the release at the owner's request — step 6.)*
 
 ---
 
@@ -415,11 +414,10 @@ manual procedure, the date it went into service.⟩
 - **The dev pushes only their batch's branch**: never `main`, never a tag, never `--force` (dev prompt §5).
 - **No secret nor production data in a repository** (`3_GITHUB.md` §7 of the package); **nothing is deleted without
   the owner's agreement** (§6).
-- **The version**: computed by the rule of §1a (“The deliverable and its version”), announced in the brief ⟨; the
-  `release` script on the dev side bumps it by one step per batch — but a batch started from `main` after a refused
-  batch takes the highest number handed over plus one, not `main` plus one⟩. A batch that does not change the code (method, test
+- **The version**: computed by the rule of §2 (step 6), announced in the brief ⟨; the `release` script on the dev side
+  gives it with no typed number, in step with that rule⟩. A batch that does not change the code (method, test
   bench) takes no version, nor does a batch of a deliverable published by release. **No version change without the
-  owner's explicit agreement**, unless a rule written in this project says otherwise — the rule of §1a is one.
+  owner's explicit agreement**, unless a rule written in this project says otherwise — the rule of §2 (step 6) is one.
 - ⟨The project's invariants: a file, a module or a fingerprint that only move on the owner's written authorization
   carried by the brief.⟩
 - **Produced texts remain gender-neutral**: never presume a person's gender from a pseudonym.
@@ -441,7 +439,7 @@ manual procedure, the date it went into service.⟩
   the version (or, for a deliverable published by release, which takes no version, the batch's name), the date, the dev
   (model, effort), the duration, the stops, the acceptance, the fingerprint, the validation; elsewhere, they are cited.
   A batch of a deliverable published by release completes the “Unreleased” section of the `CHANGELOG` and frees the
-  deliverable at its merge, after acceptance (§1a); the `CHANGELOG` says what changes for the user, a different content;
+  deliverable at its merge, after acceptance (§2, step 6); the `CHANGELOG` says what changes for the user, a different content;
 - the decision log: the decision, and “what the batch teaches” when there is a lesson; **the entry names the batch, cited
   in the version log**, without repeating its dev, duration, stops or fingerprint; the “execution is right” count stays
   there (§5);
@@ -456,7 +454,8 @@ Two batches accepted the same day can be closed together.
 
 **The living docs**:
 - live in the living-docs repository (with no repository, in the project files) **under stable names**; the version
-  is in the header **of single-owner files only** (§1a), the history in git;
+  is in the header **of the files a single PL writes only** (the method, the dev prompt, a checkpoint) ⟨; a multi-hand file, such as
+  the decision log, carries none: §1a⟩, the history in git;
 - are modified by targeted replacements, or replaced in full while removing what is obsolete — by the PL themselves,
   once per batch: they never ask the owner to upload them;
 - **stay short**, under caps (below): when one grows long again, what no longer lives goes into a **new archive**
@@ -479,6 +478,9 @@ changes one changes it here.⟩
 | cut of the decision log | **in slices of fifty numbers**, beyond **~150 KB** | |
 | archiving delay of an accepted workstream | **seven days** | `archive_workstreams.py`, without `--delay` |
 | default model and effort of the dev | **Sonnet · Medium** | Opus for ⟨…⟩ (§1); High or Low (§3) |
+| silence of a baton | **24 hours** without a commit from the session | the arbiter's information (`ARBITER.md` §1, point 4), never a workstream; the same default value in `arbiter.py` |
+| controller findings | **five findings** at most per Monday | `CONTROLLER.md` §1, point 4 |
+| the controller's reading of the decision log | **fourteen days** of entries | `CONTROLLER.md` §1, point 2 |
 
 **The caps** — *every PL re-reads everything at every resume, and the messages between PLs piled up in the entries: on the
 first project, a workstreams file went from 95 to 146 KB in one day, a decision log reached 206 KB, a checkpoint 47 KB*:
@@ -533,6 +535,16 @@ first project, a workstreams file went from 95 to 146 KB in one day, a decision 
   arbiter, if there is one, runs it every day (`Method/ARBITER.md`) and **the controller** (`Method/CONTROLLER.md`),
   every Monday, judges what the checker does not measure: contradiction, omission, duplication, useless history;
   **without them**, the coordinator runs the checker with `--domains` at their close-out.
+
+**The baton**: each checkpoint carries at the top `Session active: <short id>, since <time>` (or “none — free since
+<time>”). **The short id is the last eight characters of the session's identifier**, the one in the session attribution
+line of its commits: it was defined nowhere, three forms coexisted, and all the sessions of one account share the same
+beginning of identifier — which can mislead the arbiter looking for the baton in the commits. The resuming session sets
+it by a push, its first move; a session that finds another id than its own after a `pull` stops writing to the living
+docs and tells the owner; a session waiting for the owner keeps the baton. **A baton is judged by its silence, not by its
+age**: a session can live several days waiting for the owner. The absence of any commit from that session for the
+silence delay of the table above is **information** (the arbiter's log line, if there is one), never a forgotten session
+flagged nor a workstream: a session waiting for the owner pushes nothing.
 
 **The living docs' `.yaml` files are valid YAML** (strict form: a value that carries “: ” or a “#” preceded by a space,
 or that starts with a special character, is written between double quotes): `archive_workstreams.py normalize` rewrites
@@ -605,6 +617,9 @@ handover prompt** (the handover, below). **Images** go through the conversation,
   **151 083** and **156 577** tokens. An absolute threshold, which counts that load as work, left only about 100 000
   tokens of work to a single PL, and a PL handed over after a single reading. The fixed load changes with the
   platform: hence the measure at every session, rather than a frozen figure.
+  **What it is**: the platform's (system instructions, native tools, memory, project instructions). **Unplugging the
+  connectors only reduces it by about 1%** (measured: −1.3% without a storage connector), because a deferred connector
+  weighs only its name: the saving is to be sought in **what the sessions read**.
 - **The thresholds are in the table “The method's figures”** (above), which also says the window they assume, **one
   rule whatever the number of PLs**. The PL compares them with the “work above the fixed load” line of `context.py`:
   **at the first**, they warn the owner at the top of their answer (“Context: ~N tokens, of which ~F of fixed

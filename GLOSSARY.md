@@ -1,5 +1,5 @@
 # GLOSSARY — the words of the PL method
-### 31 October 2026 · one term, one or two lines, the document where it lives
+### 1 November 2026 · one term, one or two lines, the document where it lives
 
 *The paths are those of the package. To start, you only need the terms of the first part: the core ([`CORE.md`](CORE.md)) uses all
 of them; the other parts serve when you add an extension (table of `CORE.md` §6).*
@@ -11,6 +11,7 @@ of them; the other parts serve when you add an extension (table of `CORE.md` §6
 | term | what it is | where it lives |
 |---|---|---|
 | **owner** | you: the one who decides and validates on screen, creates the tags and the releases, deletes the merged branches. They talk only to the PL (or to the coordination). | `CORE.md` §1; [`skill/SKILL.md`](skill/SKILL.md) §2 |
+| **holder** | the session that keeps a file — the French *propriétaire*: the only one that writes a file that is not append-only (the method, the dev prompt, a checkpoint). The arbiter and the controller report to it; they never correct. Never the owner, which is you. | `templates/METHOD.md` §1a (principle 5) |
 | **PL** (project lead) | the long Opus session that decides with you, measures, writes the briefs, launches the dev, accepts, closes and keeps the living docs. It does not write the delivered code. | `CORE.md` §1; [`templates/METHOD.md`](templates/METHOD.md) §1 |
 | **dev** | the session (default model and effort: the method §6) that executes a brief, one batch at a time. It talks only to the PL: through what it pushes and through its final reply. | [`templates/DEV_PROMPT.md`](templates/DEV_PROMPT.md); `skill/SKILL.md` §6 |
 | **sub-agent** | a session the PL launches from its own (Agent tool), without its context, with a command in four parts. The dev is one; a delegated reading is another. | [`templates/DEV_COMMAND.md`](templates/DEV_COMMAND.md) §A; [`CLAUDE_DEPENDENCIES.md`](CLAUDE_DEPENDENCIES.md) |
@@ -29,13 +30,13 @@ of them; the other parts serve when you add an extension (table of `CORE.md` §6
 | **mock-up** | the render of a screen before it is built: either the PL's, made through the real code; or requested from the dev, who delivers it through a stop (`MOCKUP_<n>.md`). | `templates/METHOD.md` §2 and §3a |
 | **test bench** | the tooling that measures an archive (files, tests, lint, fingerprints); it is built by the first batch, a tooling batch. | `CORE.md` §3; `GUIDE.md` §5 |
 | **gates** | the test bench's measurements that the dev passes on its delivery (P0 to Pn). | `templates/DEV_PROMPT.md` §4 (and the gates of a low-complexity batch) |
-| **expected results** | the acceptance's expected results, computed at the brief by the PL, never where the dev reads. | `templates/METHOD.md` §2 |
+| **expected results** | the acceptance's expected results, computed at the brief by the PL, never in a repository the dev is to read; it does not read them (a rule of its prompt, not a wall). | `templates/METHOD.md` §2 |
 | **cold acceptance** | the PL re-measures independently, on `git archive` of the delivered commit: criteria as deltas, diff read against the rules, renders looked at. What the dev's report says is never copied. | `templates/METHOD.md` §4 |
 | **independent review** | for a medium or high batch, or one that adds a dependency: a fresh sub-agent, of a different model than the dev, reads the diff and returns findings; the PL rules on them at acceptance. | `templates/METHOD.md` §4 |
 | **close-out** | what the PL does once per accepted batch: fast-forward merge after your validation, decision log, workstreams, “Batch closed” commit, ⟨with the mirror extension: mirror in the project⟩, checkpoint. | `templates/METHOD.md` §6 |
 | **deliverable** | what is handed over or deployed; in the workstreams, the code repository the release comes out of. A single batch in flight per deliverable. | `templates/METHOD.md` §1a |
 | **shared resource** | a machine or a piece of software only one batch at a time can occupy (your machine and its game); it is taken like a deliverable (`resource:`). | `templates/METHOD.md` §1a |
-| **version** (the two *versioning regimes*) | *deployed per batch* (application in production, agent, deployer): the version is computed when the batch takes the deliverable, by the rule of the method §1a (never `main` plus one). *Released* (a tool downloaded as a package): the batch carries no version, its branch is `batch/<batch name>`, it completes the “Unreleased” section of the CHANGELOG; the release is made at your request. One delivery = one new number. | `templates/METHOD.md` §1a, §6; [`templates/code-repo/CHANGELOG.md`](templates/code-repo/CHANGELOG.md) |
+| **version** (the two *versioning regimes*) | *deployed per batch* (application in production, agent, deployer): the version is computed when the batch takes the deliverable, by the rule of the method §2, step 6 (never `main` plus one). *Released* (a tool downloaded as a package): the batch carries no version, its branch is `batch/<batch name>`, it completes the “Unreleased” section of the CHANGELOG; the release is made at your request. One delivery = one new number. | `templates/METHOD.md` §2 (step 6), §6; [`templates/code-repo/CHANGELOG.md`](templates/code-repo/CHANGELOG.md) |
 
 ## 3 · The living docs
 
@@ -44,7 +45,7 @@ of them; the other parts serve when you add an extension (table of `CORE.md` §6
 | **living docs** | what moves with the project: the project's method, checkpoint, decision log, plan, `workstreams.yaml`. In the living-docs repository ⟨, with the mirror extension: and as a mirror in the claude.ai project⟩; the PL writes them alone, at every closed batch. | `GUIDE.md` §2 and §4; [`templates/living-docs-repo/README.md`](templates/living-docs-repo/README.md) |
 | **checkpoint** | the project's actual state, under a cap (the method §6): the entry point of every PL session. One per domain. | [`templates/CHECKPOINT.md`](templates/CHECKPOINT.md) |
 | **fixed line** (fixed resume line) | the ready-to-paste message that resumes a domain in a new conversation; it names all the domain's repositories. It is at the top of the checkpoint and in the living-docs README. | `templates/CHECKPOINT.md`; `templates/living-docs-repo/README.md` |
-| **baton** | the line “Session active: <short id>” at the top of a checkpoint: who is working on the domain. The short id is the last eight characters of the session identifier. It is judged by its silence; the coordination's silence is not judged. | `templates/METHOD.md` §1a; `skill/SKILL.md` §4 |
+| **baton** | the line “Session active: <short id>” at the top of a checkpoint: who is working on the domain. The short id is the last eight characters of the session identifier. It is judged by its silence, which is only information, never a forgotten session flagged; the coordination's silence is not judged. | `templates/METHOD.md` §6 (“The baton”); `skill/SKILL.md` §4 |
 | **queue** | the list of what remains to be done, in the `## §<n> · The queue` section of a checkpoint; it carries only registered workstreams, cited by their id. | `templates/METHOD.md` §6; `templates/CHECKPOINT.md` |
 | **handover** | the move by which a PL hands over to a new session, on the measure of the context; the thresholds are in method §6. Never with a dev in flight. | `CORE.md` §4; `templates/METHOD.md` §6 |
 | **saturation sign** | what shows that a context is too full: losing the thread, contradictions, a forgotten decision. Every handover notes those it saw (or “none”). | `templates/METHOD.md` §6; `templates/CHECKPOINT.md` |
@@ -66,7 +67,7 @@ of them; the other parts serve when you add an extension (table of `CORE.md` §6
 | **core** | the document that is enough for an owner alone with a PL to start, and the table of extensions. | `CORE.md` |
 | **extension** | what the method adds when a sign you have lived through calls for it: the extensions of `CORE.md` §6, each with its sign. | `CORE.md` §6 |
 | **arbiter** | a daily GitHub Action, with no session: it checks the shared living docs and the checkpoints, files one workstream per new gap, archives, keeps its log, and fails if it has filed. | `GUIDE.md` §2b; [`templates/ARBITER.md`](templates/ARBITER.md) |
-| **controller** | a fresh Opus session, every Monday, by scheduled task: it judges the form of the documents (contradiction, omission, duplicate, useless history) and returns at most five findings, proved, as workstreams for their owner. | `GUIDE.md` §2b; [`templates/CONTROLLER.md`](templates/CONTROLLER.md) |
+| **controller** | a fresh Opus session, every Monday, by scheduled task: it judges the form of the documents (contradiction, omission, duplicate, useless history) and returns findings, proved, under the cap of the method §6, as workstreams for their holder. | `GUIDE.md` §2b; [`templates/CONTROLLER.md`](templates/CONTROLLER.md) |
 | **orders repository** | a private repository where the PL pushes its orders and from which the server runner pulls them; it also serves as the file-exchange bridge (`transfers/`). | `GUIDE.md` §2c; [`templates/SERVER_RUNNER.md`](templates/SERVER_RUNNER.md) §5 |
 | **server runner** | a deterministic program on your production server: it executes the orders of an allow-list and pushes a report. No AI in the deployment path. | `templates/SERVER_RUNNER.md`; `templates/METHOD.md` §4a |
 | **local runner** | a local Claude Code session on your PC, driven by files; the fallback when the bridge does not give your machine. | [`templates/LOCAL_RUNNER.md`](templates/LOCAL_RUNNER.md) |
