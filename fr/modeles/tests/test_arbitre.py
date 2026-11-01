@@ -12,8 +12,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from .outils_tests import (ARCHIVER, GENERER, MODELES, SANS_PYYAML, VERIFIER, CasTemporaire, bloc, charger,
-                           lecture_pyyaml, pyyaml, registre, sans_position, yaml)
+from .outils_tests import (ARCHIVER, GENERER, MODELES, SANS_PYYAML, VERIFIER, CasTemporaire, bloc,
+                           charger, lecture_pyyaml, pyyaml, registre, sans_position, yaml)
 
 ARBITRE = MODELES / "arbitre.py"
 WORKFLOW = MODELES / "depot-vivants" / "arbitre.yml"
@@ -154,6 +154,11 @@ class CasArbitre(CasTemporaire):
             arguments = [*arguments, "--date", date]
         return self.lancer(self.depot / "Methode" / "arbitre.py", *arguments, *supplement, cwd=self.depot)
 
+    def verifications(self):
+        return ["--chantiers", "Dossier/chantiers.yaml", "--registre", "Dossier/registre.md",
+                "--archives", "Dossier/Archives", "--domaines", "Methode/domaines.yaml",
+                "--tableau", "Dossier/chantiers.html", "--generateur", "Methode/generer_tableau.py"]
+
     def commit_du_passage(self, sortie) -> str:
         m = re.search(r"^Commit : (.*)$", sortie.stdout, re.M)
         self.assertTrue(m, sortie.stdout)
@@ -241,11 +246,6 @@ class TestEcartNouveau(CasArbitre):
         self.assertIn("arbitre-c5-alpha-2", self.lire("Dossier/chantiers.json"))
         controle = self.lancer(self.depot / "Methode" / "verifier_vivants.py", *self.verifications(), cwd=self.depot)
         self.assertEqual(controle.verdict(6), "OK", controle.stdout)
-
-    def verifications(self):
-        return ["--chantiers", "Dossier/chantiers.yaml", "--registre", "Dossier/registre.md",
-                "--archives", "Dossier/Archives", "--domaines", "Methode/domaines.yaml",
-                "--tableau", "Dossier/chantiers.html", "--generateur", "Methode/generer_tableau.py"]
 
     def test_le_meme_ecart_au_passage_suivant_ne_fait_pas_de_doublon(self):
         self.arbitrer()
@@ -377,6 +377,15 @@ class TestDestinataires(CasArbitre):
         self.assertEqual(cas, [("agent-serveur-essai", {"id": "agent-serveur-essai"})])
         cas = arbitre.cas_du_controle(4, "version v1 portée par alpha-1 et beta-2", Ctx)
         self.assertEqual(cas, [("alpha-1", {"id": "alpha-1"})])
+
+    def test_l_ecart_b_du_controle_4_se_lit_meme_si_la_version_contient_une_espace(self):
+        arbitre = charger(ARBITRE, "arbitre_sous_test")
+
+        class Ctx:
+            par_id = {"co-x": {"id": "co-x"}, "co-y": {"id": "co-y"}}
+
+        cas = arbitre.cas_du_controle(4, "co-x : v1.2 (R205) n'est pas au-dessus de v1.3 (co-y)", Ctx)
+        self.assertEqual(cas, [("co-x", {"id": "co-x"})])
 
     def test_le_coordinateur_se_lit_dans_la_table_des_domaines(self):
         table = TABLE.replace("Opus-Coordination", "Opus-Coordination-Autre")
@@ -541,6 +550,185 @@ class TestControle10(CasArbitre):
         sortie = self.arbitrer()
         self.assertEqual(sortie.code, 0, sortie.stdout + sortie.stderr)
         self.assertEqual(self.arbitres(), [])
+
+
+def long(id: str, octets: int = 1700, **cles) -> str:
+    """Une entrée de chantier de « octets » octets (ses lignes, chacune suivie d'un saut de ligne), au-delà du plafond."""
+    base = bloc(id, **cles, mesure="")
+    vide = sum(len(ligne.encode("utf-8")) + 1 for ligne in base.split("\n"))
+    return bloc(id, **cles, mesure="x" * (octets - vide))
+
+
+def decision(numero: int, caracteres: int) -> str:
+    """Une ligne « | **R<n>** | … | » de « caracteres » caractères."""
+    debut, fin = f"| **R{numero}** | ", " |"
+    return debut + "x" * (caracteres - len(debut) - len(fin)) + fin
+
+
+class TestControle12(CasArbitre):
+    """Les entrées trop longues : un chantier par domaine ; « hors domaine » et « registre » vont au coordinateur."""
+    cites = {"alpha": ("alpha-1",), "beta": ("beta-1",)}
+
+    def poser(self, *blocs: str, decisions: tuple = ()):
+        self.ecrire_chantiers(*blocs)
+        self.ecrire("depot/Dossier/registre.md", registre(1, 2, 3) + "".join(f"{d}\n" for d in decisions))
+        self.valider("des entrées longues")
+
+    def chantiers_longs(self):
+        return (long("alpha-1", 1700, statut="a-venir", module="module-a"),
+                long("beta-1", 1600, statut="a-venir", module="module-b"))
+
+    def avec_registre(self, depuis: str = "4"):
+        return self.arbitrer("--registre-depuis", depuis)
+
+    def test_un_chantier_trop_long_fait_un_chantier_par_domaine(self):
+        self.poser(*self.chantiers_longs())
+        sortie = self.arbitrer()
+        self.assertEqual(sortie.code, 1, sortie.stdout + sortie.stderr)
+        self.assertEqual(self.arbitres(), ["arbitre-c12-entrees-courtes-alpha-20260315",
+                                           "arbitre-c12-entrees-courtes-beta-20260315"])
+        alpha = self.par_id()["arbitre-c12-entrees-courtes-alpha-20260315"]
+        self.assertEqual((alpha["pour"], alpha["module"], alpha["statut"]), ("Opus-CdP-Alpha", "methode", "a-cadrer"))
+        self.assertEqual(alpha["titre"], "Des entrées de alpha dépassent leur plafond")
+        self.assertEqual(alpha["mesure"], (
+            "Signalé par l'arbitre le 15 mars 2026 (contrôle 12). "
+            "alpha : chantier alpha-1 pèse 1700 octets, plafond 1536. "
+            "Ramener chaque entrée sous son plafond (méthode §6) : l'état, la décision, le prochain geste ; "
+            "le détail part au dossier du lot ou à une note du domaine, l'entrée n'en garde que le résumé et le chemin."))
+        beta = self.par_id()["arbitre-c12-entrees-courtes-beta-20260315"]
+        self.assertEqual((beta["pour"], beta["titre"]), ("Opus-CdP-Beta", "Des entrées de beta dépassent leur plafond"))
+        self.assertIn("beta : chantier beta-1 pèse 1600 octets, plafond 1536", beta["mesure"])
+        self.assertEqual(self.commit_du_passage(sortie), "Arbitre 2026-03-15 : 2 constat(s)")
+        self.assertRegex(self.lignes_de_journal()[0], r"^- 2026-03-15 06:43 · 1 écart · 2 constats nouveaux · ")
+
+    def test_plusieurs_lignes_d_un_domaine_font_un_seul_chantier_jointes_par_un_point_virgule(self):
+        self.poser(long("alpha-1", 1700, statut="a-venir", module="module-a"),
+                   long("alpha-2", 1800, statut="a-cadrer", module="module-a"),
+                   bloc("beta-1", statut="a-venir", module="module-b"))
+        self.ecrire("depot/Alpha/CHECKPOINT_ALPHA.md", checkpoint("alpha-1", "alpha-2"))
+        self.valider("alpha-2 cité")
+        self.arbitrer()
+        self.assertEqual(self.arbitres(), ["arbitre-c12-entrees-courtes-alpha-20260315"])
+        self.assertIn("(contrôle 12). alpha : chantier alpha-1 pèse 1700 octets, plafond 1536 ; "
+                      "alpha : chantier alpha-2 pèse 1800 octets, plafond 1536. Ramener",
+                      self.par_id()["arbitre-c12-entrees-courtes-alpha-20260315"]["mesure"])
+
+    def test_hors_domaine_et_registre_vont_au_domaine_du_coordinateur_dans_l_ordre_de_la_table(self):
+        self.poser(long("orphelin-1", 1900, statut="dette", module="inconnu"), *self.chantiers_longs(),
+                   decisions=(decision(4, 900), decision(5, 100), decision(6, 801)))
+        sortie = self.avec_registre()
+        self.assertEqual(sortie.code, 1, sortie.stdout + sortie.stderr)
+        self.assertEqual(self.arbitres(), ["arbitre-c12-entrees-courtes-alpha-20260315",
+                                           "arbitre-c12-entrees-courtes-beta-20260315",
+                                           "arbitre-c12-entrees-courtes-coordination-20260315"])
+        c = self.par_id()["arbitre-c12-entrees-courtes-coordination-20260315"]
+        self.assertEqual((c["pour"], c["module"], c["titre"]),
+                         ("Opus-Coordination", "methode", "Des entrées de coordination dépassent leur plafond"))
+        self.assertIn("(contrôle 12). hors domaine : chantier orphelin-1 pèse 1900 octets, plafond 1536 ; "
+                      "registre : R4 compte 900 caractères, plafond 800 ; "
+                      "registre : R6 compte 801 caractères, plafond 800. Ramener", c["mesure"])
+        self.assertIn("Constats nouveaux (3) :", sortie.stdout)
+
+    def test_le_domaine_du_coordinateur_groupe_aussi_ses_propres_lignes(self):
+        self.poser(long("methode-1", 1700, statut="a-venir", module="methode"),
+                   bloc("alpha-1", statut="a-venir", module="module-a"), bloc("beta-1", statut="a-venir", module="module-b"),
+                   decisions=(decision(4, 900),))
+        self.ecrire("depot/Methode/CHECKPOINT_METHODE.md", checkpoint("methode-1"))
+        self.valider("methode-1 cité")
+        self.avec_registre()
+        self.assertEqual(self.arbitres(), ["arbitre-c12-entrees-courtes-coordination-20260315"])
+        self.assertIn("(contrôle 12). coordination : chantier methode-1 pèse 1700 octets, plafond 1536 ; "
+                      "registre : R4 compte 900 caractères, plafond 800. Ramener",
+                      self.par_id()["arbitre-c12-entrees-courtes-coordination-20260315"]["mesure"])
+
+    def test_les_chantiers_du_controle_12_viennent_apres_ceux_des_controles_9_et_10(self):
+        self.ecrire("depot/Alpha/CHECKPOINT_ALPHA.md", checkpoint("alpha-1", remplissage=11000))
+        self.poser(*self.chantiers_longs(), bloc("beta-2", statut="a-venir", module="module-b"))
+        self.arbitrer()
+        self.assertEqual(self.arbitres(), [
+            "arbitre-c9-checkpoint-beta-20260315", "arbitre-c10-checkpoint-court-alpha-20260315",
+            "arbitre-c12-entrees-courtes-alpha-20260315", "arbitre-c12-entrees-courtes-beta-20260315"])
+
+    def test_sans_registre_depuis_le_registre_n_est_pas_mesure(self):
+        self.poser(*[bloc("alpha-1", statut="a-venir", module="module-a"), bloc("beta-1", statut="a-venir", module="module-b")],
+                   decisions=(decision(4, 5000),))
+        sortie = self.arbitrer()
+        self.assertEqual(sortie.code, 0, sortie.stdout + sortie.stderr)
+        self.assertEqual(self.arbitres(), [])
+
+    def test_registre_depuis_est_passee_telle_quelle_et_vide_elle_n_est_pas_passee(self):
+        self.poser(*[bloc("alpha-1", statut="a-venir", module="module-a"), bloc("beta-1", statut="a-venir", module="module-b")],
+                   decisions=(decision(4, 900), decision(5, 900)))
+        self.avec_registre("5")
+        self.assertEqual(self.arbitres(), ["arbitre-c12-entrees-courtes-coordination-20260315"])
+        mesure = self.par_id()["arbitre-c12-entrees-courtes-coordination-20260315"]["mesure"]
+        self.assertIn("registre : R5 compte 900 caractères", mesure)
+        self.assertNotIn("R4 compte", mesure)
+
+    def test_une_valeur_de_registre_depuis_invalide_est_un_controle_impossible(self):
+        self.poser(*self.chantiers_longs())
+        sortie = self.avec_registre("abc")
+        self.assertEqual(sortie.code, 2, sortie.stdout + sortie.stderr)
+        self.assertIn("verifier_vivants.py a échoué (code 2)", sortie.stderr)
+        self.assertEqual(self.arbitres(), [])
+        self.assertRegex(self.lignes_de_journal()[0], r"contrôle impossible : verifier_vivants\.py$")
+
+    def test_pas_de_doublon_au_passage_suivant_meme_un_autre_jour(self):
+        self.poser(*self.chantiers_longs(), decisions=(decision(4, 900),))
+        self.avec_registre()
+        apres = self.lire("Dossier/chantiers.yaml")
+        sortie = self.arbitrer("--registre-depuis", "4", date="2026-03-16 06:43")
+        self.assertEqual(sortie.code, 0, sortie.stdout + sortie.stderr)
+        self.assertEqual(self.lire("Dossier/chantiers.yaml"), apres)
+        self.assertEqual(len(self.arbitres()), 3)
+        self.assertIn("Déjà signalés et toujours là (3) :", sortie.stdout)
+
+    def test_les_chantiers_deposes_ne_sont_pas_mesures_eux_memes(self):
+        self.poser(*self.chantiers_longs(), decisions=(decision(4, 900),))
+        self.avec_registre()
+        controle = self.lancer(self.depot / "Methode" / "verifier_vivants.py", *self.verifications(), "--registre-depuis", "4",
+                               cwd=self.depot)
+        self.assertEqual(controle.compte(12), "2 chantiers ouverts, 1 entrées du registre, 3 au-delà", controle.stdout)
+
+    def test_un_chantier_ouvert_pour_ce_cdp_dont_l_id_porte_entrees_courtes_suffit(self):
+        self.poser(*self.chantiers_longs(),
+                   bloc("alpha-entrees-courtes", titre="Fait à la main", statut="a-cadrer", module="module-a",
+                        pour="Opus-CdP-Alpha"))
+        self.ecrire("depot/Alpha/CHECKPOINT_ALPHA.md", checkpoint("alpha-1"))
+        self.valider("un constat posé à la main")
+        sortie = self.arbitrer()
+        self.assertEqual(self.arbitres(), ["arbitre-c12-entrees-courtes-beta-20260315"])
+        self.assertIn("Déjà signalés et toujours là (1) :\n  - alpha-entrees-courtes · pour Opus-CdP-Alpha", sortie.stdout)
+
+    def test_un_chantier_en_recette_ou_pour_un_autre_cdp_ne_couvre_pas(self):
+        self.poser(*self.chantiers_longs(),
+                   bloc("alpha-entrees-courtes", statut="recette", module="module-a", pour="Opus-CdP-Alpha"),
+                   bloc("gamma-entrees-courtes", statut="a-cadrer", module="module-b", pour="Opus-CdP-Gamma"))
+        self.arbitrer()
+        self.assertEqual(self.arbitres(), ["arbitre-c12-entrees-courtes-alpha-20260315",
+                                           "arbitre-c12-entrees-courtes-beta-20260315"])
+
+    def test_un_id_archive_ne_se_reutilise_pas_on_ajoute_la_date(self):
+        self.poser(*self.chantiers_longs())
+        self.ecrire("depot/Dossier/Archives/CHANTIERS_2026-03.yaml", "# Chantiers archivés — mars 2026\n\n" + bloc(
+            "arbitre-c12-entrees-courtes-alpha-20260315", statut="recette", module="methode", pour="Opus-CdP-Alpha"))
+        self.valider("un constat de ce jour déjà archivé")
+        self.arbitrer()
+        self.assertEqual(self.arbitres(), ["arbitre-c12-entrees-courtes-alpha-20260315-20260315",
+                                           "arbitre-c12-entrees-courtes-beta-20260315"])
+
+    def test_les_autres_constats_sont_ceux_d_avant(self):
+        self.poser(bloc("alpha-1", statut="en-vol", module="module-a"),  # en vol sans cdp : contrôle 5
+                   long("beta-1", 1600, statut="a-venir", module="module-b"))
+        self.arbitrer()
+        self.assertEqual(self.arbitres(), ["arbitre-c5-alpha-1", "arbitre-c12-entrees-courtes-beta-20260315"])
+        self.assertEqual(self.par_id()["arbitre-c5-alpha-1"]["titre"],
+                         "Contrôle 5 : alpha-1 (ligne 3) : cdp absent ou vide")
+
+    def test_la_docstring_decrit_le_controle_12_et_l_option(self):
+        doc = charger(ARBITRE, "arbitre_doc").__doc__
+        for attendu in ("--registre-depuis", "arbitre-c12-entrees-courtes-<domaine>-<AAAAMMJJ>", "entrees-courtes"):
+            self.assertIn(attendu, doc)
 
 
 class TestTemoins(CasArbitre):
@@ -891,6 +1079,13 @@ class TestWorkflow(unittest.TestCase):
         self.assertEqual(pas[1]["with"]["python-version"], "3.12")
         for variable in ("SCRIPT", "CHANTIERS", "REGISTRE", "ARCHIVES", "DOMAINES", "JOURNAL_ARBITRE"):
             self.assertIn(variable, document["env"])
+
+    def test_la_variable_registre_depuis_est_facultative_et_vide_par_defaut(self):
+        texte = self.texte()
+        self.assertRegex(texte, r'(?m)^  REGISTRE_DEPUIS: ""$')
+        self.assertIn('if [ -n "$REGISTRE_DEPUIS" ]; then args+=(--registre-depuis "$REGISTRE_DEPUIS"); fi', texte)
+        self.assertLess(texte.index("  FICHE:"), texte.index("  REGISTRE_DEPUIS:"))
+        self.assertLess(texte.index("  REGISTRE_DEPUIS:"), texte.index("jobs:"))
 
     def test_chaque_chemin_a_sa_variable_en_tete_du_fichier(self):
         texte = self.texte()

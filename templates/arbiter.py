@@ -9,12 +9,14 @@ The behavior is that of the arbiter's procedure (ARBITER.md, §1 to §3).
     python3 -B arbiter.py --workstreams <workstreams.yaml> --log <decision_log.md> --archives <folder> \\
         --domains <domains.yaml> --arbiter-log <log.md> \\
         [--board <page> --generator <script>] [--plan <plan.md>] [--root <folder>] \\
-        [--method <file>] [--sheet <file>] [--date "YYYY-MM-DD HH:MM"]
+        [--method <file>] [--sheet <file>] [--log-from <n>] [--date "YYYY-MM-DD HH:MM"]
 
 The first five options are those of the checker (check_living_docs.py); "--board" and "--generator" go together;
 "--root" is the folder the domain table's checkpoints are read from (the current folder by default; it is also git's
 folder). "--method" (the project's method) and "--sheet" (the common product sheet) only serve to measure the
-footprint of the log. "--date" (Paris time) is for the tests; without it, it is the time in Paris (zoneinfo,
+footprint of the log. "--log-from" (the number of the first decision log entry measured by check 12) is passed as it is
+to the checker; absent, nothing is passed and the log is not measured; the caps stay those of the checker. "--date"
+(Paris time) is for the tests; without it, it is the time in Paris (zoneinfo,
 Europe/Paris). The checker, the archiver and the script itself are in the same folder; the generator is the one of
 "--generator". Standard library only, Python 3.11 at least.
 
@@ -24,11 +26,14 @@ A run does, in order:
   3. file ONE workstream per new gap, at the end of workstreams.yaml, in strict YAML format: the id
      "arbiter-c<n>-<key>" (<n> the number of the check); check 9 as one workstream per domain
      ("arbiter-c9-checkpoint-<domain>-<YYYYMMDD>"), check 10 likewise
-     ("arbiter-c10-short-checkpoint-<domain>-<YYYYMMDD>"), a fault of the domain table as a single workstream for the
+     ("arbiter-c10-short-checkpoint-<domain>-<YYYYMMDD>"), check 12 likewise
+     ("arbiter-c12-short-entries-<domain>-<YYYYMMDD>"; the lines "outside any domain" and "decision log" go to the
+     coordinator's domain workstream), a fault of the domain table as a single workstream for the
      coordinator ("arbiter-c9-table-<YYYYMMDD>"); never twice: a (living) workstream with the same id has
      been reported, an archived id is not reused ("-<YYYYMMDD>" is added), a domain workstream
      "arbiter-c9-checkpoint-<domain>-*" or "arbiter-c9-table-*" still open (not accepted) is enough, and for check 10,
-     an open workstream "for:" that PL whose id carries "short-checkpoint" too;
+     an open workstream "for:" that PL whose id carries "short-checkpoint" too, and for check 12, an open
+     workstream "for:" that PL whose id carries "short-entries";
   4. the batons: the "Session active" line of each domain checkpoint and the last commit that carries its
      identifier — information (the log and the output), never a workstream; the coordination (the domain whose "pl"
      contains "Coordination" or "Coordinator") is excluded;
@@ -138,7 +143,7 @@ class Parser(argparse.ArgumentParser):
 def read_arguments(argv: list[str]):
     p = Parser(prog="arbiter.py", allow_abbrev=False, add_help=False)
     for option in ("workstreams", "log", "archives", "domains", "arbiter-log", "board", "generator",
-                   "plan", "root", "method", "sheet", "date"):
+                   "plan", "root", "method", "sheet", "log-from", "date"):
         p.add_argument(f"--{option}")
     a, unknown = p.parse_known_args(argv)
     if unknown:
@@ -215,6 +220,8 @@ def run_check(a) -> Check:
         options += ["--plan", a.plan]
     if a.root:
         options += ["--root", a.root]
+    if a.log_from:
+        options += ["--log-from", a.log_from]
     process = run(HERE / "check_living_docs.py", *options)
     if process.returncode not in (0, 1):
         raise Impossible("check_living_docs.py", f"check_living_docs.py failed (code {process.returncode}): "
@@ -257,6 +264,7 @@ class Context:
             raise Impossible(file, f"no Coordination entry in the domain table ({file}): "
                                    "the coordinator's name is read there")
         self.coordinator = coordination["pl"]
+        self.coordination_domain = coordination.get("domain") or "coordination"
         self.pl_of = {d["domain"]: d.get("pl") or self.coordinator for d in self.valid}
 
     def domain_of(self, c: dict) -> str | None:
@@ -295,7 +303,7 @@ def cases_of_check(rank: int, line: str, ctx: Context):
         if m:
             first = m.group(2).split(" and ")[0]
             return [(safe_key(first), workstream(first))]
-        m = re.match(r"(\S+): \S+ is not above ", line)
+        m = re.match(r"(\S+): .+? is not above ", line)
         if m:
             return [(safe_key(m.group(1)), workstream(m.group(1)))]
         return [(safe_key(line[:40]), None)]
@@ -323,10 +331,10 @@ def cases_of_check(rank: int, line: str, ctx: Context):
 
 
 def ordinary_findings(check: Check, ctx: Context, day: date) -> list[Finding]:
-    """One finding per case of the checks other than 9 and 10; the lines of one key are grouped."""
+    """One finding per case of the checks other than 9, 10 and 12; the lines of one key are grouped."""
     findings = []
     for rank in sorted(check.ranks):
-        if rank in (9, 10):
+        if rank in (9, 10, 12):
             continue
         groups: dict[str, tuple] = {}
         for line in check.lines(rank):
@@ -404,6 +412,32 @@ def checkpoint_findings(check: Check, lates: dict, ctx: Context, day: date) -> t
     return findings, reported
 
 
+def entry_findings(check: Check, ctx: Context, day: date) -> list[Finding]:
+    """The findings of check 12: one per domain, in the order of the table; the lines "outside any domain" and
+    "decision log" are grouped with those of the coordinator's domain."""
+    by_domain: dict[str, list[str]] = {}
+    for line in check.lines(12):
+        domain = domain_name(line)
+        if domain in ("outside any domain", "decision log"):
+            domain = ctx.coordination_domain
+        by_domain.setdefault(domain, []).append(line)
+    order = [d["domain"] for d in ctx.valid]
+    findings = []
+    for domain in order + sorted(d for d in by_domain if d not in order):
+        lines = by_domain.get(domain)
+        if not lines:
+            continue
+        findings.append(Finding(
+            id=f"arbiter-c12-short-entries-{domain}-{day.strftime('%Y%m%d')}",
+            title=f"Entries of {domain} exceed their cap", module="method",
+            for_=ctx.pl_of.get(domain, ctx.coordinator),
+            basis=(f"Reported by the arbiter on {long_date(day)} (check 12). {'; '.join(lines)}. "
+                   "Bring every entry under its cap (method §6): the state, the decision, the next move; "
+                   "the detail goes to the batch folder or to a note of the domain, the entry only keeps the summary "
+                   "and the path.")))
+    return findings
+
+
 def is_open(c: dict) -> bool:
     return c.get("status") != "accepted"
 
@@ -422,6 +456,9 @@ def reported_before(finding: Finding, living: list[dict], archived_ids: set[str]
     elif i.startswith("arbiter-c10-short-checkpoint-"):
         covering = next((c for c in living if c.get("id") and is_open(c) and c.get("for") == finding.for_
                          and "short-checkpoint" in c["id"]), None)
+    elif i.startswith("arbiter-c12-short-entries-"):
+        covering = next((c for c in living if c.get("id") and is_open(c) and c.get("for") == finding.for_
+                         and "short-entries" in c["id"]), None)
     if covering is not None:
         return None, covering
     if i in ids:
@@ -699,7 +736,7 @@ def make_run(a, now: datetime) -> int:
     lates = read_lates(ctx, root)                                # 5
     new, existing = [], []
     findings_9, reported = checkpoint_findings(check, lates, ctx, day)
-    findings = ordinary_findings(check, ctx, day) + findings_9
+    findings = ordinary_findings(check, ctx, day) + findings_9 + entry_findings(check, ctx, day)
     file_findings(findings, a, ctx, archiver, checker, new, existing)  # 3
     archiving = archive(a, day)                                  # 6
     if archiving.warnings:

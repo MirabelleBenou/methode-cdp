@@ -1,5 +1,5 @@
-# PL METHOD PACKAGE · v19
-### 31 October 2026 · to start a new project under the PL method
+# PL METHOD PACKAGE · v20
+### 1 November 2026 · to start a new project under the PL method
 
 *This package reproduces a way of working proven batch after batch: a **project lead** (PL, Opus) who decides
 with you, writes the briefs, launches the dev and accepts; a **dev** who builds one batch at a time;
@@ -39,7 +39,7 @@ production server).
 | `templates/workstreams.yaml` | the single source of the workstreams | living-docs repository |
 | `templates/context.py` | measures the context of the PL session, to decide the handover (thresholds: method §6) | `pl_tools/` in the living-docs repository |
 | `templates/make_board.py` | **“published board” extension** — the page `workstreams.html` and its data file `workstreams.json` | living-docs repository |
-| `templates/check_living_docs.py` | read-only check of the living docs — eleven checks, described in its docstring | living-docs repository |
+| `templates/check_living_docs.py` | read-only check of the living docs — twelve checks, described in its docstring | living-docs repository |
 | `templates/archive_workstreams.py` | moves the accepted workstreams out to the month's archive (delay: method §6); `search`, `normalize` | living-docs repository |
 | `templates/domains.yaml` | **modes B and C** — the domain table that check 9 reads | `Method/domains.yaml` in the living-docs repository |
 | [`templates/ARBITER.md`](templates/ARBITER.md), `templates/arbiter.py`, `templates/living-docs-repo/arbiter.yml` | **optional, mode C** — the living-docs arbiter, a daily GitHub Action | `Method/` and `.github/workflows/` in the living-docs repository |
@@ -453,3 +453,7 @@ package (what a session knows before reading the project's method; the rest move
 method's figures in a table of its §6, a pointer everywhere else, and a parity test in CI); a batch's facts written
 once, in the plan's version log; light low-complexity batches (the short form of the brief, seven gates, expected results only when
 the batch produces values to compare); check 4 verifies the number of the batch in flight.
+v20, 1 November 2026 — check 12 of `check_living_docs.py`: the size of a workstream entry and of a decision log entry against
+their caps (method §6), one workstream per domain for the arbiter; gap (b) of check 4 is read whatever the version; the
+handover thresholds are counted above the fixed load measured at the first turn, one rule for all (`context.py` shows it);
+the skill stays v19.

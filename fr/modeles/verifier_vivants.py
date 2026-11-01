@@ -9,7 +9,8 @@ et le journal des lots du plan.
 
     python3 -B verifier_vivants.py --chantiers <chantiers.yaml> --registre <registre.md> \\
         [--tableau <chantiers.html> --generateur <generer_tableau.py>] [--journal <plan.md>] \\
-        [--archives <dossier>] [--domaines <fichier> [--racine <dossier>] [--plafond-checkpoint <octets>]]
+        [--archives <dossier>] [--domaines <fichier> [--racine <dossier>] [--plafond-checkpoint <octets>]
+                                 [--plafond-chantier <octets>] [--plafond-registre <caractères>] [--registre-depuis <n>]]
 
 « --tableau » et « --generateur » vont ensemble ; « --tableau » désigne la page, son fichier
 de données est celui qui est à côté, même nom en « .json » ; « --journal » est facultatif.
@@ -23,10 +24,13 @@ règle des lots en vol), le 7 et le 11.
 par défaut) ; il ne s'emploie qu'avec « --domaines ». « --plafond-checkpoint » donne le
 plafond de taille d'un checkpoint, en octets (un entier positif, 10240 par défaut) : un
 checkpoint se relit en entier à chaque reprise, il doit rester court (voir le contrôle 10) ;
-il ne s'emploie, lui aussi, qu'avec « --domaines ». Un contrôle dont les fichiers ne sont
-pas donnés s'affiche « non demandé ».
+il ne s'emploie, lui aussi, qu'avec « --domaines ». De même, « --plafond-chantier » (octets,
+1536 par défaut), « --plafond-registre » (caractères, 800 par défaut) et « --registre-depuis »
+(le numéro de la première entrée du registre mesurée ; sans elle, le registre n'est pas mesuré) :
+des entiers positifs, qui ne s'emploient qu'avec « --domaines » (voir le contrôle 12). Un contrôle
+dont les fichiers ne sont pas donnés s'affiche « non demandé ».
 
-Les onze contrôles, dans cet ordre :
+Les douze contrôles, dans cet ordre :
   1. numéros du registre : les lignes « | **R<n>** | » n'ont aucun numéro en
      double et aucun trou entre le plus petit et le plus grand ;
   2. réservations : une ligne « | **R<n>** | *réservé … » encore présente est un
@@ -126,13 +130,34 @@ Les onze contrôles, dans cet ordre :
      OK : « <n> fichiers, <m> lignes lues » ; ÉCART : « <k> valeur(s) non conforme(s), <n> fichiers,
      <m> lignes lues », les cinq premières valeurs non conformes (« fichier:ligne : clé <clé> »),
      puis la commande qui normalise (« archiver_chantiers.py normaliser », qui ne réécrit que
-     ces valeurs).
+     ces valeurs) ;
+ 12. taille des entrées : une entrée de chantier ou du registre se relit à chaque reprise ; au-delà
+     de son plafond, son détail part au dossier du lot ou à une note, l'entrée n'en garde que le
+     résumé et le chemin. Le contrôle demande « --domaines ». Entrées de chantier mesurées : celles de
+     chantiers.yaml (pas des archives) en « statut » a-venir, a-cadrer, dette ou en-vol, sauf celles
+     dont l'id commence par « arbitre- » (les constats de l'arbitre se ferment en corrigeant leur
+     cause) ; une entrée avec « pour: » se mesure. Sa taille est le nombre d'octets UTF-8 des lignes du
+     fichier depuis sa ligne « - id: » jusqu'à la ligne qui précède la suivante, sans les lignes vides
+     ni celles dont le premier caractère non blanc est « # » (les bandeaux de section), chacune
+     suivie d'un saut de ligne ; écart si elle est strictement au-dessus de « --plafond-chantier »
+     (1536 par défaut). Entrées du registre mesurées : les lignes « | **R<n>** | » dont le numéro est
+     au moins « --registre-depuis », sauf les réservations ; leur taille est le nombre de caractères
+     de la ligne, saut de ligne exclu ; écart au-dessus de « --plafond-registre » (800 par défaut).
+     Sans « --registre-depuis », le registre n'est pas mesuré. Le domaine d'une entrée de chantier est
+     celui du contrôle 9 (cdp, puis préfixe, puis module), sinon « hors domaine » ; une entrée du
+     registre n'a pas de domaine. Une ligne d'écart par entrée, dans l'ordre des fichiers
+     (chantiers.yaml, puis le registre) : « <domaine> : chantier <id> pèse <o> octets, plafond <p> »
+     (« hors domaine : chantier … »), « registre : R<n> compte <c> caractères, plafond <p> ». Le compte
+     est « <n> chantiers ouverts, <r> entrées du registre, <k> au-delà » (<n> les entrées mesurées,
+     <r> celles du registre, <k> les lignes d'écart) ; sans « --registre-depuis » :
+     « <n> chantiers ouverts, registre non mesuré, <k> au-delà ».
 
 Sortie : une ligne par contrôle (OK, ÉCART ou avertissement, avec un compte),
 le détail des écarts indenté dessous, puis une dernière ligne « VIVANTS · … ».
 Code de retour : 0 sans écart, 1 avec au moins un écart, 2 pour un appel
-invalide (argument manquant, fichier ou dossier introuvable, « --racine » ou
-« --plafond-checkpoint » sans « --domaines », plafond qui n'est pas un entier positif).
+invalide (argument manquant, fichier ou dossier introuvable, « --racine »,
+« --plafond-checkpoint », « --plafond-chantier », « --plafond-registre » ou « --registre-depuis »
+sans « --domaines », plafond ou numéro qui n'est pas un entier positif).
 
 Python 3.11 et plus, bibliothèque standard seulement. Le lecteur YAML est volontairement
 pauvre, comme celui du générateur : « - id: » puis des « clé: valeur » sur une seule ligne ;
@@ -164,6 +189,11 @@ DEBUTS_INTERDITS = "-?:,[]{}#&*!|>'\"%@`"
 NON_DEMANDE = "—  non demandé"
 STATUTS_OUVERTS = ("a-venir", "a-cadrer", "dette", "en-vol")
 PLAFOND_DEFAUT = 10240  # octets : un checkpoint se relit en entier à chaque reprise
+PLAFOND_CHANTIER_DEFAUT = 1536  # octets : une entrée de chantier (contrôle 12)
+PLAFOND_REGISTRE_DEFAUT = 800  # caractères : une entrée du registre (contrôle 12)
+HORS_DOMAINE = "hors domaine"
+OPTIONS_PLAFONDS = (("plafond_checkpoint", "plafond-checkpoint"), ("plafond_chantier", "plafond-chantier"),
+                    ("plafond_registre", "plafond-registre"), ("registre_depuis", "registre-depuis"))
 
 
 def lire_texte(chemin: Path) -> str:
@@ -509,6 +539,40 @@ def controle_taille(table: list[dict], racine: Path, plafond: int):
     return ("ÉCART" if details else "OK"), compte, details
 
 
+def taille_entree(lignes: list[str]) -> int:
+    """Les octets UTF-8 des lignes d'une entrée, chacune suivie d'un saut de ligne, sans les lignes vides ni les « # »."""
+    return sum(len(ligne.encode("utf-8")) + 1 for ligne in lignes if ligne.strip() and not ligne.strip().startswith("#"))
+
+
+def controle_entrees(chantiers: list[dict], chantiers_texte: str, registre_texte: str, table: list[dict],
+                     plafond_chantier: int, plafond_registre: int, registre_depuis: int | None):
+    """Une entrée de chantier ouverte (hors « arbitre- ») ou du registre au-delà de son plafond est un écart."""
+    valides = [d for d in table if d.get("domaine") and d.get("checkpoint")]
+    lignes = chantiers_texte.split("\n")
+    details, mesurees = [], 0
+    for rang, c in enumerate(chantiers):
+        if c.get("statut") not in STATUTS_OUVERTS or c.get("id", "").startswith("arbitre-"):
+            continue
+        mesurees += 1
+        fin = chantiers[rang + 1]["_ligne"] - 1 if rang + 1 < len(chantiers) else len(lignes)
+        taille = taille_entree(lignes[c["_ligne"] - 1:fin])
+        if taille > plafond_chantier:
+            domaine = domaine_de(c, valides) if c.get("id") else None
+            details.append(f"{domaine or HORS_DOMAINE} : chantier {nom(c)} pèse {taille} octets, plafond {plafond_chantier}")
+    mesurees_registre = 0
+    if registre_depuis is not None:
+        for ligne in registre_texte.split("\n"):
+            m = RE_NUMERO.match(ligne)
+            if not m or int(m.group(1)) < registre_depuis or RE_RESERVATION.match(ligne):
+                continue
+            mesurees_registre += 1
+            if len(ligne) > plafond_registre:
+                details.append(f"registre : R{m.group(1)} compte {len(ligne)} caractères, plafond {plafond_registre}")
+    suite = f"{mesurees_registre} entrées du registre" if registre_depuis is not None else "registre non mesuré"
+    compte = f"{mesurees} chantiers ouverts, {suite}, {len(details)} au-delà"
+    return ("ÉCART" if details else "OK"), compte, details
+
+
 def valeur_conforme(brut: str) -> bool:
     """Un scalaire YAML sûr : vide, entre guillemets doubles, ou nu et sans rien que YAML lirait autrement."""
     valeur = brut.strip()
@@ -568,7 +632,8 @@ def lire_arguments(argv: list[str]):
     p = Analyseur(prog="verifier_vivants.py", allow_abbrev=False, add_help=False)
     for option in ("chantiers", "registre", "tableau", "generateur", "journal", "archives", "domaines", "racine"):
         p.add_argument(f"--{option}")
-    p.add_argument("--plafond-checkpoint")
+    for _, option in OPTIONS_PLAFONDS:
+        p.add_argument(f"--{option}")
     a, inconnus = p.parse_known_args(argv)
     if inconnus:
         raise ValueError(f"argument inconnu : {inconnus[0]}")
@@ -579,25 +644,29 @@ def lire_arguments(argv: list[str]):
         raise ValueError("--tableau et --generateur vont ensemble")
     if a.racine and not a.domaines:
         raise ValueError("--racine ne va qu'avec --domaines")
-    if a.plafond_checkpoint is not None and not a.domaines:
-        raise ValueError("--plafond-checkpoint ne va qu'avec --domaines")
-    plafond = PLAFOND_DEFAUT
-    if a.plafond_checkpoint is not None:
-        if not re.fullmatch(r"[0-9]+", a.plafond_checkpoint) or int(a.plafond_checkpoint) < 1:
-            raise ValueError(f"--plafond-checkpoint : un entier positif est attendu ({a.plafond_checkpoint})")
-        plafond = int(a.plafond_checkpoint)
+    plafonds = {"plafond_checkpoint": PLAFOND_DEFAUT, "plafond_chantier": PLAFOND_CHANTIER_DEFAUT,
+                "plafond_registre": PLAFOND_REGISTRE_DEFAUT, "registre_depuis": None}
+    for attribut, option in OPTIONS_PLAFONDS:
+        valeur = getattr(a, attribut)
+        if valeur is None:
+            continue
+        if not a.domaines:
+            raise ValueError(f"--{option} ne va qu'avec --domaines")
+        if not re.fullmatch(r"[0-9]+", valeur) or int(valeur) < 1:
+            raise ValueError(f"--{option} : un entier positif est attendu ({valeur})")
+        plafonds[attribut] = int(valeur)
     chemins = {option: Path(getattr(a, option)) for option in
                ("chantiers", "registre", "tableau", "generateur", "journal", "archives", "domaines", "racine")
                if getattr(a, option)}
     for option, chemin in chemins.items():
         if not (chemin.is_dir() if option in ("archives", "racine") else chemin.is_file()):
             raise ValueError(f"fichier introuvable : --{option} {chemin}")
-    return chemins, plafond
+    return chemins, plafonds
 
 
 def main(argv: list[str]) -> int:
     try:
-        f, plafond = lire_arguments(argv)
+        f, plafonds = lire_arguments(argv)
         chantiers = lire_chantiers(f["chantiers"])
         archives = lire_archives(f["archives"]) if "archives" in f else None
         table = lire_chantiers(f["domaines"]) if "domaines" in f else None
@@ -620,11 +689,14 @@ def main(argv: list[str]) -> int:
         ("livrables et ressources", lambda: controle_livrables(chantiers)),
         ("checkpoints", (lambda: controle_checkpoints(chantiers, archives, table, f.get("racine", Path("."))))
          if table is not None else None),
-        ("taille des checkpoints", (lambda: controle_taille(table, f.get("racine", Path(".")), plafond))
+        ("taille des checkpoints", (lambda: controle_taille(table, f.get("racine", Path(".")), plafonds["plafond_checkpoint"]))
          if table is not None else None),
         ("format YAML", lambda: controle_format(
             [f["chantiers"]] + (fichiers_archives(f["archives"]) if "archives" in f else [])
             + ([f["domaines"]] if "domaines" in f else []), commande_normaliser(f))),
+        ("taille des entrées", (lambda: controle_entrees(
+            chantiers, lire_texte(f["chantiers"]), lire_texte(f["registre"]), table, plafonds["plafond_chantier"],
+            plafonds["plafond_registre"], plafonds["registre_depuis"])) if table is not None else None),
     ]
     ecarts = 0
     for rang, (libelle, controle) in enumerate(controles, start=1):

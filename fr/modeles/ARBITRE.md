@@ -1,5 +1,5 @@
 # L'ARBITRE DES VIVANTS — <Projet> · v6
-### <date> · <session de coordination> · tiré du package méthode CdP v19
+### <date> · <session de coordination> · tiré du package méthode CdP v20
 
 ***L'arbitre est une action GitHub**, `.github/workflows/arbitre.yml` : chaque jour, sans session, elle lance
 `<Dossier>/arbitre.py`, commite et pousse au nom de `github-actions[bot]`, puis **échoue si elle a déposé un
@@ -51,15 +51,16 @@ dit ce que le script fait, dans l'ordre ; il ne s'exécute pas, il se lit.*
 
 1. **Normaliser** : `archiver_chantiers.py normaliser` met entre guillemets les seules valeurs qu'un lecteur YAML lirait
    mal (format strict, contrôle 11) ; il ne change aucune valeur lue.
-2. **Contrôler** : `verifier_vivants.py` avec `--archives` et `--domaines` (onze contrôles ; le 9 recoupe la file de chaque
-   checkpoint avec `chantiers.yaml`, le 10 mesure leur taille contre le plafond de la méthode §6, le 11 le format). Un fichier qui manque :
+2. **Contrôler** : `verifier_vivants.py` avec `--archives` et `--domaines` (douze contrôles ; le 9 recoupe la file de chaque
+   checkpoint avec `chantiers.yaml`, le 10 mesure leur taille contre le plafond de la méthode §6, le 11 le format, le 12 la
+   taille des entrées de chantier et du registre contre leurs plafonds, `--registre-depuis` si le registre se mesure). Un fichier qui manque :
    code 2, rien n'est écrit, le journal dit « contrôle impossible : <fichier> ».
 3. **Déposer un chantier par écart nouveau**, en fin de `chantiers.yaml`, au format strict : id `arbitre-c<n>-<clé>`
    (`<n>` le contrôle, `<clé>` le chantier en cause, `R<n>`, `tableau`, `journal`). **Jamais en double** : un chantier
-   vivant de même id suffit ; un id archivé ne se réutilise pas (on ajoute `-<AAAAMMJJ>`). **Le contrôle 9 et le
-   contrôle 10, un chantier par domaine** (`arbitre-c9-checkpoint-<domaine>-<date>`,
-   `arbitre-c10-checkpoint-court-<domaine>-<date>`), sans nouveau dépôt tant qu'un chantier du même nom, ouvert, attend
-   son CdP ; **un défaut de la table elle-même** : un seul chantier `arbitre-c9-table-<date>`, pour le coordinateur.
+   vivant de même id suffit ; un id archivé ne se réutilise pas (on ajoute `-<AAAAMMJJ>`). **Le contrôle 9, le
+   contrôle 10 et le contrôle 12, un chantier par domaine** (`arbitre-c9-checkpoint-<domaine>-<date>`,
+   `arbitre-c10-checkpoint-court-<domaine>-<date>`, `arbitre-c12-entrees-courtes-<domaine>-<date>`), sans nouveau dépôt
+   tant qu'un chantier du même nom, ouvert, attend son CdP ; **un défaut de la table elle-même** : un seul chantier `arbitre-c9-table-<date>`, pour le coordinateur.
 4. **Les témoins** : la ligne « Session en activité » de chaque checkpoint. **Un témoin ne se juge pas à son âge, mais à son
    silence** : aucun commit portant son identifiant depuis plus de 24 heures. ⟨Le témoin est les huit derniers
    caractères de l'identifiant de session des lignes d'attribution des commits ; sans cette ligne, convenir d'une marque
@@ -88,6 +89,7 @@ dit ce que le script fait, dans l'ordre ; il ne s'exécute pas, il se lit.*
 | un chantier en vol | le `cdp:` qu'il porte |
 | deux lots en vol sur un livrable ou une ressource | les CdP des lots en cause, un chantier chacun |
 | le retard (contrôle 9) ou la taille (contrôle 10) d'un checkpoint | le `cdp` du domaine dans `Methode/domaines.yaml` |
+| la taille des entrées (contrôle 12) | le `cdp` du domaine ; le coordinateur pour le registre et les entrées hors domaine |
 | tout le reste : registre, tableau, journaux, table des domaines, `methode` | le coordinateur (l'entrée de la table dont le `cdp` contient « Coordination ») |
 
 ## §3 · Ce que l'arbitre ne fait jamais

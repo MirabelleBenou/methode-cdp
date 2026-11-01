@@ -42,6 +42,9 @@ env:
   PLAN_LOG: Folder/PLAN.md
   METHOD: Method/METHOD.md
   SHEET: ""
+  # The number of the first decision log entry that check 12 measures (old entries are not rewritten);
+  # empty: the log is not measured.
+  LOG_FROM: ""
 
 jobs:
   arbiter:
@@ -66,6 +69,7 @@ jobs:
           if [ -n "$PLAN_LOG" ]; then args+=(--plan "$PLAN_LOG"); fi
           if [ -n "$METHOD" ]; then args+=(--method "$METHOD"); fi
           if [ -n "$SHEET" ]; then args+=(--sheet "$SHEET"); fi
+          if [ -n "$LOG_FROM" ]; then args+=(--log-from "$LOG_FROM"); fi
           code=0
           python3 -B "$SCRIPT" "${args[@]}" > "$RUNNER_TEMP/arbiter.txt" 2>&1 || code=$?
           cat "$RUNNER_TEMP/arbiter.txt"

@@ -1,4 +1,4 @@
-"""Tests of check_living_docs.py: each of the eleven checks, once OK and once in gap; the invalid calls.
+"""Tests of check_living_docs.py: each of the twelve checks, once OK and once in gap; the invalid calls.
 
 Every test builds its fixtures in a temporary folder (see test_tools.py) and calls the script on the
 command line; a few tests call its functions when that is clearer.
@@ -75,16 +75,16 @@ class TestBasicCall(CheckerCase):
 
     def test_not_requested_when_an_option_is_missing(self):
         output = self.check()
-        for rank in (6, 7, 9, 10):
+        for rank in (6, 7, 9, 10, 12):
             self.assertEqual(output.verdict(rank), NOT_REQUESTED, f"check {rank}")
-        self.assertEqual(len(output.checks) - 1, 11, "eleven check lines, plus the summary")
+        self.assertEqual(len(output.checks) - 1, 12, "twelve check lines, plus the summary")
 
-    def test_eleven_checks_in_order(self):
+    def test_twelve_checks_in_order(self):
         labels = re.findall(r"^\d+\s+(\S.*?)\s+(?:OK|GAP|warning|—)(?:\s|$)", self.check().stdout, flags=re.M)
         self.assertEqual(labels, [
             "decision numbers", "reservations", "workstream ids", "batch versions",
             "workstreams in flight", "board", "version log", "deliverables and resources", "checkpoints",
-            "checkpoint size", "YAML format"])
+            "checkpoint size", "YAML format", "entry sizes"])
 
     def test_a_gap_gives_code_1(self):
         self.log = self.write("decision_log.md", decision_log(1, 3))
@@ -173,6 +173,19 @@ class TestInvalidCalls(CheckerCase):
             with self.subTest(value=value):
                 output = self.check("--domains", table, "--checkpoint-cap", value)
                 self.invalid(output, "a positive integer is expected")
+
+    def test_the_options_of_check_12_without_domains(self):
+        for option in ("--workstream-cap", "--log-cap", "--log-from"):
+            with self.subTest(option=option):
+                self.invalid(self.check(option, "100"), f"{option} only goes with --domains")
+
+    def test_the_options_of_check_12_want_a_positive_integer(self):
+        table = self.write("domains.yaml", TWO_DOMAINS_TABLE)
+        for option in ("--workstream-cap", "--log-cap", "--log-from"):
+            for value in ("abc", "0", "-5", "1.5", "", "٣"):
+                with self.subTest(option=option, value=value):
+                    output = self.check("--domains", table, option, value)
+                    self.invalid(output, f"{option}: a positive integer is expected ({value})")
 
     def test_unknown_argument(self):
         self.invalid(self.check("--unknown", "x"), "unknown argument: --unknown")
@@ -1088,6 +1101,238 @@ class TestCheck11Format(CheckpointsCase):
         output = self.check_domains()
         self.assertEqual([output.verdict(r) for r in range(1, 11)],
                          ["OK", "OK", "OK", "OK", "OK", NOT_REQUESTED, NOT_REQUESTED, "OK", "OK", "OK"])
+
+
+def octets(text: str) -> int:
+    return len(text.encode("utf-8"))
+
+
+def entry_of(id: str, size: int, **keys) -> str:
+    """A workstream entry that weighs exactly "size" bytes in the sense of check 12: its "basis" key is filled with "x"
+    (its lines, each followed by a line break)."""
+    base = block(id, **keys, basis="")
+    empty = sum(octets(line) + 1 for line in base.split("\n"))
+    assert size >= empty, (size, empty)
+    return block(id, **keys, basis="x" * (size - empty))
+
+
+def log_line(number: int, characters: int) -> str:
+    """A line "| **D<n>** | … |" of exactly "characters" characters (line break excluded)."""
+    start, end = f"| **D{number}** | ", " |"
+    return start + "é" * (characters - len(start) - len(end)) + end
+
+
+class TestCheck12Entries(CheckpointsCase):
+    """The table: alpha (module-a, prefix alpha-), beta (module-b); an unknown module is "outside any domain"."""
+
+    def setUp(self):
+        super().setUp()
+        self.write_log()
+
+    def write_log(self, *lines: str):
+        """A log D1 to D3 short, then the given lines (in the order given)."""
+        self.log = self.write("decision_log.md", decision_log(1, 2, 3) + "".join(line + "\n" for line in lines))
+
+    def check12(self, *options):
+        output = self.check_domains(*options)
+        return output.verdict(12), output.count(12), output.details(12)
+
+    def test_without_domains_not_requested_and_nothing_else_changes(self):
+        without = self.check()
+        self.assertEqual(without.verdict(12), NOT_REQUESTED)
+        self.assertEqual(re.findall(r"^12 entry sizes +—  not requested$", without.stdout, flags=re.M),
+                         ["12 entry sizes                —  not requested"])
+        self.assertEqual(without.code, 0)
+        self.assertEqual(without.summary, "LIVING DOCS · no gap")
+        # the line of check 12 comes after that of 11 and before the last one
+        lines = without.stdout.rstrip("\n").split("\n")
+        self.assertTrue(lines[-3].startswith("11 "), lines)
+        self.assertTrue(lines[-2].startswith("12 "), lines)
+        self.assertTrue(lines[-1].startswith("LIVING DOCS · "), lines)
+
+    def test_ok_without_log_from_the_log_is_not_measured(self):
+        self.write_log(log_line(4, 5000))
+        self.assertEqual(self.check12(), ("OK", "2 open workstreams, decision log not measured, 0 above", []))
+
+    def test_ok_with_log_from(self):
+        self.assertEqual(self.check12("--log-from", "1"),
+                         ("OK", "2 open workstreams, 3 decision log entries, 0 above", []))
+
+    def test_the_cap_of_a_workstream_is_1536_bytes_strictly(self):
+        self.with_workstreams(entry_of("alpha-1", 1536, status="upcoming", module="module-a"),
+                              block("beta-1", status="to-brief", module="module-b"))
+        self.assertEqual(self.check12()[0], "OK")
+        self.with_workstreams(entry_of("alpha-1", 1537, status="upcoming", module="module-a"),
+                              block("beta-1", status="to-brief", module="module-b"))
+        self.assertEqual(self.check12(), (GAP, "2 open workstreams, decision log not measured, 1 above",
+                                          ["alpha: workstream alpha-1 weighs 1537 bytes, cap 1536"]))
+
+    def test_the_exit_code_counts_check_12(self):
+        self.with_workstreams(entry_of("alpha-1", 1600, status="upcoming", module="module-a"),
+                              block("beta-1", status="to-brief", module="module-b"))
+        output = self.check_domains()
+        self.assertEqual((output.code, output.summary), (1, "LIVING DOCS · 1 gap(s)"))
+
+    def test_the_size_is_measured_in_utf_8_bytes(self):
+        # every "é" weighs two bytes: 1000 characters make 2000
+        text = block("alpha-1", status="upcoming", module="module-a", basis="é" * 1000)
+        self.with_workstreams(text, block("beta-1", status="to-brief", module="module-b"))
+        size = sum(octets(line) + 1 for line in text.split("\n"))
+        self.assertGreater(size, 2000)
+        self.assertEqual(self.check12()[2], [f"alpha: workstream alpha-1 weighs {size} bytes, cap 1536"])
+
+    def test_empty_lines_and_hash_lines_do_not_count(self):
+        # the 1536-byte entry, plus empty lines, an indented comment and a section banner that follows
+        entry = entry_of("alpha-1", 1536, status="upcoming", module="module-a")
+        lines = entry.split("\n")
+        entry = "\n".join([lines[0], "", "  # a note that does not count", *lines[1:], "   "])
+        text = ("# Workstreams\n\n" + entry + "\n\n# ═══════ a section ═══════\n# " + "x" * 3000 + "\n\n"
+                + block("beta-1", status="to-brief", module="module-b") + "\n")
+        self.workstreams = self.write("workstreams.yaml", text)
+        self.assertEqual(self.check12()[0], "OK", self.check_domains().stdout)
+
+    def test_the_last_entry_runs_to_the_end_of_the_file(self):
+        self.with_workstreams(block("beta-1", status="to-brief", module="module-b"),
+                              entry_of("alpha-1", 1700, status="upcoming", module="module-a"))
+        self.assertEqual(self.check12()[2], ["alpha: workstream alpha-1 weighs 1700 bytes, cap 1536"])
+
+    def test_open_statuses_are_measured_and_accepted_is_not(self):
+        for status in ("upcoming", "to-brief", "debt", "in-flight"):
+            with self.subTest(status=status):
+                self.with_workstreams(entry_of("alpha-1", 1600, status=status, module="module-a", pl="Opus-PL-Alpha"))
+                self.assertEqual(self.check12(), (GAP, "1 open workstreams, decision log not measured, 1 above",
+                                                  ["alpha: workstream alpha-1 weighs 1600 bytes, cap 1536"]))
+        for status in ("accepted", "other", ""):
+            with self.subTest(status=status):
+                self.with_workstreams(entry_of("alpha-1", 1600, status=status or None, module="module-a"))
+                self.assertEqual(self.check12(), ("OK", "0 open workstreams, decision log not measured, 0 above", []))
+
+    def test_an_open_workstream_then_accepted_the_line_disappears(self):
+        self.with_workstreams(entry_of("alpha-1", 1700, status="upcoming", module="module-a"))
+        self.assertEqual(len(self.check12()[2]), 1)
+        self.with_workstreams(entry_of("alpha-1", 1700, status="accepted", module="module-a"))
+        self.assertEqual(self.check12()[2], [])
+
+    def test_an_arbiter_id_is_neither_measured_nor_counted(self):
+        self.with_workstreams(entry_of("arbiter-c9-checkpoint-alpha-20260101", 2000, status="to-brief", module="method",
+                                       **{"for": "Opus-PL-Alpha"}),
+                              block("alpha-1", status="upcoming", module="module-a"))
+        self.assertEqual(self.check12(), ("OK", "1 open workstreams, decision log not measured, 0 above", []))
+
+    def test_an_id_that_contains_arbiter_without_starting_with_it_is_measured(self):
+        self.with_workstreams(entry_of("alpha-arbiter-1", 2000, status="upcoming", module="module-a"))
+        self.assertEqual(len(self.check12()[2]), 1)
+
+    def test_an_entry_with_for_is_measured(self):
+        self.with_workstreams(entry_of("alpha-1", 1600, status="to-brief", module="module-a", **{"for": "Opus-PL-Alpha"}))
+        self.assertEqual(self.check12()[1], "1 open workstreams, decision log not measured, 1 above")
+
+    def test_the_archives_are_not_measured(self):
+        folder = self.archives(**{"WORKSTREAMS_2026-01": [entry_of("old-1", 5000, status="accepted", module="module-a")]})
+        output = self.check_domains("--archives", folder)
+        self.assertEqual((output.verdict(12), output.count(12)),
+                         ("OK", "2 open workstreams, decision log not measured, 0 above"))
+
+    def test_the_domain_is_read_as_in_check_9_and_the_rest_is_outside_any_domain(self):
+        self.with_workstreams(
+            entry_of("x-by-pl", 1600, status="upcoming", module="module-b", pl="Opus-PL-Alpha"),
+            entry_of("alpha-by-prefix", 1601, status="upcoming", module="module-b"),
+            entry_of("y-by-module", 1602, status="debt", module="module-b"),
+            entry_of("z-orphan", 1603, status="to-brief", module="unknown"),
+            entry_of("w-no-module", 1604, status="to-brief"))
+        self.assertEqual(self.check12()[2], [
+            "alpha: workstream x-by-pl weighs 1600 bytes, cap 1536",
+            "alpha: workstream alpha-by-prefix weighs 1601 bytes, cap 1536",
+            "beta: workstream y-by-module weighs 1602 bytes, cap 1536",
+            "outside any domain: workstream z-orphan weighs 1603 bytes, cap 1536",
+            "outside any domain: workstream w-no-module weighs 1604 bytes, cap 1536"])
+
+    def test_an_entry_without_id_is_named_by_its_line_and_outside_any_domain(self):
+        base = block("beta-1", status="to-brief", module="module-b")
+        no_id = "- status: upcoming\n  basis: " + "x" * 1600
+        self.with_workstreams(base, no_id)
+        line = (self.folder / "workstreams.yaml").read_text(encoding="utf-8").split("\n").index("- status: upcoming") + 1
+        self.assertEqual(self.check12()[2], [
+            f"outside any domain: workstream (no id, line {line}) weighs {octets(no_id) + 1} bytes, cap 1536"])
+
+    def test_workstream_lines_follow_the_file_order_then_come_those_of_the_log(self):
+        self.with_workstreams(entry_of("beta-1", 1700, status="upcoming", module="module-b"),
+                              entry_of("alpha-1", 1800, status="upcoming", module="module-a"))
+        self.write_log(log_line(4, 900), log_line(5, 801))
+        verdict, count, lines = self.check12("--log-from", "4")
+        self.assertEqual((verdict, count), (GAP, "2 open workstreams, 2 decision log entries, 4 above"))
+        self.assertEqual(lines, ["beta: workstream beta-1 weighs 1700 bytes, cap 1536",
+                                 "alpha: workstream alpha-1 weighs 1800 bytes, cap 1536",
+                                 "decision log: D4 counts 900 characters, cap 800",
+                                 "decision log: D5 counts 801 characters, cap 800"])
+
+    def test_the_workstream_cap_is_that_of_the_option(self):
+        self.with_workstreams(entry_of("alpha-1", 2000, status="upcoming", module="module-a"),
+                              entry_of("beta-1", 1500, status="upcoming", module="module-b"))
+        self.assertEqual(self.check12("--workstream-cap", "1499")[2], [
+            "alpha: workstream alpha-1 weighs 2000 bytes, cap 1499", "beta: workstream beta-1 weighs 1500 bytes, cap 1499"])
+        self.assertEqual(self.check12("--workstream-cap", "1500")[2],
+                         ["alpha: workstream alpha-1 weighs 2000 bytes, cap 1500"])
+        self.assertEqual(self.check12("--workstream-cap", "2000")[0], "OK")
+
+    def test_the_log_cap_is_800_characters_strictly_and_without_the_line_break(self):
+        self.write_log(log_line(4, 800))
+        self.assertEqual(self.check12("--log-from", "4"),
+                         ("OK", "2 open workstreams, 1 decision log entries, 0 above", []))
+        self.write_log(log_line(4, 801))
+        self.assertEqual(self.check12("--log-from", "4"), (
+            GAP, "2 open workstreams, 1 decision log entries, 1 above",
+            ["decision log: D4 counts 801 characters, cap 800"]))
+
+    def test_the_log_is_measured_in_characters_not_bytes(self):
+        line = log_line(4, 700)
+        self.assertGreater(octets(line), 800)
+        self.write_log(line)
+        self.assertEqual(self.check12("--log-from", "4")[0], "OK")
+
+    def test_the_log_cap_is_that_of_the_option(self):
+        self.write_log(log_line(4, 500), log_line(5, 1001))
+        self.assertEqual(self.check12("--log-from", "4", "--log-cap", "499")[2], [
+            "decision log: D4 counts 500 characters, cap 499", "decision log: D5 counts 1001 characters, cap 499"])
+        self.assertEqual(self.check12("--log-from", "4", "--log-cap", "1000")[2],
+                         ["decision log: D5 counts 1001 characters, cap 1000"])
+
+    def test_only_the_entries_from_the_given_number_are_measured(self):
+        self.write_log(log_line(4, 900), log_line(5, 900), log_line(6, 900))
+        self.assertEqual(self.check12("--log-from", "5"), (
+            GAP, "2 open workstreams, 2 decision log entries, 2 above",
+            ["decision log: D5 counts 900 characters, cap 800", "decision log: D6 counts 900 characters, cap 800"]))
+        self.assertEqual(self.check12("--log-from", "7"),
+                         ("OK", "2 open workstreams, 0 decision log entries, 0 above", []))
+
+    def test_a_reservation_is_neither_measured_nor_counted(self):
+        self.write_log("| **D4** | *reserved by Opus-PL-Alpha, " + "x" * 2000 + "* |")
+        output = self.check_domains("--log-from", "4")
+        self.assertEqual((output.verdict(12), output.count(12)),
+                         ("OK", "2 open workstreams, 0 decision log entries, 0 above"))
+        self.assertEqual(output.verdict(2), WARNING)
+
+    def test_lines_that_are_not_log_entries_do_not_count(self):
+        self.write_log("A sentence " + "x" * 2000, "| decision without a number | " + "x" * 2000 + " |")
+        self.assertEqual(self.check12("--log-from", "1")[1], "2 open workstreams, 3 decision log entries, 0 above")
+
+    def test_a_log_entry_has_no_domain_even_if_it_names_a_pl(self):
+        line = "| **D4** | " + "Opus-PL-Alpha " * 100 + " |"
+        self.write_log(line)
+        self.assertEqual(self.check12("--log-from", "4")[2], [
+            f"decision log: D4 counts {len(line)} characters, cap 800"])
+
+    def test_checks_1_to_11_do_not_change(self):
+        with_ = self.check_domains("--log-from", "1", "--workstream-cap", "10")
+        without = self.check_domains()
+        self.assertEqual([(with_.verdict(r), with_.count(r), with_.details(r)) for r in range(1, 12)],
+                         [(without.verdict(r), without.count(r), without.details(r)) for r in range(1, 12)])
+
+    def test_the_docstring_describes_check_12_and_its_options(self):
+        doc = load(CHECKER, "check_living_docs_doc").__doc__
+        for expected in ("The twelve checks", "12. entry sizes", "--workstream-cap", "--log-cap",
+                         "--log-from", "1536 by default", "800 by default"):
+            self.assertIn(expected, doc)
 
 
 class TestFunctions(TempCase):

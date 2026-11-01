@@ -1,4 +1,4 @@
-"""Tests de verifier_vivants.py : chacun des onze contrôles, une fois OK et une fois en écart ; les appels invalides.
+"""Tests de verifier_vivants.py : chacun des douze contrôles, une fois OK et une fois en écart ; les appels invalides.
 
 Chaque test bâtit ses fixtures dans un dossier temporaire (voir outils_tests.py) et appelle le script en
 ligne de commande ; quelques tests appellent ses fonctions quand c'est plus net.
@@ -75,16 +75,16 @@ class TestAppelDeBase(CasVerifier):
 
     def test_non_demande_quand_une_option_manque(self):
         sortie = self.verifier()
-        for rang in (6, 7, 9, 10):
+        for rang in (6, 7, 9, 10, 12):
             self.assertEqual(sortie.verdict(rang), NON_DEMANDE, f"contrôle {rang}")
-        self.assertEqual(len(sortie.controles) - 1, 11, "onze lignes de contrôle, plus le bilan")
+        self.assertEqual(len(sortie.controles) - 1, 12, "douze lignes de contrôle, plus le bilan")
 
-    def test_onze_controles_dans_l_ordre(self):
+    def test_douze_controles_dans_l_ordre(self):
         libelles = re.findall(r"^\d+\s+(\S.*?)\s+(?:OK|ÉCART|avertissement|—)(?:\s|$)", self.verifier().stdout, flags=re.M)
         self.assertEqual(libelles, [
             "numéros du registre", "réservations", "identifiants de chantier", "versions des lots",
             "chantiers en vol", "tableau", "journal", "livrables et ressources", "checkpoints",
-            "taille des checkpoints", "format YAML"])
+            "taille des checkpoints", "format YAML", "taille des entrées"])
 
     def test_un_ecart_donne_le_code_1(self):
         self.registre = self.ecrire("registre.md", registre(1, 3))
@@ -173,6 +173,19 @@ class TestAppelsInvalides(CasVerifier):
             with self.subTest(valeur=valeur):
                 sortie = self.verifier("--domaines", table, "--plafond-checkpoint", valeur)
                 self.invalide(sortie, "un entier positif est attendu")
+
+    def test_les_options_du_controle_12_sans_domaines(self):
+        for option in ("--plafond-chantier", "--plafond-registre", "--registre-depuis"):
+            with self.subTest(option=option):
+                self.invalide(self.verifier(option, "100"), f"{option} ne va qu'avec --domaines")
+
+    def test_les_options_du_controle_12_veulent_un_entier_positif(self):
+        table = self.ecrire("domaines.yaml", TABLE_DEUX_DOMAINES)
+        for option in ("--plafond-chantier", "--plafond-registre", "--registre-depuis"):
+            for valeur in ("abc", "0", "-5", "1.5", "", "٣"):
+                with self.subTest(option=option, valeur=valeur):
+                    sortie = self.verifier("--domaines", table, option, valeur)
+                    self.invalide(sortie, f"{option} : un entier positif est attendu ({valeur})")
 
     def test_argument_inconnu(self):
         self.invalide(self.verifier("--inconnu", "x"), "argument inconnu : --inconnu")
@@ -1088,6 +1101,235 @@ class TestControle11Format(CasCheckpoints):
         sortie = self.verifier_domaines()
         self.assertEqual([sortie.verdict(r) for r in range(1, 11)],
                          ["OK", "OK", "OK", "OK", "OK", NON_DEMANDE, NON_DEMANDE, "OK", "OK", "OK"])
+
+
+def octets(texte: str) -> int:
+    return len(texte.encode("utf-8"))
+
+
+def entree_de(id: str, taille: int, **cles) -> str:
+    """Une entrée de chantier qui pèse exactement « taille » octets au sens du contrôle 12 : sa clé « mesure » est
+    remplie de « x » (ses lignes, chacune suivie d'un saut de ligne)."""
+    base = bloc(id, **cles, mesure="")
+    vide = sum(octets(ligne) + 1 for ligne in base.split("\n"))
+    assert taille >= vide, (taille, vide)
+    return bloc(id, **cles, mesure="x" * (taille - vide))
+
+
+def ligne_du_registre(numero: int, caracteres: int) -> str:
+    """Une ligne « | **R<n>** | … | » de exactement « caracteres » caractères (saut de ligne exclu)."""
+    debut, fin = f"| **R{numero}** | ", " |"
+    return debut + "é" * (caracteres - len(debut) - len(fin)) + fin
+
+
+class TestControle12Entrees(CasCheckpoints):
+    """La table : alpha (module-a, préfixe alpha-), beta (module-b) ; un module inconnu est « hors domaine »."""
+
+    def setUp(self):
+        super().setUp()
+        self.ecrire_registre()
+
+    def ecrire_registre(self, *lignes: str):
+        """Un registre R1 à R3 courts, puis les lignes données (dans l'ordre donné)."""
+        self.registre = self.ecrire("registre.md", registre(1, 2, 3) + "".join(ligne + "\n" for ligne in lignes))
+
+    def controle12(self, *options):
+        sortie = self.verifier_domaines(*options)
+        return sortie.verdict(12), sortie.compte(12), sortie.details(12)
+
+    def test_sans_domaines_non_demande_et_rien_d_autre_ne_change(self):
+        sans = self.verifier()
+        self.assertEqual(sans.verdict(12), NON_DEMANDE)
+        self.assertEqual(re.findall(r"^12 taille des entrées +—  non demandé$", sans.stdout, flags=re.M),
+                         ["12 taille des entrées         —  non demandé"])
+        self.assertEqual(sans.code, 0)
+        self.assertEqual(sans.bilan, "VIVANTS · aucun écart")
+        # la ligne du 12 vient après celle du 11 et avant la dernière
+        lignes = sans.stdout.rstrip("\n").split("\n")
+        self.assertTrue(lignes[-3].startswith("11 "), lignes)
+        self.assertTrue(lignes[-2].startswith("12 "), lignes)
+        self.assertTrue(lignes[-1].startswith("VIVANTS · "), lignes)
+
+    def test_ok_sans_registre_depuis_le_registre_n_est_pas_mesure(self):
+        self.ecrire_registre(ligne_du_registre(4, 5000))
+        self.assertEqual(self.controle12(), ("OK", "2 chantiers ouverts, registre non mesuré, 0 au-delà", []))
+
+    def test_ok_avec_registre_depuis(self):
+        self.assertEqual(self.controle12("--registre-depuis", "1"), ("OK", "2 chantiers ouverts, 3 entrées du registre, 0 au-delà", []))
+
+    def test_le_plafond_d_un_chantier_est_1536_octets_strictement(self):
+        self.avec_chantiers(entree_de("alpha-1", 1536, statut="a-venir", module="module-a"),
+                            bloc("beta-1", statut="a-cadrer", module="module-b"))
+        self.assertEqual(self.controle12()[0], "OK")
+        self.avec_chantiers(entree_de("alpha-1", 1537, statut="a-venir", module="module-a"),
+                            bloc("beta-1", statut="a-cadrer", module="module-b"))
+        self.assertEqual(self.controle12(), (ECART, "2 chantiers ouverts, registre non mesuré, 1 au-delà",
+                                             ["alpha : chantier alpha-1 pèse 1537 octets, plafond 1536"]))
+
+    def test_le_code_de_retour_compte_le_controle_12(self):
+        self.avec_chantiers(entree_de("alpha-1", 1600, statut="a-venir", module="module-a"),
+                            bloc("beta-1", statut="a-cadrer", module="module-b"))
+        sortie = self.verifier_domaines()
+        self.assertEqual((sortie.code, sortie.bilan), (1, "VIVANTS · 1 écart(s)"))
+
+    def test_la_taille_se_mesure_en_octets_utf_8(self):
+        # chaque « é » pèse deux octets : 1000 caractères en font 2000
+        self.avec_chantiers(bloc("alpha-1", statut="a-venir", module="module-a", mesure="é" * 1000),
+                            bloc("beta-1", statut="a-cadrer", module="module-b"))
+        taille = sum(octets(ligne) + 1 for ligne in
+                     bloc("alpha-1", statut="a-venir", module="module-a", mesure="é" * 1000).split("\n"))
+        self.assertGreater(taille, 2000)
+        self.assertEqual(self.controle12()[2], [f"alpha : chantier alpha-1 pèse {taille} octets, plafond 1536"])
+
+    def test_les_lignes_vides_et_les_lignes_diese_ne_comptent_pas(self):
+        # l'entrée de 1536 octets, plus des lignes vides, un commentaire en retrait et un bandeau de section qui suit
+        entree = entree_de("alpha-1", 1536, statut="a-venir", module="module-a")
+        lignes = entree.split("\n")
+        entree = "\n".join([lignes[0], "", "  # une note qui ne compte pas", *lignes[1:], "   "])
+        texte = ("# Chantiers\n\n" + entree + "\n\n# ═══════ une section ═══════\n# " + "x" * 3000 + "\n\n"
+                 + bloc("beta-1", statut="a-cadrer", module="module-b") + "\n")
+        self.chantiers = self.ecrire("chantiers.yaml", texte)
+        self.assertEqual(self.controle12()[0], "OK", self.verifier_domaines().stdout)
+
+    def test_la_derniere_entree_va_jusqu_a_la_fin_du_fichier(self):
+        self.avec_chantiers(bloc("beta-1", statut="a-cadrer", module="module-b"),
+                            entree_de("alpha-1", 1700, statut="a-venir", module="module-a"))
+        self.assertEqual(self.controle12()[2], ["alpha : chantier alpha-1 pèse 1700 octets, plafond 1536"])
+
+    def test_les_statuts_ouverts_sont_mesures_et_la_recette_non(self):
+        for statut in ("a-venir", "a-cadrer", "dette", "en-vol"):
+            with self.subTest(statut=statut):
+                self.avec_chantiers(entree_de("alpha-1", 1600, statut=statut, module="module-a", cdp="Opus-CdP-Alpha"))
+                self.assertEqual(self.controle12(), (ECART, "1 chantiers ouverts, registre non mesuré, 1 au-delà",
+                                                     ["alpha : chantier alpha-1 pèse 1600 octets, plafond 1536"]))
+        for statut in ("recette", "autre", ""):
+            with self.subTest(statut=statut):
+                self.avec_chantiers(entree_de("alpha-1", 1600, statut=statut or None, module="module-a"))
+                self.assertEqual(self.controle12(), ("OK", "0 chantiers ouverts, registre non mesuré, 0 au-delà", []))
+
+    def test_un_chantier_ouvert_puis_en_recette_la_ligne_disparait(self):
+        self.avec_chantiers(entree_de("alpha-1", 1700, statut="a-venir", module="module-a"))
+        self.assertEqual(len(self.controle12()[2]), 1)
+        self.avec_chantiers(entree_de("alpha-1", 1700, statut="recette", module="module-a"))
+        self.assertEqual(self.controle12()[2], [])
+
+    def test_un_id_arbitre_n_est_ni_mesure_ni_compte(self):
+        self.avec_chantiers(entree_de("arbitre-c9-checkpoint-alpha-20260101", 2000, statut="a-cadrer", module="methode",
+                                      pour="Opus-CdP-Alpha"),
+                            bloc("alpha-1", statut="a-venir", module="module-a"))
+        self.assertEqual(self.controle12(), ("OK", "1 chantiers ouverts, registre non mesuré, 0 au-delà", []))
+
+    def test_un_id_qui_contient_arbitre_sans_commencer_par_lui_est_mesure(self):
+        self.avec_chantiers(entree_de("alpha-arbitre-1", 2000, statut="a-venir", module="module-a"))
+        self.assertEqual(len(self.controle12()[2]), 1)
+
+    def test_une_entree_avec_pour_est_mesuree(self):
+        self.avec_chantiers(entree_de("alpha-1", 1600, statut="a-cadrer", module="module-a", pour="Opus-CdP-Alpha"))
+        self.assertEqual(self.controle12()[1], "1 chantiers ouverts, registre non mesuré, 1 au-delà")
+
+    def test_les_archives_ne_sont_pas_mesurees(self):
+        dossier = self.archives(**{"CHANTIERS_2026-01": [entree_de("vieux-1", 5000, statut="recette", module="module-a")]})
+        sortie = self.verifier_domaines("--archives", dossier)
+        self.assertEqual((sortie.verdict(12), sortie.compte(12)), ("OK", "2 chantiers ouverts, registre non mesuré, 0 au-delà"))
+
+    def test_le_domaine_se_lit_comme_au_controle_9_et_le_reste_est_hors_domaine(self):
+        self.avec_chantiers(
+            entree_de("x-par-cdp", 1600, statut="a-venir", module="module-b", cdp="Opus-CdP-Alpha"),
+            entree_de("alpha-par-prefixe", 1601, statut="a-venir", module="module-b"),
+            entree_de("y-par-module", 1602, statut="dette", module="module-b"),
+            entree_de("z-orphelin", 1603, statut="a-cadrer", module="inconnu"),
+            entree_de("w-sans-module", 1604, statut="a-cadrer"))
+        self.assertEqual(self.controle12()[2], [
+            "alpha : chantier x-par-cdp pèse 1600 octets, plafond 1536",
+            "alpha : chantier alpha-par-prefixe pèse 1601 octets, plafond 1536",
+            "beta : chantier y-par-module pèse 1602 octets, plafond 1536",
+            "hors domaine : chantier z-orphelin pèse 1603 octets, plafond 1536",
+            "hors domaine : chantier w-sans-module pèse 1604 octets, plafond 1536"])
+
+    def test_une_entree_sans_id_est_nommee_par_sa_ligne_et_hors_domaine(self):
+        base = bloc("beta-1", statut="a-cadrer", module="module-b")
+        sans_id = "- statut: a-venir\n  mesure: " + "x" * 1600
+        self.avec_chantiers(base, sans_id)
+        ligne = (self.dossier / "chantiers.yaml").read_text(encoding="utf-8").split("\n").index("- statut: a-venir") + 1
+        self.assertEqual(self.controle12()[2], [
+            f"hors domaine : chantier (sans id, ligne {ligne}) pèse {octets(sans_id) + 1} octets, plafond 1536"])
+
+    def test_les_lignes_de_chantiers_suivent_l_ordre_du_fichier_puis_viennent_celles_du_registre(self):
+        self.avec_chantiers(entree_de("beta-1", 1700, statut="a-venir", module="module-b"),
+                            entree_de("alpha-1", 1800, statut="a-venir", module="module-a"))
+        self.ecrire_registre(ligne_du_registre(4, 900), ligne_du_registre(5, 801))
+        verdict, compte, lignes = self.controle12("--registre-depuis", "4")
+        self.assertEqual((verdict, compte), (ECART, "2 chantiers ouverts, 2 entrées du registre, 4 au-delà"))
+        self.assertEqual(lignes, ["beta : chantier beta-1 pèse 1700 octets, plafond 1536",
+                                  "alpha : chantier alpha-1 pèse 1800 octets, plafond 1536",
+                                  "registre : R4 compte 900 caractères, plafond 800",
+                                  "registre : R5 compte 801 caractères, plafond 800"])
+
+    def test_le_plafond_du_chantier_est_celui_de_l_option(self):
+        self.avec_chantiers(entree_de("alpha-1", 2000, statut="a-venir", module="module-a"),
+                            entree_de("beta-1", 1500, statut="a-venir", module="module-b"))
+        self.assertEqual(self.controle12("--plafond-chantier", "1499")[2], [
+            "alpha : chantier alpha-1 pèse 2000 octets, plafond 1499", "beta : chantier beta-1 pèse 1500 octets, plafond 1499"])
+        self.assertEqual(self.controle12("--plafond-chantier", "1500")[2],
+                         ["alpha : chantier alpha-1 pèse 2000 octets, plafond 1500"])
+        self.assertEqual(self.controle12("--plafond-chantier", "2000")[0], "OK")
+
+    def test_le_plafond_du_registre_est_800_caracteres_strictement_et_sans_le_saut_de_ligne(self):
+        self.ecrire_registre(ligne_du_registre(4, 800))
+        self.assertEqual(self.controle12("--registre-depuis", "4"), ("OK", "2 chantiers ouverts, 1 entrées du registre, 0 au-delà", []))
+        self.ecrire_registre(ligne_du_registre(4, 801))
+        self.assertEqual(self.controle12("--registre-depuis", "4"), (
+            ECART, "2 chantiers ouverts, 1 entrées du registre, 1 au-delà",
+            ["registre : R4 compte 801 caractères, plafond 800"]))
+
+    def test_le_registre_se_mesure_en_caracteres_pas_en_octets(self):
+        ligne = ligne_du_registre(4, 700)
+        self.assertGreater(octets(ligne), 800)
+        self.ecrire_registre(ligne)
+        self.assertEqual(self.controle12("--registre-depuis", "4")[0], "OK")
+
+    def test_le_plafond_du_registre_est_celui_de_l_option(self):
+        self.ecrire_registre(ligne_du_registre(4, 500), ligne_du_registre(5, 1001))
+        self.assertEqual(self.controle12("--registre-depuis", "4", "--plafond-registre", "499")[2], [
+            "registre : R4 compte 500 caractères, plafond 499", "registre : R5 compte 1001 caractères, plafond 499"])
+        self.assertEqual(self.controle12("--registre-depuis", "4", "--plafond-registre", "1000")[2],
+                         ["registre : R5 compte 1001 caractères, plafond 1000"])
+
+    def test_seules_les_entrees_depuis_le_numero_donne_sont_mesurees(self):
+        self.ecrire_registre(ligne_du_registre(4, 900), ligne_du_registre(5, 900), ligne_du_registre(6, 900))
+        self.assertEqual(self.controle12("--registre-depuis", "5"), (
+            ECART, "2 chantiers ouverts, 2 entrées du registre, 2 au-delà",
+            ["registre : R5 compte 900 caractères, plafond 800", "registre : R6 compte 900 caractères, plafond 800"]))
+        self.assertEqual(self.controle12("--registre-depuis", "7"),
+                         ("OK", "2 chantiers ouverts, 0 entrées du registre, 0 au-delà", []))
+
+    def test_une_reservation_n_est_pas_mesuree_ni_comptee(self):
+        self.ecrire_registre("| **R4** | *réservé par Opus-CdP-Alpha, " + "x" * 2000 + "* |")
+        sortie = self.verifier_domaines("--registre-depuis", "4")
+        self.assertEqual((sortie.verdict(12), sortie.compte(12)), ("OK", "2 chantiers ouverts, 0 entrées du registre, 0 au-delà"))
+        self.assertEqual(sortie.verdict(2), AVERTISSEMENT)
+
+    def test_les_lignes_qui_ne_sont_pas_des_entrees_du_registre_ne_comptent_pas(self):
+        self.ecrire_registre("Une phrase " + "x" * 2000, "| décision sans numéro | " + "x" * 2000 + " |")
+        self.assertEqual(self.controle12("--registre-depuis", "1")[1], "2 chantiers ouverts, 3 entrées du registre, 0 au-delà")
+
+    def test_une_entree_du_registre_n_a_pas_de_domaine_meme_si_elle_nomme_un_cdp(self):
+        ligne = "| **R4** | " + "Opus-CdP-Alpha " * 100 + " |"
+        self.ecrire_registre(ligne)
+        self.assertEqual(self.controle12("--registre-depuis", "4")[2], [
+            f"registre : R4 compte {len(ligne)} caractères, plafond 800"])
+
+    def test_les_controles_1_a_11_ne_changent_pas(self):
+        avec = self.verifier_domaines("--registre-depuis", "1", "--plafond-chantier", "10")
+        sans = self.verifier_domaines()
+        self.assertEqual([(avec.verdict(r), avec.compte(r), avec.details(r)) for r in range(1, 12)],
+                         [(sans.verdict(r), sans.compte(r), sans.details(r)) for r in range(1, 12)])
+
+    def test_la_docstring_decrit_le_controle_12_et_ses_options(self):
+        doc = charger(VERIFIER, "verifier_vivants_doc").__doc__
+        for attendu in ("Les douze contrôles", "12. taille des entrées", "--plafond-chantier", "--plafond-registre",
+                        "--registre-depuis", "1536 par défaut", "800 par défaut"):
+            self.assertIn(attendu, doc)
 
 
 class TestFonctions(CasTemporaire):

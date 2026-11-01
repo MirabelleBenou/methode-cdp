@@ -35,6 +35,11 @@ class CasContexte(CasTemporaire):
     def contexte(self, *arguments):
         return self.lancer(CONTEXTE, *arguments, env={"HOME": str(self.home), "USERPROFILE": str(self.home)})
 
+    @staticmethod
+    def premiere(sortie) -> str:
+        """La première ligne de la sortie, sans sa fin de ligne : le contexte au dernier tour."""
+        return sortie.stdout.split("\n")[0]
+
     def assertUneLigne(self, sortie, fragment: str):
         """Échec propre : code 1, une seule ligne, aucune trace d'erreur Python."""
         self.assertEqual(sortie.code, 1, sortie.stdout + sortie.stderr)
@@ -48,34 +53,34 @@ class TestMesure(CasContexte):
     def test_mesure_juste_sur_un_cas_simple(self):
         self.journal("p/session.jsonl", usage(10, 200, 30))
         sortie = self.contexte()
-        self.assertEqual((sortie.code, sortie.stdout, sortie.stderr), (0, "contexte au dernier tour : 240 jetons\n", ""))
+        self.assertEqual((sortie.code, self.premiere(sortie), sortie.stderr), (0, "contexte au dernier tour : 240 jetons", ""))
 
     def test_le_dernier_tour_compte_pas_le_cumul(self):
         self.journal("p/session.jsonl", usage(1, 1000, 100), {"type": "user"}, usage(5, 4000, 300), {"type": "user"})
-        self.assertEqual(self.contexte().stdout, "contexte au dernier tour : 4 305 jetons\n")
+        self.assertEqual(self.premiere(self.contexte()), "contexte au dernier tour : 4 305 jetons")
 
     def test_les_milliers_sont_separes_par_des_espaces(self):
         self.journal("p/session.jsonl", usage(2, 1_234_000, 565))
-        self.assertEqual(self.contexte().stdout, "contexte au dernier tour : 1 234 567 jetons\n")
+        self.assertEqual(self.premiere(self.contexte()), "contexte au dernier tour : 1 234 567 jetons")
 
     def test_un_compteur_absent_vaut_zero(self):
         self.journal("p/session.jsonl", {"message": {"usage": {"input_tokens": 7, "cache_read_input_tokens": 3}}})
-        self.assertEqual(self.contexte().stdout, "contexte au dernier tour : 10 jetons\n")
+        self.assertEqual(self.premiere(self.contexte()), "contexte au dernier tour : 10 jetons")
 
     def test_le_journal_le_plus_recent_est_pris(self):
         self.journal("p/ancien.jsonl", usage(1, 1, 1))
         self.journal("q/recent.jsonl", usage(2, 2, 2))
-        self.assertEqual(self.contexte().stdout, "contexte au dernier tour : 6 jetons\n")
+        self.assertEqual(self.premiere(self.contexte()), "contexte au dernier tour : 6 jetons")
 
     def test_un_journal_en_argument_l_emporte(self):
         voulu = self.journal("p/voulu.jsonl", usage(1, 1, 1))
         self.journal("q/plus-recent.jsonl", usage(9, 9, 9))
-        self.assertEqual(self.contexte(voulu).stdout, "contexte au dernier tour : 3 jetons\n")
+        self.assertEqual(self.premiere(self.contexte(voulu)), "contexte au dernier tour : 3 jetons")
 
     def test_un_journal_en_argument_hors_de_home(self):
         autre = self.ecrire("ailleurs/journal.jsonl", json.dumps(usage(4, 5, 6)) + "\n")
         sortie = self.contexte(autre)
-        self.assertEqual((sortie.code, sortie.stdout), (0, "contexte au dernier tour : 15 jetons\n"))
+        self.assertEqual((sortie.code, self.premiere(sortie)), (0, "contexte au dernier tour : 15 jetons"))
 
 
 class TestRobustesse(CasContexte):
@@ -102,7 +107,7 @@ class TestRobustesse(CasContexte):
         self.journal("p/session.jsonl", usage(10, 20, 30), "{ceci n'est pas du json", "", "[1, 2]", "null", usage(1, 2, 3),
                      "{\"tronquée\": ")
         sortie = self.contexte()
-        self.assertEqual((sortie.code, sortie.stdout), (0, "contexte au dernier tour : 6 jetons\n"))
+        self.assertEqual((sortie.code, self.premiere(sortie)), (0, "contexte au dernier tour : 6 jetons"))
 
     def test_un_journal_illisible_en_argument(self):
         manquant = self.dossier / "absent.jsonl"
@@ -117,11 +122,11 @@ class TestRobustesse(CasContexte):
 class TestSessionPrincipale(CasContexte):
     def test_une_ligne_de_sous_agent_plus_recente_est_ignoree(self):
         self.journal("p/session.jsonl", usage(10, 20, 30), usage(900, 900, 900, isSidechain=True))
-        self.assertEqual(self.contexte().stdout, "contexte au dernier tour : 60 jetons\n")
+        self.assertEqual(self.premiere(self.contexte()), "contexte au dernier tour : 60 jetons")
 
     def test_une_ligne_isSidechain_false_compte(self):
         self.journal("p/session.jsonl", usage(10, 20, 30), usage(1, 2, 3, isSidechain=False))
-        self.assertEqual(self.contexte().stdout, "contexte au dernier tour : 6 jetons\n")
+        self.assertEqual(self.premiere(self.contexte()), "contexte au dernier tour : 6 jetons")
 
     def test_un_journal_fait_seulement_de_lignes_de_sous_agent(self):
         self.journal("p/session.jsonl", usage(1, 2, 3, isSidechain=True))
@@ -130,11 +135,50 @@ class TestSessionPrincipale(CasContexte):
     def test_un_fichier_sous_subagents_est_ecarte(self):
         self.journal("p/principal.jsonl", usage(10, 20, 30))
         self.journal("subagents/agent-1.jsonl", usage(500, 500, 500))
-        self.assertEqual(self.contexte().stdout, "contexte au dernier tour : 60 jetons\n")
+        self.assertEqual(self.premiere(self.contexte()), "contexte au dernier tour : 60 jetons")
 
     def test_seuls_des_fichiers_sous_subagents(self):
         self.journal("subagents/agent-1.jsonl", usage(500, 500, 500))
         self.assertUneLigne(self.contexte(), "aucun journal")
+
+
+class TestChargeFixe(CasContexte):
+    """Le premier tour est la charge fixe ; le travail est ce qui s'ajoute au dernier tour."""
+
+    def test_trois_tours_et_un_sous_agent_entre_eux(self):
+        self.journal("p/session.jsonl", usage(1, 150_000, 82), usage(999_999, isSidechain=True),
+                     usage(3, 183_000, 937), usage(0, 254_000, 0))
+        sortie = self.contexte()
+        self.assertEqual((sortie.code, sortie.stderr), (0, ""))
+        self.assertEqual(sortie.stdout, "contexte au dernier tour : 254 000 jetons\n"
+                                        "charge fixe (premier tour) : 150 083 jetons\n"
+                                        "travail au-dessus de la charge fixe : 103 917 jetons\n")
+
+    def test_les_chiffres_du_cadrage(self):
+        self.journal("p/session.jsonl", usage(83, 151_000, 0), usage(999_999, 0, 0, isSidechain=True),
+                     usage(940, 183_000, 0), usage(0, 254_000, 0))
+        self.assertEqual(self.contexte().stdout, "contexte au dernier tour : 254 000 jetons\n"
+                                                 "charge fixe (premier tour) : 151 083 jetons\n"
+                                                 "travail au-dessus de la charge fixe : 102 917 jetons\n")
+
+    def test_un_seul_tour_donne_un_travail_de_zero(self):
+        self.journal("p/session.jsonl", usage(10, 200, 30))
+        self.assertEqual(self.contexte().stdout, "contexte au dernier tour : 240 jetons\n"
+                                                 "charge fixe (premier tour) : 240 jetons\n"
+                                                 "travail au-dessus de la charge fixe : 0 jetons\n")
+
+    def test_le_premier_tour_ecarte_un_sous_agent_en_tete_et_une_ligne_illisible(self):
+        self.journal("p/session.jsonl", usage(900, 900, 900, isSidechain=True), "{illisible", usage(1, 2, 3),
+                     usage(4, 5, 6))
+        self.assertEqual(self.contexte().stdout, "contexte au dernier tour : 15 jetons\n"
+                                                 "charge fixe (premier tour) : 6 jetons\n"
+                                                 "travail au-dessus de la charge fixe : 9 jetons\n")
+
+    def test_la_charge_fixe_prend_les_memes_separateurs_de_milliers(self):
+        self.journal("p/session.jsonl", usage(2, 1_234_000, 565), usage(0, 2_000_000, 0))
+        self.assertEqual(self.contexte().stdout, "contexte au dernier tour : 2 000 000 jetons\n"
+                                                 "charge fixe (premier tour) : 1 234 567 jetons\n"
+                                                 "travail au-dessus de la charge fixe : 765 433 jetons\n")
 
 
 class TestCompactage(CasContexte):
@@ -147,11 +191,15 @@ class TestCompactage(CasContexte):
         sortie = self.contexte()
         self.assertEqual(sortie.code, 0)
         self.assertEqual(sortie.stdout, "contexte au dernier tour : 15 jetons\n"
+                                        "charge fixe (premier tour) : 6 jetons\n"
+                                        "travail au-dessus de la charge fixe : 9 jetons\n"
                                         "compactage vu : la mesure porte sur le contexte compacté\n")
 
     def test_la_marque_compact_boundary_est_signalee(self):
         self.journal("p/session.jsonl", {"type": "system", "subtype": "compact_boundary"}, usage(4, 5, 6))
         self.assertEqual(self.contexte().stdout, "contexte au dernier tour : 15 jetons\n"
+                                                 "charge fixe (premier tour) : 15 jetons\n"
+                                                 "travail au-dessus de la charge fixe : 0 jetons\n"
                                                  "compactage vu : la mesure porte sur le contexte compacté\n")
 
     def test_une_marque_de_sous_agent_n_est_pas_signalee(self):

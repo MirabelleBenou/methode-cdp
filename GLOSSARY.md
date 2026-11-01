@@ -56,7 +56,7 @@ of them; the other parts serve when you add an extension (table of `CORE.md` §6
 | **accepted** (the `accepted` status) | the status of a workstream delivered and validated; once the delay of the method §6 is over, it moves out to the month's archive. | `templates/METHOD.md` §6 |
 | **published board** | the page `workstreams.html`, fixed and with no data at all, and its *data file* `workstreams.json` next to it, published together at the same link. | `templates/METHOD.md` §6; `templates/make_board.py` |
 | **data file** | `workstreams.json`, which the generator writes next to the page; the page reads it by `fetch`. | `templates/make_board.py`; `templates/living-docs-repo/README.md` |
-| **checker** | `check_living_docs.py`: the read-only check of the shared living docs (eleven checks, including 6, the page and its data against their regeneration, and 11, the `.yaml` files in valid YAML). | `templates/check_living_docs.py`; `templates/living-docs-repo/README.md` |
+| **checker** | `check_living_docs.py`: the read-only check of the shared living docs (twelve checks, including 6, the page and its data against their regeneration, and 11, the `.yaml` files in valid YAML). | `templates/check_living_docs.py`; `templates/living-docs-repo/README.md` |
 | **product sheet** | the checkpoint of a product that has several module PLs: what is common (ritual, test bench, circuit, pitfalls), never the state. | `templates/METHOD.md` §1a |
 
 ## 4 · The extensions, the bridge and the fallback

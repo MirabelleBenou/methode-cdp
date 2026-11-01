@@ -35,7 +35,7 @@ S = "[ \u00a0\u202f]?"
 # The figures of the table in the method §6, by pattern. A pattern is looked for, case-insensitively, in every line of
 # every English .md; it also takes the abbreviated forms ("250 k", "350k", "10 kb").
 FIGURES = {
-    "handover thresholds": rf"\b[2-5]50(?:[,\u00a0\u202f ]?000|{S}k)\b|\b450/550\b|\b1{S}M tokens\b",
+    "handover thresholds": rf"\b(?:[2-5]50|[34]00)(?:[,\u00a0\u202f ]?000|{S}k)\b|\b450/550\b|\b1{S}M tokens\b",
     "cap of a checkpoint": rf"\b10{S}kb\b|\b10[,\u00a0\u202f ]?240\b",
     "cap of a workstream entry": rf"\b1\.5{S}kb\b",
     "cap of a decision log entry": rf"\b800{S}characters\b",
@@ -177,7 +177,7 @@ class ParityCase(unittest.TestCase):
 
     def test_the_patterns_take_no_break_spaces_case_and_abbreviated_forms(self):
         seen = {
-            "handover thresholds": ["250\u00a0000 tokens", "350\u202f000", "250,000", "250 k", "350k", "450 K"],
+            "handover thresholds": ["250\u00a0000 tokens", "350\u202f000", "250,000", "250 k", "350k", "450 K", "300\u00a0000 tokens", "400,000", "400 k"],
             "cap of a checkpoint": ["10 kb", "10\u00a0KB", "10\u202fKb", "10KB", "10,240 bytes"],
             "cap of a workstream entry": ["~1.5\u00a0kb"],
             "cap of a decision log entry": ["800\u00a0characters"],

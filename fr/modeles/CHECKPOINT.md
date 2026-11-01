@@ -90,7 +90,7 @@ touche.*
 
 - **Ouverte** le <date heure>, **close** le <date heure>.
 - **Travail réalisé** : <…>.
-- **Contexte** : environ <n> jetons au dernier tour (les seuils sont à la méthode §6).
+- **Contexte** : environ <n> jetons au dernier tour, dont <f> de charge fixe (les seuils sont à la méthode §6).
 - **Signes de saturation vus** : <pertes de fil, contradictions, une décision oubliée — ou « aucun »> (ils servent à
   recalibrer le seuil sur des mesures).
 - **Premiers postes** : <…>.

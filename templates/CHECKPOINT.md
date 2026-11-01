@@ -90,7 +90,7 @@ the table a PL touches.*
 
 - **Opened** on <date time>, **closed** on <date time>.
 - **Work done**: <…>.
-- **Context**: about <n> tokens at the last turn (the thresholds are in method §6).
+- **Context**: about <n> tokens at the last turn, of which <f> of fixed load (the thresholds are in method §6).
 - **Saturation signs seen**: <losing the thread, contradictions, a forgotten decision — or “none”> (they serve to
   recalibrate the threshold on measurements).
 - **Main items**: <…>.

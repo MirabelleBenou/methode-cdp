@@ -446,7 +446,7 @@ procédure manuelle, la date de mise en service.⟩
   y reste (§5) ;
 - `chantiers.yaml` — le champ `fait:` de l'entrée close tient en une ligne, la date et la version, sans le détail —,
   ⟨avec le tableau publié : **puis la page et le fichier de données du tableau régénérés** (ci-dessous)⟩ ;
-- **un commit « Lot v<X.Y> clos »** au dépôt des vivants, dont le message porte la ligne **`Contexte : <N> jetons`**
+- **un commit « Lot v<X.Y> clos »** au dépôt des vivants, dont le message porte la ligne **`Contexte : <N> jetons, dont <F> de charge fixe`**
   (la mesure de `contexte.py`, « La passation » ci-dessous) ⟨, puis **le miroir au projet**, s'il y en a un⟩ ;
 - le **§0 du checkpoint du domaine**, rafraîchi (l'état seulement), **sa file relue face à `chantiers.yaml`**
   (ci-dessous) : la passation ne réécrit plus qu'un état déjà à jour, au moment où le contexte est le plus lourd.
@@ -471,11 +471,10 @@ les mêmes. ⟨Un projet qui en change un le change ici.⟩
 
 | chiffre | valeur | ce qu'il règle |
 |---|---|---|
-| seuils de passation, un seul CdP | **250 000** jetons pour prévenir, **350 000** au plus tard pour passer la main | la passation (ci-dessous) ; ils supposent une fenêtre d'environ 1 M de jetons |
-| seuils de passation, plusieurs CdP | **450 000** et **550 000** | les mêmes gestes : un domaine y a plus de documents à relire |
+| seuils de passation | **charge fixe + 300 000** jetons pour prévenir, **charge fixe + 400 000** au plus tard pour passer la main | la passation (ci-dessous) ; la charge fixe se mesure au premier tour (`contexte.py`) ; ils supposent une fenêtre d'environ 1 M de jetons |
 | plafond d'un checkpoint | **10 Ko** (10 240 octets) | contrôle 10 (`--plafond-checkpoint`) |
-| plafond d'une entrée de chantier | **~1,5 Ko** | |
-| plafond d'une entrée du registre | **~800 caractères** | |
+| plafond d'une entrée de chantier | **1,5 Ko** (1 536 octets) | contrôle 12 (`--plafond-chantier`) |
+| plafond d'une entrée du registre | **800 caractères** | contrôle 12 (`--plafond-registre`, à partir de `--registre-depuis`) |
 | coupe du registre | **par tranches de cinquante numéros**, au-delà de **~150 Ko** | |
 | délai d'archivage d'un chantier en recette | **sept jours** | `archiver_chantiers.py`, sans `--delai` |
 | modèle et effort par défaut du dev | **Sonnet · Medium** | Opus pour ⟨…⟩ (§1) ; High ou Low (§3) |
@@ -485,7 +484,10 @@ premier projet, un fichier de chantiers est passé de 95 à 146 Ko en un jour, u
 47 Ko* :
 - **une entrée de chantier tient sous son plafond** : l'état, la décision, le prochain geste ; un échange long va au
   dossier du lot ou dans une note du domaine, l'entrée n'en garde que le résumé et le chemin ;
-- **une entrée du registre tient sous le sien** ;
+- **une entrée du registre tient sous le sien** ; **le contrôle 12** de `verifier_vivants.py --domaines` mesure ces deux
+  plafonds (réglables par `--plafond-chantier` et `--plafond-registre` ; le registre seulement à partir de
+  `--registre-depuis`, les entrées anciennes ne se réécrivent pas) ; l'arbitre, s'il existe, en fait **un chantier par
+  domaine**, sans en redéposer un quand son message existe déjà ;
 - **un chantier en recette sort à l'archive après le délai de la table** (ci-dessous) ;
 - **le registre se coupe par tranches** au-delà de sa taille de coupe : une archive figée par tranche
   (`<Dossier>/Archives/REGISTRE_ARBITRAGES_ARCHIVE_R<a>_a_R<b>.md`), et les comptes « l'exécution a raison » se reportent dans une base
@@ -590,16 +592,24 @@ jamais à la racine ; un ancien rejoint son dossier à sa prochaine mise à jour
 dépôt. **Plus de prompt de reprise** (la passation, ci-dessous). **Les images** passent dans la discussion, jamais par les fichiers du projet.
 
 **La passation se mesure, elle ne se devine pas** :
-- **Ce qui se mesure** : la taille du contexte au dernier tour, par `python3 -B <Dossier>/outils_cdp/contexte.py` (copié
-  du package). Ce n'est pas le cumul consommé depuis le début de la session, qui grossit bien plus vite.
+- **Ce qui se mesure** : la taille du contexte au dernier tour, et la charge fixe du premier tour, par
+  `python3 -B <Dossier>/outils_cdp/contexte.py` (copié du package) : trois lignes, le contexte au dernier tour, la charge
+  fixe, et le travail au-dessus de la charge fixe (la différence). Ce n'est pas le cumul consommé depuis le début de la
+  session, qui grossit bien plus vite.
 - **Pourquoi des seuils** : chaque tour relit tout le contexte, cache compris. Plus il est gros, plus chaque tour coûte
-  et plus la qualité baisse.
+  et plus la qualité baisse. **Les seuils se comptent au-dessus de la charge fixe** : avant son premier geste, la
+  session paie les instructions système, les définitions des outils, les instructions du projet et la mémoire, et le
+  CdP n'y peut rien. Mesurée le 1er novembre 2026 au premier tour, avant toute lecture, sur deux projets, elle était de
+  **151 083** et de **156 577** jetons. Un seuil absolu, qui compte cette charge comme du travail, ne laissait qu'environ
+  100 000 jetons de travail à un CdP seul, et un CdP a passé la main après un seul relevé. La charge fixe change avec la
+  plateforme : d'où la mesure à chaque session, plutôt qu'un chiffre figé.
 - **Les seuils sont à la table « Les chiffres de la méthode »** (ci-dessus), qui dit aussi la fenêtre qu'ils
-  supposent : **au premier**, le CdP prévient le porteur en tête de sa réponse (« Contexte : ~N jetons — passation à
-  prévoir ») et ne lance plus de lot neuf, il finit celui en cours ; **au second au plus tard**, ou à une fin de file
-  naturelle avant, ou au premier signe de saturation, il passe la main. **Un projet à plusieurs CdP** prend la seconde
-  ligne de la table : un domaine y a plus de documents à relire, et le CdP a besoin d'un contexte plus long.
-- **Quand on mesure — trois moments** : **à chaque lot clos** (la ligne `Contexte : <N> jetons` du commit de clôture),
+  supposent, **une seule règle quel que soit le nombre de CdP**. Le CdP les compare à la ligne « travail au-dessus de la
+  charge fixe » de `contexte.py` : **au premier**, il prévient le porteur en tête de sa réponse (« Contexte : ~N jetons, dont ~F de
+  charge fixe — passation à prévoir ») et ne lance plus de lot neuf, il finit celui en cours ; **au second au plus tard**, ou à une fin
+  de file naturelle avant, ou au premier signe de saturation, il passe la main.
+- **Quand on mesure — trois moments** : **à chaque lot clos** (la ligne `Contexte : <N> jetons, dont <F> de charge fixe` du commit de
+  clôture),
   **avant chaque lancement de dev**, et **au moins tous les dix échanges**.
 - **Si le produit compacte la conversation** (il peut le faire de lui-même), `contexte.py` mesure un contexte réduit :
   le seuil n'arrive jamais et le CdP continue sur un résumé. **C'est le risque le plus

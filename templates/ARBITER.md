@@ -1,5 +1,5 @@
 # THE LIVING-DOCS ARBITER — <Project> · v6
-### <date> · <coordination session> · drawn from the PL method package v19
+### <date> · <coordination session> · drawn from the PL method package v20
 
 ***The arbiter is a GitHub Action**, `.github/workflows/arbiter.yml`: every day, with no session, it runs
 `<Folder>/arbiter.py`, commits and pushes as `github-actions[bot]`, then **fails if it has filed a new workstream** — it is
@@ -48,14 +48,15 @@ it is not executed, it is read.*
 
 1. **Normalize**: `archive_workstreams.py normalize` puts in double quotes only the values a YAML reader would misread
    (strict format, check 11); it changes no value read.
-2. **Check**: `check_living_docs.py` with `--archives` and `--domains` (eleven checks; 9 cross-checks each checkpoint's queue
-   with `workstreams.yaml`, 10 measures their size against the cap of the method §6, 11 the format). A missing file: code 2, nothing is
+2. **Check**: `check_living_docs.py` with `--archives` and `--domains` (twelve checks; 9 cross-checks each checkpoint's queue
+   with `workstreams.yaml`, 10 measures their size against the cap of the method §6, 11 the format, 12 the size of the
+   workstream and decision log entries against their caps, `--log-from` if the log is measured). A missing file: code 2, nothing is
    written, the log says “check impossible: <file>”.
 3. **File one workstream per new gap**, at the end of `workstreams.yaml`, in strict format: id `arbiter-c<n>-<key>` (`<n>`
    the check, `<key>` the workstream concerned, `D<n>`, `board`, `log`). **Never twice**: a living workstream with the
-   same id is enough; an archived id is not reused (add `-<YYYYMMDD>`). **Check 9 and check 10, one workstream per
-   domain** (`arbiter-c9-checkpoint-<domain>-<date>`, `arbiter-c10-short-checkpoint-<domain>-<date>`), not filed again while
-   an open workstream of the same name awaits its PL; **a fault of the table itself**: a single workstream
+   same id is enough; an archived id is not reused (add `-<YYYYMMDD>`). **Check 9, check 10 and check 12, one
+   workstream per domain** (`arbiter-c9-checkpoint-<domain>-<date>`, `arbiter-c10-short-checkpoint-<domain>-<date>`,
+   `arbiter-c12-short-entries-<domain>-<date>`), not filed again while an open workstream of the same name awaits its PL; **a fault of the table itself**: a single workstream
    `arbiter-c9-table-<date>`, for the coordinator.
 4. **The batons**: the “Session active” line of each checkpoint. **A baton is judged not by its age but by its silence**:
    no commit carrying its identifier for more than 24 hours. ⟨The baton is the last eight characters of the session
@@ -85,6 +86,7 @@ it is not executed, it is read.*
 | a workstream in flight | the `pl:` it carries |
 | two batches in flight on one deliverable or resource | the PLs of the batches concerned, one workstream each |
 | the lag (check 9) or the size (check 10) of a checkpoint | the `pl` of the domain in `Method/domains.yaml` |
+| the size of the entries (check 12) | the `pl` of the domain; the coordinator for the decision log and the entries outside any domain |
 | everything else: decision log, board, logs, domain table, `method` | the coordinator (the table entry whose `pl` contains “Coordination”) |
 
 ## §3 · What the arbiter never does

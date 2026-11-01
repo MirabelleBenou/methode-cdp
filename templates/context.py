@@ -4,16 +4,20 @@
     python3 -B context.py [<log.jsonl>]
 
 The PL's throwaway tool (copied into <Folder>/pl_tools/). Reads the session log and adds up,
-for the last turn, input_tokens + cache_read_input_tokens + cache_creation_input_tokens. This is
-the size of the context, not the total consumed since the session began.
+for one turn, input_tokens + cache_read_input_tokens + cache_creation_input_tokens. This is
+the size of the context, not the total consumed since the session began. It writes three lines: the
+context at the last turn, the fixed load (the context of the first turn, before any reading: system
+instructions, tool definitions, project instructions, memory), and the work above the fixed load (the
+difference) — the one the thresholds of method §6 compare. A log of a single turn gives a work of 0.
 
 The log is the one given as an argument; without an argument, the most recent of
 ~/.claude/projects/*/*.jsonl, leaving out every file under a "subagents/" folder. Only the lines
 of the main session count: a line marked "isSidechain": true (a subagent) is ignored, an
-unreadable line is skipped. Without a log or without a "usage" line, the script says so in one
+unreadable line is skipped; the first turn is the first "usage" line of the main session, read with
+the same rules as the last. Without a log or without a "usage" line, the script says so in one
 line (on the error output) and exits with code 1. If the log carries a compaction mark
-("isCompactSummary": true or "subtype": "compact_boundary"), a second line says so: the
-measure is of the compacted context.
+("isCompactSummary": true or "subtype": "compact_boundary"), a fourth line, after the
+three, says so: the measure is of the compacted context.
 
 Python 3.11 and later, standard library only.
 """
@@ -33,8 +37,8 @@ def latest_log():
 
 
 def measure(path):
-    """(last "usage" of the main session or None, compaction seen?)."""
-    usage, compaction = None, False
+    """(first "usage" of the main session or None, last "usage" or None, compaction seen?)."""
+    first, usage, compaction = None, None, False
     with open(path, encoding="utf-8", errors="replace") as log:
         for line in log:
             try:
@@ -48,7 +52,18 @@ def measure(path):
             message = entry.get("message")
             if isinstance(message, dict) and isinstance(message.get("usage"), dict) and message["usage"]:
                 usage = message["usage"]
-    return usage, compaction
+                if first is None:
+                    first = usage
+    return first, usage, compaction
+
+
+def total_of(usage):
+    """The context of a turn: the sum of the three counters (a missing or unreadable counter counts as zero)."""
+    return sum(v for v in (usage.get(k, 0) for k in KEYS) if isinstance(v, (int, float)))
+
+
+def thousands(n):
+    return f"{n:,}".replace(",", " ")
 
 
 def main(argv):
@@ -57,15 +72,17 @@ def main(argv):
         print("context: no log found (~/.claude/projects/*/*.jsonl)", file=sys.stderr)
         return 1
     try:
-        usage, compaction = measure(path)
+        first, usage, compaction = measure(path)
     except OSError as error:
         print(f"context: log unreadable ({path}): {error.strerror or error}", file=sys.stderr)
         return 1
     if usage is None:
         print(f"context: no usage line in {path}", file=sys.stderr)
         return 1
-    total = sum(v for v in (usage.get(k, 0) for k in KEYS) if isinstance(v, (int, float)))
-    print(f"context at the last turn: {total:,} tokens".replace(",", " "))
+    total, fixed = total_of(usage), total_of(first)
+    print(f"context at the last turn: {thousands(total)} tokens")
+    print(f"fixed load (first turn): {thousands(fixed)} tokens")
+    print(f"work above the fixed load: {thousands(total - fixed)} tokens")
     if compaction:
         print("compaction seen: the measure is of the compacted context")
     return 0

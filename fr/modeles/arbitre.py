@@ -9,12 +9,14 @@ Le comportement est celui de la procédure de l'arbitre (ARBITRE.md, §1 à §3)
     python3 -B arbitre.py --chantiers <chantiers.yaml> --registre <registre.md> --archives <dossier> \\
         --domaines <domaines.yaml> --journal-arbitre <journal.md> \\
         [--tableau <page> --generateur <script>] [--journal <plan.md>] [--racine <dossier>] \\
-        [--methode <fichier>] [--fiche <fichier>] [--date "AAAA-MM-JJ HH:MM"]
+        [--methode <fichier>] [--fiche <fichier>] [--registre-depuis <n>] [--date "AAAA-MM-JJ HH:MM"]
 
 Les options sont celles du vérificateur (verifier_vivants.py) pour les cinq premières, « --tableau » et
 « --generateur » vont ensemble, « --racine » est le dossier d'où se lisent les checkpoints de la table des
 domaines (le dossier courant par défaut ; c'est aussi le dossier de git). « --methode » (la méthode du projet) et
-« --fiche » (la fiche commune) ne servent qu'à mesurer le socle du journal. « --date » (heure de Paris) sert aux
+« --fiche » (la fiche commune) ne servent qu'à mesurer le socle du journal. « --registre-depuis » (le numéro de la
+première entrée du registre mesurée par le contrôle 12) est passée telle quelle au vérificateur ; absente, rien n'est
+passé et le registre n'est pas mesuré ; les plafonds restent ceux du vérificateur. « --date » (heure de Paris) sert aux
 tests ; sans elle, c'est l'heure de Paris (zoneinfo, Europe/Paris). Le vérificateur, l'archiveur et
 le script lui-même se trouvent dans le même dossier ; le générateur est celui de « --generateur ».
 Bibliothèque standard seule, Python 3.11 au moins.
@@ -25,11 +27,14 @@ Un passage fait, dans l'ordre :
   3. déposer UN chantier par écart nouveau, en fin de chantiers.yaml, au format YAML strict : l'id
      « arbitre-c<n>-<clé> » (<n> le numéro du contrôle) ; le contrôle 9 en un chantier par domaine
      (« arbitre-c9-checkpoint-<domaine>-<AAAAMMJJ> »), le contrôle 10 de même
-     (« arbitre-c10-checkpoint-court-<domaine>-<AAAAMMJJ> »), un défaut de la table des domaines en un seul chantier
+     (« arbitre-c10-checkpoint-court-<domaine>-<AAAAMMJJ> »), le contrôle 12 de même
+     (« arbitre-c12-entrees-courtes-<domaine>-<AAAAMMJJ> » ; les lignes « hors domaine » et « registre » vont au
+     chantier du domaine du coordinateur), un défaut de la table des domaines en un seul chantier
      pour le coordinateur (« arbitre-c9-table-<AAAAMMJJ> ») ; jamais en double : un chantier de même id (vivant)
      est déjà signalé, un id archivé ne se réutilise pas (on ajoute « -<AAAAMMJJ> »), un chantier de domaine
      « arbitre-c9-checkpoint-<domaine>-* » ou « arbitre-c9-table-* » encore ouvert (pas en recette) suffit, et
-     pour le contrôle 10, un chantier ouvert « pour: » ce CdP dont l'id porte « checkpoint-court » aussi ;
+     pour le contrôle 10, un chantier ouvert « pour: » ce CdP dont l'id porte « checkpoint-court » aussi, et pour le
+     contrôle 12, un chantier ouvert « pour: » ce CdP dont l'id porte « entrees-courtes » ;
   4. les témoins : la ligne « Session en activité » de chaque checkpoint de domaine et le dernier commit qui porte
      son identifiant — une information (le journal et la sortie), jamais un chantier ; la coordination (le domaine
      dont le « cdp » contient « Coordination ») est exclue ;
@@ -139,7 +144,7 @@ class Analyseur(argparse.ArgumentParser):
 def lire_arguments(argv: list[str]):
     p = Analyseur(prog="arbitre.py", allow_abbrev=False, add_help=False)
     for option in ("chantiers", "registre", "archives", "domaines", "journal-arbitre", "tableau", "generateur",
-                   "journal", "racine", "methode", "fiche", "date"):
+                   "journal", "racine", "methode", "fiche", "registre-depuis", "date"):
         p.add_argument(f"--{option}")
     a, inconnus = p.parse_known_args(argv)
     if inconnus:
@@ -216,6 +221,8 @@ def controler(a) -> Controle:
         options += ["--journal", a.journal]
     if a.racine:
         options += ["--racine", a.racine]
+    if a.registre_depuis:
+        options += ["--registre-depuis", a.registre_depuis]
     processus = lancer(ICI / "verifier_vivants.py", *options)
     if processus.returncode not in (0, 1):
         raise Impossible("verifier_vivants.py", f"verifier_vivants.py a échoué (code {processus.returncode}) : "
@@ -257,6 +264,7 @@ class Contexte:
             raise Impossible(fichier, f"aucune entrée Coordination dans la table des domaines ({fichier}) : "
                                       "le nom du coordinateur s'y lit")
         self.coordinateur = coordination["cdp"]
+        self.domaine_coordination = coordination.get("domaine") or "coordination"
         self.cdp_de = {d["domaine"]: d.get("cdp") or self.coordinateur for d in self.valides}
 
     def domaine_de(self, c: dict) -> str | None:
@@ -295,7 +303,7 @@ def cas_du_controle(rang: int, ligne: str, ctx: Contexte):
         if m:
             premier = m.group(2).split(" et ")[0]
             return [(cle_sure(premier), chantier(premier))]
-        m = re.match(r"(\S+) : \S+ n'est pas au-dessus de ", ligne)
+        m = re.match(r"(\S+) : .+? n'est pas au-dessus de ", ligne)
         if m:
             return [(cle_sure(m.group(1)), chantier(m.group(1)))]
         return [(cle_sure(ligne[:40]), None)]
@@ -323,10 +331,10 @@ def cas_du_controle(rang: int, ligne: str, ctx: Contexte):
 
 
 def constats_ordinaires(controle: Controle, ctx: Contexte, jour: date) -> list[Constat]:
-    """Un constat par cas des contrôles autres que 9 et 10 ; les lignes d'une même clé se groupent."""
+    """Un constat par cas des contrôles autres que 9, 10 et 12 ; les lignes d'une même clé se groupent."""
     constats = []
     for rang in sorted(controle.rangs):
-        if rang in (9, 10):
+        if rang in (9, 10, 12):
             continue
         groupes: dict[str, tuple] = {}
         for ligne in controle.lignes(rang):
@@ -401,6 +409,32 @@ def constats_checkpoints(controle: Controle, retards: dict, ctx: Contexte, jour:
     return constats, signales
 
 
+def constats_entrees(controle: Controle, ctx: Contexte, jour: date) -> list[Constat]:
+    """Les constats du contrôle 12 : un par domaine, dans l'ordre de la table ; les lignes « hors domaine » et « registre »
+    se groupent avec celles du domaine du coordinateur."""
+    par_domaine: dict[str, list[str]] = {}
+    for ligne in controle.lignes(12):
+        domaine = nom_du_domaine(ligne)
+        if domaine in ("hors domaine", "registre"):
+            domaine = ctx.domaine_coordination
+        par_domaine.setdefault(domaine, []).append(ligne)
+    ordre = [d["domaine"] for d in ctx.valides]
+    constats = []
+    for domaine in ordre + sorted(d for d in par_domaine if d not in ordre):
+        lignes = par_domaine.get(domaine)
+        if not lignes:
+            continue
+        constats.append(Constat(
+            id=f"arbitre-c12-entrees-courtes-{domaine}-{jour.strftime('%Y%m%d')}",
+            titre=f"Des entrées de {domaine} dépassent leur plafond", module="methode",
+            pour=ctx.cdp_de.get(domaine, ctx.coordinateur),
+            mesure=(f"Signalé par l'arbitre le {date_longue(jour)} (contrôle 12). {' ; '.join(lignes)}. "
+                    "Ramener chaque entrée sous son plafond (méthode §6) : l'état, la décision, le prochain geste ; "
+                    "le détail part au dossier du lot ou à une note du domaine, l'entrée n'en garde que le résumé "
+                    "et le chemin.")))
+    return constats
+
+
 def est_ouvert(c: dict) -> bool:
     return c.get("statut") != "recette"
 
@@ -419,6 +453,9 @@ def deja_signale(constat: Constat, vivants: list[dict], archives_ids: set[str], 
     elif i.startswith("arbitre-c10-checkpoint-court-"):
         couvrant = next((c for c in vivants if c.get("id") and est_ouvert(c) and c.get("pour") == constat.pour
                          and "checkpoint-court" in c["id"]), None)
+    elif i.startswith("arbitre-c12-entrees-courtes-"):
+        couvrant = next((c for c in vivants if c.get("id") and est_ouvert(c) and c.get("pour") == constat.pour
+                         and "entrees-courtes" in c["id"]), None)
     if couvrant is not None:
         return None, couvrant
     if i in ids:
@@ -697,7 +734,7 @@ def passage(a, maintenant: datetime) -> int:
     retards = lire_retards(ctx, racine)                          # 5
     nouveaux, deja = [], []
     constats_9, signales = constats_checkpoints(controle, retards, ctx, jour)
-    constats = constats_ordinaires(controle, ctx, jour) + constats_9
+    constats = constats_ordinaires(controle, ctx, jour) + constats_9 + constats_entrees(controle, ctx, jour)
     deposer(constats, a, ctx, archiveur, verifier, nouveaux, deja)  # 3
     archivage = archiver(a, jour)                                # 6
     if archivage.avertissements:

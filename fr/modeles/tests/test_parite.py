@@ -36,7 +36,7 @@ E = "[ \u00a0\u202f]?"
 # Les chiffres de la table de la méthode §6, par motif. Un motif se cherche, la casse indifférente, dans chaque ligne de
 # chaque .md français ; il prend aussi les formes abrégées (« 250 k », « 350k », « 10 ko »).
 CHIFFRES = {
-    "seuils de passation": rf"\b[2-5]50(?:{E}000|{E}k)\b|\b450/550\b|\b1{E}M de jetons\b",
+    "seuils de passation": rf"\b(?:[2-5]50|[34]00)(?:{E}000|{E}k)\b|\b450/550\b|\b1{E}M de jetons\b",
     "plafond d'un checkpoint": rf"\b10{E}ko\b|\b10{E}240\b",
     "plafond d'une entrée de chantier": rf"\b1[,.]5{E}ko\b",
     "plafond d'une entrée du registre": rf"\b800{E}caractères\b",
@@ -178,7 +178,7 @@ class CasParite(unittest.TestCase):
 
     def test_les_motifs_prennent_les_espaces_insecables_la_casse_et_les_formes_abregees(self):
         vus = {
-            "seuils de passation": ["250\u00a0000 jetons", "350\u202f000", "250 k", "350k", "450 K"],
+            "seuils de passation": ["250\u00a0000 jetons", "350\u202f000", "250 k", "350k", "450 K", "300\u00a0000 jetons", "400 k"],
             "plafond d'un checkpoint": ["10 ko", "10\u00a0Ko", "10\u202fKO", "10Ko", "10\u00a0240 octets"],
             "plafond d'une entrée de chantier": ["~1,5\u00a0ko"],
             "plafond d'une entrée du registre": ["800\u00a0caractères"],

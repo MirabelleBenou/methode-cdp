@@ -154,6 +154,11 @@ class ArbiterCase(TempCase):
             arguments = [*arguments, "--date", date]
         return self.run_script(self.repo / "Method" / "arbiter.py", *arguments, *extra, cwd=self.repo)
 
+    def verifications(self):
+        return ["--workstreams", "Folder/workstreams.yaml", "--log", "Folder/decision_log.md",
+                "--archives", "Folder/Archives", "--domains", "Method/domains.yaml",
+                "--board", "Folder/workstreams.html", "--generator", "Method/make_board.py"]
+
     def run_commit(self, output) -> str:
         m = re.search(r"^Commit: (.*)$", output.stdout, re.M)
         self.assertTrue(m, output.stdout)
@@ -210,11 +215,6 @@ class TestNewGap(ArbiterCase):
             block("alpha-1", title="First", status="upcoming", module="module-a"),
             block("alpha-2", title="Second", status="in-flight", module="module-a"),  # in flight without pl: check 5
             block("beta-1", title="Other", status="upcoming", module="module-b"))
-
-    def verifications(self):
-        return ["--workstreams", "Folder/workstreams.yaml", "--log", "Folder/decision_log.md",
-                "--archives", "Folder/Archives", "--domains", "Method/domains.yaml",
-                "--board", "Folder/workstreams.html", "--generator", "Method/make_board.py"]
 
     def test_a_new_gap_makes_a_workstream_of_the_right_shape_and_returns_1(self):
         before = self.read("Folder/workstreams.yaml")
@@ -377,6 +377,15 @@ class TestAddressees(ArbiterCase):
         self.assertEqual(cases, [("agent-server-trial", {"id": "agent-server-trial"})])
         cases = arbiter.cases_of_check(4, "version v1 carried by alpha-1 and beta-2", Ctx)
         self.assertEqual(cases, [("alpha-1", {"id": "alpha-1"})])
+
+    def test_gap_b_of_check_4_is_read_even_if_the_version_contains_a_space(self):
+        arbiter = load(ARBITER, "arbiter_under_test")
+
+        class Ctx:
+            by_id = {"co-x": {"id": "co-x"}, "co-y": {"id": "co-y"}}
+
+        cases = arbiter.cases_of_check(4, "co-x: v1.2 (R205) is not above v1.3 (co-y)", Ctx)
+        self.assertEqual(cases, [("co-x", {"id": "co-x"})])
 
     def test_the_coordinator_is_read_in_the_domain_table(self):
         table = TABLE.replace("Opus-Coordination", "Opus-Coordination-Other")
@@ -541,6 +550,187 @@ class TestCheck10(ArbiterCase):
         output = self.arbitrate()
         self.assertEqual(output.code, 0, output.stdout + output.stderr)
         self.assertEqual(self.arbiter_ids(), [])
+
+
+def long(id: str, size: int = 1700, **keys) -> str:
+    """A workstream entry of "size" bytes (its lines, each followed by a line break), above the cap."""
+    base = block(id, **keys, basis="")
+    empty = sum(len(line.encode("utf-8")) + 1 for line in base.split("\n"))
+    return block(id, **keys, basis="x" * (size - empty))
+
+
+def decision(number: int, characters: int) -> str:
+    """A line "| **D<n>** | … |" of "characters" characters."""
+    start, end = f"| **D{number}** | ", " |"
+    return start + "x" * (characters - len(start) - len(end)) + end
+
+
+class TestCheck12(ArbiterCase):
+    """Entries that are too long: one workstream per domain; "outside any domain" and "decision log" go to the coordinator."""
+    cited = {"alpha": ("alpha-1",), "beta": ("beta-1",)}
+
+    def set(self, *blocks: str, decisions: tuple = ()):
+        self.write_workstreams(*blocks)
+        self.write("repo/Folder/decision_log.md", decision_log(1, 2, 3) + "".join(f"{d}\n" for d in decisions))
+        self.commit("long entries")
+
+    def long_workstreams(self):
+        return (long("alpha-1", 1700, status="upcoming", module="module-a"),
+                long("beta-1", 1600, status="upcoming", module="module-b"))
+
+    def with_log(self, since: str = "4"):
+        return self.arbitrate("--log-from", since)
+
+    def test_a_workstream_that_is_too_long_makes_one_workstream_per_domain(self):
+        self.set(*self.long_workstreams())
+        output = self.arbitrate()
+        self.assertEqual(output.code, 1, output.stdout + output.stderr)
+        self.assertEqual(self.arbiter_ids(), ["arbiter-c12-short-entries-alpha-20260315",
+                                              "arbiter-c12-short-entries-beta-20260315"])
+        alpha = self.by_id()["arbiter-c12-short-entries-alpha-20260315"]
+        self.assertEqual((alpha["for"], alpha["module"], alpha["status"]), ("Opus-PL-Alpha", "method", "to-brief"))
+        self.assertEqual(alpha["title"], "Entries of alpha exceed their cap")
+        self.assertEqual(alpha["basis"], (
+            "Reported by the arbiter on 15 March 2026 (check 12). "
+            "alpha: workstream alpha-1 weighs 1700 bytes, cap 1536. "
+            "Bring every entry under its cap (method §6): the state, the decision, the next move; "
+            "the detail goes to the batch folder or to a note of the domain, the entry only keeps the summary and the path."))
+        beta = self.by_id()["arbiter-c12-short-entries-beta-20260315"]
+        self.assertEqual((beta["for"], beta["title"]), ("Opus-PL-Beta", "Entries of beta exceed their cap"))
+        self.assertIn("beta: workstream beta-1 weighs 1600 bytes, cap 1536", beta["basis"])
+        self.assertEqual(self.run_commit(output), "Arbiter 2026-03-15: 2 finding(s)")
+        self.assertRegex(self.log_lines()[0], r"^- 2026-03-15 06:43 · 1 gap · 2 new findings · ")
+
+    def test_several_lines_of_a_domain_make_a_single_workstream_joined_by_a_semicolon(self):
+        self.set(long("alpha-1", 1700, status="upcoming", module="module-a"),
+                 long("alpha-2", 1800, status="to-brief", module="module-a"),
+                 block("beta-1", status="upcoming", module="module-b"))
+        self.write("repo/Alpha/CHECKPOINT_ALPHA.md", checkpoint("alpha-1", "alpha-2"))
+        self.commit("alpha-2 cited")
+        self.arbitrate()
+        self.assertEqual(self.arbiter_ids(), ["arbiter-c12-short-entries-alpha-20260315"])
+        self.assertIn("(check 12). alpha: workstream alpha-1 weighs 1700 bytes, cap 1536; "
+                      "alpha: workstream alpha-2 weighs 1800 bytes, cap 1536. Bring",
+                      self.by_id()["arbiter-c12-short-entries-alpha-20260315"]["basis"])
+
+    def test_outside_any_domain_and_log_go_to_the_coordinators_domain_in_the_order_of_the_table(self):
+        self.set(long("orphan-1", 1900, status="debt", module="unknown"), *self.long_workstreams(),
+                 decisions=(decision(4, 900), decision(5, 100), decision(6, 801)))
+        output = self.with_log()
+        self.assertEqual(output.code, 1, output.stdout + output.stderr)
+        self.assertEqual(self.arbiter_ids(), ["arbiter-c12-short-entries-alpha-20260315",
+                                              "arbiter-c12-short-entries-beta-20260315",
+                                              "arbiter-c12-short-entries-coordination-20260315"])
+        c = self.by_id()["arbiter-c12-short-entries-coordination-20260315"]
+        self.assertEqual((c["for"], c["module"], c["title"]),
+                         ("Opus-Coordination", "method", "Entries of coordination exceed their cap"))
+        self.assertIn("(check 12). outside any domain: workstream orphan-1 weighs 1900 bytes, cap 1536; "
+                      "decision log: D4 counts 900 characters, cap 800; "
+                      "decision log: D6 counts 801 characters, cap 800. Bring", c["basis"])
+        self.assertIn("New findings (3):", output.stdout)
+
+    def test_the_coordinators_domain_also_groups_its_own_lines(self):
+        self.set(long("method-1", 1700, status="upcoming", module="method"),
+                 block("alpha-1", status="upcoming", module="module-a"), block("beta-1", status="upcoming", module="module-b"),
+                 decisions=(decision(4, 900),))
+        self.write("repo/Method/CHECKPOINT_METHOD.md", checkpoint("method-1"))
+        self.commit("method-1 cited")
+        self.with_log()
+        self.assertEqual(self.arbiter_ids(), ["arbiter-c12-short-entries-coordination-20260315"])
+        self.assertIn("(check 12). coordination: workstream method-1 weighs 1700 bytes, cap 1536; "
+                      "decision log: D4 counts 900 characters, cap 800. Bring",
+                      self.by_id()["arbiter-c12-short-entries-coordination-20260315"]["basis"])
+
+    def test_the_findings_of_check_12_come_after_those_of_checks_9_and_10(self):
+        self.write("repo/Alpha/CHECKPOINT_ALPHA.md", checkpoint("alpha-1", padding=11000))
+        self.set(*self.long_workstreams(), block("beta-2", status="upcoming", module="module-b"))
+        self.arbitrate()
+        self.assertEqual(self.arbiter_ids(), [
+            "arbiter-c9-checkpoint-beta-20260315", "arbiter-c10-short-checkpoint-alpha-20260315",
+            "arbiter-c12-short-entries-alpha-20260315", "arbiter-c12-short-entries-beta-20260315"])
+
+    def test_without_log_from_the_log_is_not_measured(self):
+        self.set(block("alpha-1", status="upcoming", module="module-a"), block("beta-1", status="upcoming", module="module-b"),
+                 decisions=(decision(4, 5000),))
+        output = self.arbitrate()
+        self.assertEqual(output.code, 0, output.stdout + output.stderr)
+        self.assertEqual(self.arbiter_ids(), [])
+
+    def test_log_from_is_passed_as_it_is(self):
+        self.set(block("alpha-1", status="upcoming", module="module-a"), block("beta-1", status="upcoming", module="module-b"),
+                 decisions=(decision(4, 900), decision(5, 900)))
+        self.with_log("5")
+        self.assertEqual(self.arbiter_ids(), ["arbiter-c12-short-entries-coordination-20260315"])
+        basis = self.by_id()["arbiter-c12-short-entries-coordination-20260315"]["basis"]
+        self.assertIn("decision log: D5 counts 900 characters", basis)
+        self.assertNotIn("D4 counts", basis)
+
+    def test_an_invalid_log_from_is_an_impossible_check(self):
+        self.set(*self.long_workstreams())
+        output = self.with_log("abc")
+        self.assertEqual(output.code, 2, output.stdout + output.stderr)
+        self.assertIn("check_living_docs.py failed (code 2)", output.stderr)
+        self.assertEqual(self.arbiter_ids(), [])
+        self.assertRegex(self.log_lines()[0], r"check impossible: check_living_docs\.py$")
+
+    def test_no_duplicate_at_the_next_run_even_on_another_day(self):
+        self.set(*self.long_workstreams(), decisions=(decision(4, 900),))
+        self.with_log()
+        after = self.read("Folder/workstreams.yaml")
+        output = self.arbitrate("--log-from", "4", date="2026-03-16 06:43")
+        self.assertEqual(output.code, 0, output.stdout + output.stderr)
+        self.assertEqual(self.read("Folder/workstreams.yaml"), after)
+        self.assertEqual(len(self.arbiter_ids()), 3)
+        self.assertIn("Reported before and still there (3):", output.stdout)
+
+    def test_the_filed_workstreams_are_not_measured_themselves(self):
+        self.set(*self.long_workstreams(), decisions=(decision(4, 900),))
+        self.with_log()
+        checker = self.repo / "Method" / "check_living_docs.py"
+        check = self.run_script(checker, *self.verifications(), "--domains", "Method/domains.yaml", cwd=self.repo)
+        self.assertEqual(check.count(12), "2 open workstreams, decision log not measured, 2 above", check.stdout)
+        self.assertEqual(check.details(12), ["alpha: workstream alpha-1 weighs 1700 bytes, cap 1536",
+                                             "beta: workstream beta-1 weighs 1600 bytes, cap 1536"])
+
+    def test_an_open_workstream_for_that_pl_whose_id_carries_short_entries_is_enough(self):
+        self.set(*self.long_workstreams(),
+                 block("alpha-short-entries", title="Done by hand", status="to-brief", module="module-a",
+                       **{"for": "Opus-PL-Alpha"}))
+        self.write("repo/Alpha/CHECKPOINT_ALPHA.md", checkpoint("alpha-1"))
+        self.commit("a finding set by hand")
+        output = self.arbitrate()
+        self.assertEqual(self.arbiter_ids(), ["arbiter-c12-short-entries-beta-20260315"])
+        self.assertIn("Reported before and still there (1):\n  - alpha-short-entries · for Opus-PL-Alpha", output.stdout)
+
+    def test_an_accepted_workstream_or_one_for_another_pl_does_not_cover(self):
+        self.set(*self.long_workstreams(),
+                 block("alpha-short-entries", status="accepted", module="module-a", **{"for": "Opus-PL-Alpha"}),
+                 block("gamma-short-entries", status="to-brief", module="module-b", **{"for": "Opus-PL-Gamma"}))
+        self.arbitrate()
+        self.assertEqual(self.arbiter_ids(), ["arbiter-c12-short-entries-alpha-20260315",
+                                              "arbiter-c12-short-entries-beta-20260315"])
+
+    def test_an_archived_id_is_not_reused_the_date_is_added(self):
+        self.set(*self.long_workstreams())
+        self.write("repo/Folder/Archives/WORKSTREAMS_2026-03.yaml", "# Archived workstreams — March 2026\n\n" + block(
+            "arbiter-c12-short-entries-alpha-20260315", status="accepted", module="method", **{"for": "Opus-PL-Alpha"}))
+        self.commit("a finding of the day already archived")
+        self.arbitrate()
+        self.assertEqual(self.arbiter_ids(), ["arbiter-c12-short-entries-alpha-20260315-20260315",
+                                              "arbiter-c12-short-entries-beta-20260315"])
+
+    def test_the_other_findings_are_those_of_before(self):
+        self.set(block("alpha-1", status="in-flight", module="module-a"),  # in flight without pl: check 5
+                 long("beta-1", 1600, status="upcoming", module="module-b"))
+        self.arbitrate()
+        self.assertEqual(self.arbiter_ids(), ["arbiter-c5-alpha-1", "arbiter-c12-short-entries-beta-20260315"])
+        self.assertEqual(self.by_id()["arbiter-c5-alpha-1"]["title"],
+                         "Check 5: alpha-1 (line 3): pl missing or empty")
+
+    def test_the_docstring_describes_check_12_and_the_option(self):
+        doc = load(ARBITER, "arbiter_doc").__doc__
+        for expected in ("--log-from", "arbiter-c12-short-entries-<domain>-<YYYYMMDD>", "short-entries"):
+            self.assertIn(expected, doc)
 
 
 class TestBatons(ArbiterCase):
@@ -891,6 +1081,13 @@ class TestWorkflow(unittest.TestCase):
         self.assertEqual(steps[1]["with"]["python-version"], "3.12")
         for variable in ("SCRIPT", "WORKSTREAMS", "LOG", "ARCHIVES", "DOMAINS", "ARBITER_LOG"):
             self.assertIn(variable, document["env"])
+
+    def test_the_variable_log_from_is_optional_and_empty_by_default(self):
+        text = self.text()
+        self.assertRegex(text, r'(?m)^  LOG_FROM: ""$')
+        self.assertIn('if [ -n "$LOG_FROM" ]; then args+=(--log-from "$LOG_FROM"); fi', text)
+        self.assertLess(text.index("  SHEET:"), text.index("  LOG_FROM:"))
+        self.assertLess(text.index("  LOG_FROM:"), text.index("jobs:"))
 
     def test_every_path_has_its_variable_at_the_top_of_the_file(self):
         text = self.text()

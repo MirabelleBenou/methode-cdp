@@ -9,7 +9,8 @@ version log.
 
     python3 -B check_living_docs.py --workstreams <workstreams.yaml> --log <decision_log.md> \\
         [--board <workstreams.html> --generator <make_board.py>] [--plan <plan.md>] \\
-        [--archives <folder>] [--domains <file> [--root <folder>] [--checkpoint-cap <bytes>]]
+        [--archives <folder>] [--domains <file> [--root <folder>] [--checkpoint-cap <bytes>]
+                                 [--workstream-cap <bytes>] [--log-cap <characters>] [--log-from <n>]]
 
 "--board" and "--generator" go together; "--board" names the page, its data file is the one
 next to it, same name in ".json"; "--plan" is optional.
@@ -23,9 +24,12 @@ extends 11 to the table;
 by default); it is only used with "--domains". "--checkpoint-cap" gives the size cap of a
 checkpoint, in bytes (a positive integer, 10240 by default): a checkpoint is re-read in full at
 every resumption, so it must stay short (see check 10); it too is only used with "--domains".
-A check whose files are not given shows "not requested".
+Likewise "--workstream-cap" (bytes, 1536 by default), "--log-cap" (characters, 800 by default) and
+"--log-from" (the number of the first decision log entry that is measured; without it, the log is not
+measured): positive integers, only used with "--domains" (see check 12). A check whose files are
+not given shows "not requested".
 
-The eleven checks, in this order:
+The twelve checks, in this order:
   1. decision numbers: the lines "| **D<n>** |" have no duplicated number and
      no gap between the smallest and the largest;
   2. reservations: a line "| **D<n>** | *reserved …" still present is a
@@ -118,13 +122,31 @@ The eleven checks, in this order:
      \\\\ are escapes. The check always runs. OK: "<n> files, <m> lines read"; GAP: "<k>
      non-conforming value(s), <n> files, <m> lines read", the first five non-conforming
      values ("file:line : key <key>"), then the command that normalizes
-     ("archive_workstreams.py normalize", which rewrites only those values).
+     ("archive_workstreams.py normalize", which rewrites only those values);
+ 12. entry sizes: a workstream entry or a decision log entry is re-read at every resumption; above
+     its cap, its detail goes to the batch folder or to a note, and the entry only keeps the summary and
+     the path. The check needs "--domains". Workstream entries measured: those of workstreams.yaml (not
+     of the archives) in "status" upcoming, to-brief, debt or in-flight, except those whose id starts
+     with "arbiter-" (the arbiter's findings are closed by fixing their cause); an entry with "for:" is
+     measured. Its size is the number of UTF-8 bytes of the file's lines from its "- id:" line to the line
+     before the next one, without the empty lines or those whose first non-blank character is "#" (the
+     section banners), each followed by a line break; a gap if strictly above "--workstream-cap" (1536
+     by default). Decision log entries measured: the lines "| **D<n>** |" whose number is at least
+     "--log-from", except the reservations; their size is the number of characters of the line, line break
+     excluded; a gap above "--log-cap" (800 by default). Without "--log-from", the log is not measured.
+     The domain of a workstream entry is that of check 9 (pl, then prefix, then module), otherwise
+     "outside any domain"; a decision log entry has no domain. One gap line per entry, in the order of
+     the files (workstreams.yaml, then the log): "<domain>: workstream <id> weighs <o> bytes, cap <p>"
+     ("outside any domain: workstream …"), "decision log: D<n> counts <c> characters, cap <p>". The count
+     is "<n> open workstreams, <r> decision log entries, <k> above" (<n> the entries measured, <r> those
+     of the log, <k> the gap lines); without "--log-from": "<n> open workstreams, decision log not
+     measured, <k> above".
 
 Output: one line per check (OK, GAP or warning, with a count), the details of
 the gaps indented below, then a last line "LIVING DOCS · …".
 Exit code: 0 with no gap, 1 with at least one gap, 2 for an invalid call
-(missing argument, file or folder not found, "--root" or "--checkpoint-cap" without
-"--domains", a cap that is not a positive integer).
+(missing argument, file or folder not found, "--root", "--checkpoint-cap", "--workstream-cap",
+"--log-cap" or "--log-from" without "--domains", a cap or a number that is not a positive integer).
 
 Python 3.11 and later, standard library only. The YAML reader is deliberately poor, like
 the generator's: "- id:" then "key: value" on a single line; a value between double quotes
@@ -156,6 +178,11 @@ FORBIDDEN_STARTS = "-?:,[]{}#&*!|>'\"%@`"
 NOT_REQUESTED = "—  not requested"
 OPEN_STATUSES = ("upcoming", "to-brief", "debt", "in-flight")
 DEFAULT_CAP = 10240  # bytes: a checkpoint is re-read in full at every resumption
+DEFAULT_WORKSTREAM_CAP = 1536  # bytes: a workstream entry (check 12)
+DEFAULT_LOG_CAP = 800  # characters: a decision log entry (check 12)
+NO_DOMAIN = "outside any domain"
+CAP_OPTIONS = (("checkpoint_cap", "checkpoint-cap"), ("workstream_cap", "workstream-cap"),
+               ("log_cap", "log-cap"), ("log_from", "log-from"))
 
 
 def read_text(path: Path) -> str:
@@ -502,6 +529,40 @@ def check_size(table: list[dict], root: Path, cap: int):
     return ("GAP" if details else "OK"), count, details
 
 
+def entry_size(lines: list[str]) -> int:
+    """The UTF-8 bytes of the lines of an entry, each followed by a line break, without the empty lines or the "#" ones."""
+    return sum(len(line.encode("utf-8")) + 1 for line in lines if line.strip() and not line.strip().startswith("#"))
+
+
+def check_entries(workstreams: list[dict], workstreams_text: str, log_text: str, table: list[dict],
+                  workstream_cap: int, log_cap: int, log_from: int | None):
+    """An open workstream entry (except "arbiter-") or a decision log entry above its cap is a gap."""
+    valid = [d for d in table if d.get("domain") and d.get("checkpoint")]
+    lines = workstreams_text.split("\n")
+    details, measured = [], 0
+    for rank, c in enumerate(workstreams):
+        if c.get("status") not in OPEN_STATUSES or c.get("id", "").startswith("arbiter-"):
+            continue
+        measured += 1
+        end = workstreams[rank + 1]["_line"] - 1 if rank + 1 < len(workstreams) else len(lines)
+        size = entry_size(lines[c["_line"] - 1:end])
+        if size > workstream_cap:
+            domain = domain_of(c, valid) if c.get("id") else None
+            details.append(f"{domain or NO_DOMAIN}: workstream {name(c)} weighs {size} bytes, cap {workstream_cap}")
+    measured_log = 0
+    if log_from is not None:
+        for line in log_text.split("\n"):
+            m = RE_NUMBER.match(line)
+            if not m or int(m.group(1)) < log_from or RE_RESERVATION.match(line):
+                continue
+            measured_log += 1
+            if len(line) > log_cap:
+                details.append(f"decision log: D{m.group(1)} counts {len(line)} characters, cap {log_cap}")
+    rest = f"{measured_log} decision log entries" if log_from is not None else "decision log not measured"
+    count = f"{measured} open workstreams, {rest}, {len(details)} above"
+    return ("GAP" if details else "OK"), count, details
+
+
 def value_conforms(raw: str) -> bool:
     """A safe YAML scalar: empty, between double quotes, or bare and with nothing YAML would read otherwise."""
     value = raw.strip()
@@ -561,7 +622,8 @@ def read_arguments(argv: list[str]):
     p = Parser(prog="check_living_docs.py", allow_abbrev=False, add_help=False)
     for option in ("workstreams", "log", "board", "generator", "plan", "archives", "domains", "root"):
         p.add_argument(f"--{option}")
-    p.add_argument("--checkpoint-cap")
+    for _, option in CAP_OPTIONS:
+        p.add_argument(f"--{option}")
     a, unknown = p.parse_known_args(argv)
     if unknown:
         raise ValueError(f"unknown argument: {unknown[0]}")
@@ -572,24 +634,28 @@ def read_arguments(argv: list[str]):
         raise ValueError("--board and --generator go together")
     if a.root and not a.domains:
         raise ValueError("--root only goes with --domains")
-    if a.checkpoint_cap is not None and not a.domains:
-        raise ValueError("--checkpoint-cap only goes with --domains")
-    cap = DEFAULT_CAP
-    if a.checkpoint_cap is not None:
-        if not re.fullmatch(r"[0-9]+", a.checkpoint_cap) or int(a.checkpoint_cap) < 1:
-            raise ValueError(f"--checkpoint-cap: a positive integer is expected ({a.checkpoint_cap})")
-        cap = int(a.checkpoint_cap)
+    caps = {"checkpoint_cap": DEFAULT_CAP, "workstream_cap": DEFAULT_WORKSTREAM_CAP,
+            "log_cap": DEFAULT_LOG_CAP, "log_from": None}
+    for attribute, option in CAP_OPTIONS:
+        value = getattr(a, attribute)
+        if value is None:
+            continue
+        if not a.domains:
+            raise ValueError(f"--{option} only goes with --domains")
+        if not re.fullmatch(r"[0-9]+", value) or int(value) < 1:
+            raise ValueError(f"--{option}: a positive integer is expected ({value})")
+        caps[attribute] = int(value)
     paths = {option: Path(getattr(a, option)) for option in
              ("workstreams", "log", "board", "generator", "plan", "archives", "domains", "root") if getattr(a, option)}
     for option, path in paths.items():
         if not (path.is_dir() if option in ("archives", "root") else path.is_file()):
             raise ValueError(f"file not found: --{option} {path}")
-    return paths, cap
+    return paths, caps
 
 
 def main(argv: list[str]) -> int:
     try:
-        f, cap = read_arguments(argv)
+        f, caps = read_arguments(argv)
         workstreams = read_workstreams(f["workstreams"])
         archives = read_archives(f["archives"]) if "archives" in f else None
         table = read_workstreams(f["domains"]) if "domains" in f else None
@@ -612,11 +678,14 @@ def main(argv: list[str]) -> int:
         ("deliverables and resources", lambda: check_deliverables(workstreams)),
         ("checkpoints", (lambda: check_checkpoints(workstreams, archives, table, f.get("root", Path("."))))
          if table is not None else None),
-        ("checkpoint size", (lambda: check_size(table, f.get("root", Path(".")), cap))
+        ("checkpoint size", (lambda: check_size(table, f.get("root", Path(".")), caps["checkpoint_cap"]))
          if table is not None else None),
         ("YAML format", lambda: check_format(
             [f["workstreams"]] + (archive_files(f["archives"]) if "archives" in f else [])
             + ([f["domains"]] if "domains" in f else []), normalize_command(f))),
+        ("entry sizes", (lambda: check_entries(
+            workstreams, read_text(f["workstreams"]), read_text(f["log"]), table, caps["workstream_cap"],
+            caps["log_cap"], caps["log_from"])) if table is not None else None),
     ]
     gaps = 0
     for rank, (label, check) in enumerate(checks, start=1):

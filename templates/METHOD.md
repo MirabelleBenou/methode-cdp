@@ -448,7 +448,7 @@ manual procedure, the date it went into service.⟩
 - `workstreams.yaml` — the `done:` field of the closed entry fits on one line, the date and the version, without the
   detail —, ⟨with the published board: **then the board's page and data file regenerated** (below)⟩;
 - **a commit “Batch v<X.Y> closed”** in the living-docs repository, whose message carries the line **`Context: <N>
-  tokens`** (the measure of `context.py`, “The handover” below) ⟨, then **the mirror in the project**, if there is one⟩;
+  tokens, of which <F> of fixed load`** (the measure of `context.py`, “The handover” below) ⟨, then **the mirror in the project**, if there is one⟩;
 - **§0 of the domain's checkpoint**, refreshed (the state only), **its queue re-read against `workstreams.yaml`**
   (below): the handover only rewrites a state already up to date, at the moment when the context is heaviest.
 
@@ -472,11 +472,10 @@ changes one changes it here.⟩
 
 | figure | value | what it governs |
 |---|---|---|
-| handover thresholds, a single PL | **250,000** tokens to warn, **350,000** at the latest to hand over | the handover (below); they assume a window of about 1 M tokens |
-| handover thresholds, several PLs | **450,000** and **550,000** | the same moves: a domain has more documents to re-read there |
+| handover thresholds | **fixed load + 300,000** tokens to warn, **fixed load + 400,000** at the latest to hand over | the handover (below); the fixed load is measured at the first turn (`context.py`); they assume a window of about 1 M tokens |
 | cap of a checkpoint | **10 KB** (10,240 bytes) | check 10 (`--checkpoint-cap`) |
-| cap of a workstream entry | **~1.5 KB** | |
-| cap of a decision log entry | **~800 characters** | |
+| cap of a workstream entry | **1.5 KB** (1,536 bytes) | check 12 (`--workstream-cap`) |
+| cap of a decision log entry | **800 characters** | check 12 (`--log-cap`, from `--log-from`) |
 | cut of the decision log | **in slices of fifty numbers**, beyond **~150 KB** | |
 | archiving delay of an accepted workstream | **seven days** | `archive_workstreams.py`, without `--delay` |
 | default model and effort of the dev | **Sonnet · Medium** | Opus for ⟨…⟩ (§1); High or Low (§3) |
@@ -485,7 +484,10 @@ changes one changes it here.⟩
 first project, a workstreams file went from 95 to 146 KB in one day, a decision log reached 206 KB, a checkpoint 47 KB*:
 - **a workstream entry fits under its cap**: the state, the decision, the next move; a long exchange goes to the batch
   folder or into a domain note, the entry only keeps the summary and the path;
-- **a decision log entry fits under its own**;
+- **a decision log entry fits under its own**; **check 12** of `check_living_docs.py --domains` measures these two caps
+  (adjustable with `--workstream-cap` and `--log-cap`; the log only from `--log-from`, old entries are not rewritten);
+  the arbiter, if there is one, turns it into **one workstream per domain**, without filing a new one when its message
+  already exists;
 - **an accepted workstream leaves for the archive after the delay in the table** (below);
 - **the decision log is cut into slices** beyond its cut size: one frozen archive per slice
   (`<Folder>/Archives/DECISION_LOG_ARCHIVE_D<a>_to_D<b>.md`), and the “execution is right” counts are carried over into a base at
@@ -592,17 +594,25 @@ created in its folder, never at the root; an old one joins its folder at its nex
 handover prompt** (the handover, below). **Images** go through the conversation, never through the project files.
 
 **The handover is measured, not guessed**:
-- **What is measured**: the context size at the last turn, with `python3 -B <Folder>/pl_tools/context.py` (copied
-  from the package). It is not the cumulative consumption since the start of the session, which grows much faster.
+- **What is measured**: the context size at the last turn, and the fixed load of the first turn, with
+  `python3 -B <Folder>/pl_tools/context.py` (copied from the package): three lines, the context at the last turn, the
+  fixed load, and the work above the fixed load (the difference). It is not the cumulative consumption since the start
+  of the session, which grows much faster.
 - **Why thresholds**: every turn re-reads the whole context, cache included. The bigger it is, the more each turn
-  costs and the more quality drops.
-- **The thresholds are in the table “The method's figures”** (above), which also says the window they assume: **at the
-  first**, the PL warns the owner at the top of their answer (“Context: ~N tokens — handover ahead”) and launches no
-  new batch, they finish the one in progress; **at the second at the latest**, or at a natural end of a queue before
-  that, or at the first sign of saturation, they hand over. **A project with several PLs** takes the second line of
-  the table: a domain has more documents to re-read there, and the PL needs a longer context.
-- **When to measure — three moments**: **at each batch close-out** (the `Context: <N> tokens` line of the closing
-  commit), **before each dev launch**, and **at least every ten exchanges**.
+  costs and the more quality drops. **The thresholds are counted above the fixed load**: before its first move, the
+  session pays the system instructions, the tool definitions, the project instructions and the memory, and the PL can
+  do nothing about it. Measured on 1 November 2026 at the first turn, before any reading, on two projects, it was
+  **151 083** and **156 577** tokens. An absolute threshold, which counts that load as work, left only about 100 000
+  tokens of work to a single PL, and a PL handed over after a single reading. The fixed load changes with the
+  platform: hence the measure at every session, rather than a frozen figure.
+- **The thresholds are in the table “The method's figures”** (above), which also says the window they assume, **one
+  rule whatever the number of PLs**. The PL compares them with the “work above the fixed load” line of `context.py`:
+  **at the first**, they warn the owner at the top of their answer (“Context: ~N tokens, of which ~F of fixed
+  load — handover ahead”) and launch
+  no new batch, they finish the one in progress; **at the second at the latest**, or at a natural end of a queue
+  before that, or at the first sign of saturation, they hand over.
+- **When to measure — three moments**: **at each batch close-out** (the `Context: <N> tokens, of which <F> of fixed load` line of the
+  closing commit), **before each dev launch**, and **at least every ten exchanges**.
 - **If the product compacts the conversation** (it may do so by itself), `context.py` measures a reduced context: the
   threshold never comes and the PL carries on from a summary. **This is the most likely risk** ([`CLAUDE_DEPENDENCIES.md`](../CLAUDE_DEPENDENCIES.md)).
   The defence: the three moments of measurement, handing over at a natural end of a queue without waiting for the

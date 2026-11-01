@@ -56,7 +56,7 @@
 | **recette** | le statut d'un chantier livré et validé ; le délai de la méthode §6 passé, il sort vers l'archive du mois. | `modeles/METHODE.md` §6 |
 | **tableau publié** | la page `chantiers.html`, fixe et sans aucune donnée, et son fichier de données `chantiers.json` à côté, publiés ensemble au même lien. | `modeles/METHODE.md` §6 ; `modeles/generer_tableau.py` |
 | **fichier de données** | `chantiers.json`, que le générateur écrit à côté de la page ; la page le lit par `fetch`. | `modeles/generer_tableau.py` ; `modeles/depot-vivants/README.md` |
-| **vérificateur** | `verifier_vivants.py` : le contrôle en lecture seule des vivants partagés (onze contrôles, dont le 6, la page et ses données contre leur régénération, et le 11, les `.yaml` en YAML valide). | `modeles/verifier_vivants.py` ; `modeles/depot-vivants/README.md` |
+| **vérificateur** | `verifier_vivants.py` : le contrôle en lecture seule des vivants partagés (douze contrôles, dont le 6, la page et ses données contre leur régénération, et le 11, les `.yaml` en YAML valide). | `modeles/verifier_vivants.py` ; `modeles/depot-vivants/README.md` |
 | **fiche produit** | le checkpoint d'un produit qui a plusieurs CdP de modules : le commun (rituel, banc, circuit, pièges), jamais l'état. | `modeles/METHODE.md` §1 bis |
 
 ## 4 · Les extensions, le pont et le repli

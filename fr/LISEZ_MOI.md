@@ -1,5 +1,5 @@
-# PACKAGE MÉTHODE CdP · v19
-### 31 octobre 2026 · pour démarrer un nouveau projet sous la méthode CdP
+# PACKAGE MÉTHODE CdP · v20
+### 1er novembre 2026 · pour démarrer un nouveau projet sous la méthode CdP
 
 *Ce package reproduit une façon de travailler éprouvée lot après lot : un **chef de projet** (CdP, Opus) qui décide
 avec toi, cadre, lance le dev et réceptionne ; un **dev** qui construit un lot à la fois ; **toi**,
@@ -39,7 +39,7 @@ production).
 | `modeles/chantiers.yaml` | la source unique des chantiers | dépôt des vivants |
 | `modeles/contexte.py` | mesure le contexte de la session du CdP, pour décider la passation (seuils : méthode §6) | `outils_cdp/` du dépôt des vivants |
 | `modeles/generer_tableau.py` | **extension « tableau publié »** — la page `chantiers.html` et son fichier de données `chantiers.json` | dépôt des vivants |
-| `modeles/verifier_vivants.py` | contrôle les vivants en lecture seule — onze contrôles, décrits dans sa docstring | dépôt des vivants |
+| `modeles/verifier_vivants.py` | contrôle les vivants en lecture seule — douze contrôles, décrits dans sa docstring | dépôt des vivants |
 | `modeles/archiver_chantiers.py` | sort les chantiers en recette vers l'archive du mois (délai : méthode §6) ; `chercher`, `normaliser` | dépôt des vivants |
 | `modeles/domaines.yaml` | **modes B et C** — la table des domaines que lit le contrôle 9 | `Methode/domaines.yaml` du dépôt des vivants |
 | [`modeles/ARBITRE.md`](modeles/ARBITRE.md), `modeles/arbitre.py`, `modeles/depot-vivants/arbitre.yml` | **facultatif, mode C** — l'arbitre des vivants, une action GitHub quotidienne | `Methode/` et `.github/workflows/` du dépôt des vivants |
@@ -450,3 +450,7 @@ seule source par règle (les chiffres de la méthode dans une table de son §6, 
 parité en CI) ; le fait d'un lot écrit une fois, au journal des versions du plan ; des lots de complexité faible légers (la forme
 courte du cadrage, sept portes, des attendus seulement quand le lot produit des valeurs à comparer) ; le contrôle 4
 vérifie le numéro du lot en vol.
+v20, le 1er novembre 2026 — le contrôle 12 de `verifier_vivants.py` : la taille d'une entrée de chantier et d'une entrée du
+registre contre leurs plafonds (méthode §6), un chantier par domaine pour l'arbitre ; l'écart (b) du contrôle 4 se lit quelle
+que soit la version ; les seuils de passation se comptent au-dessus de la charge fixe mesurée au premier tour, une règle
+pour tous (`contexte.py` l'affiche) ; la skill reste v19.
